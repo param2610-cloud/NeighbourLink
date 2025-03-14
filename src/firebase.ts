@@ -3,6 +3,10 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getMessaging,isSupported } from "firebase/messaging";
+import 'firebase/auth';
+import 'firebase/firestore';
+import 'firebase/storage';
+import 'firebase/messaging';
 
 const firebaseConfig = {
     apiKey: "AIzaSyBgY_u8JRYyn6pdezJVlaB_teB8ZPyzorI",
