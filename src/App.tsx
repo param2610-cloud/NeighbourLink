@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
 import {
   requestNotificationPermission,
   onMessageListener,
@@ -10,9 +15,16 @@ import Register from "./components/authPage/Register";
 import { ToastContainer } from "react-toastify";
 import Login from "./components/authPage/login";
 import Profile from "./components/authPage/Profile";
+import { auth } from "./firebase";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
+  const [user, setUser] = useState<any>();
+  useEffect(()=>{
+    auth.onAuthStateChanged((user)=>{
+      setUser(user);
+    })
+  })
 
   useEffect(() => {
     async function setupNotifications() {
@@ -42,17 +54,17 @@ function App() {
     setupNotifications();
   }, []);
 
+
+
   return (
     <>
       <Router>
         <div className="app-container border border-gray-300">
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={user ? <Navigate to="/profile" /> : <LandingPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
-
-            {/* Example additional route */}
           </Routes>
           {!notificationsSupported && (
             <p className="text-orange-500">
