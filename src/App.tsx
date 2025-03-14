@@ -9,6 +9,7 @@ import LandingPage from "./components/landingpage/LandingPage";
 import Register from "./components/authPage/Register";
 import { ToastContainer } from "react-toastify";
 import Login from "./components/authPage/login";
+import Profile from "./components/authPage/Profile";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -42,23 +43,26 @@ function App() {
   }, []);
 
   return (
-    <><Router>
-      <div className="app-container border border-gray-300">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
+    <>
+      <Router>
+        <div className="app-container border border-gray-300">
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/profile" element={<Profile />} />
 
-
-          {/* Example additional route */}
-        </Routes>
-        {!notificationsSupported && (
-          <p className="text-orange-500">
-            Note: Push notifications are not supported in this browser.
-          </p>
-        )}
-      </div>
-    </Router><ToastContainer /></>
+            {/* Example additional route */}
+          </Routes>
+          {!notificationsSupported && (
+            <p className="text-orange-500">
+              Note: Push notifications are not supported in this browser.
+            </p>
+          )}
+        </div>
+      </Router>
+      <ToastContainer />
+    </>
   );
 }
 

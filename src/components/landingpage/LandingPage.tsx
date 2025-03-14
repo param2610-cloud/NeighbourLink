@@ -21,8 +21,19 @@ const LandingPage: React.FC = () => {
           <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition duration-300">Testimonials</a>
           <a href="#download" className="text-gray-600 hover:text-indigo-600 transition duration-300">Download</a>
         </div>
-        <div className="flex items-center">
+
+        
+        {/* <div className="flex items-center">
           <a href="register" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign Up</a>
+          <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div> */}
+
+        <div className="flex items-center">
+          <a href="login" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign In</a>
           <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -39,6 +50,7 @@ const LandingPage: React.FC = () => {
           <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Testimonials</a>
           <a href="#download" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Download</a>
           <a href="/register" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign Up</a>
+          <a href="/login" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign In</a>
         </div>
           </div>
         )}

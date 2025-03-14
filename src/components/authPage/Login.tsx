@@ -28,8 +28,14 @@ function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <button
+        className="absolute top-4 left-4 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        onClick={() => (window.location.href = "/")}
+    >
+        Back to Home
+    </button>
       <form onSubmit={handleSubmit} className="w-full max-w-md p-6 bg-white shadow-md rounded">
-        <h3 className="text-2xl font-bold mb-4 text-center">Login</h3>
+        <h3 className="text-2xl font-bold mb-4 text-center">Login / Sign In</h3>
 
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-700">Email address</label>
