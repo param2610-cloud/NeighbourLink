@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -40,6 +40,11 @@ function Profile() {
     }
   }
 
+  async function handleQform() {
+    window.location.href = "/profile/rqform";
+    
+  }
+
   return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
     <button
@@ -65,8 +70,16 @@ function Profile() {
             <p className="text-sm text-gray-700">First Name: {userDetails.firstName}</p>
             {/* <p className="text-sm text-gray-700">Last Name: {userDetails.lastName}</p> */}
           </div>
+
           <button
-            className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full px-4 py-2 bg-indigo-600 mb-3 text-white font-medium rounded-md shadow-sm hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            onClick={handleQform}
+          >
+            Querry Form
+          </button>
+
+          <button
+            className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             onClick={handleLogout}
           >
             Logout

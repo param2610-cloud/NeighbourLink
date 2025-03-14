@@ -13,9 +13,10 @@ import "./App.css";
 import LandingPage from "./components/landingpage/LandingPage";
 import Register from "./components/authPage/Register";
 import { ToastContainer } from "react-toastify";
-import Login from "./components/authPage/login";
+import Login from "./components/authPage/Login";
 import Profile from "./components/authPage/Profile";
 import { auth } from "./firebase";
+import ResourceForm from "./components/Forms/ResourceForm";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -65,6 +66,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/rqform" element={<ResourceForm userId={user?.uid} />} />
           </Routes>
           {!notificationsSupported && (
             <p className="text-orange-500">
@@ -74,6 +76,7 @@ function App() {
         </div>
       </Router>
       <ToastContainer />
+      
     </>
   );
 }
