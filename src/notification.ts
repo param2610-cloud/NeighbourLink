@@ -1,7 +1,8 @@
 import { initializeMessaging } from "./firebase";
 import { getToken, onMessage } from "firebase/messaging";
 
-const vapidKey = 'S611W1c3kWVXd1-B9QsaEwfhVEZKV1HyuUjdLpGYOpM'; // From Firebase Console
+
+const vapidKey = import.meta.env.VITE_VAPIDKEY; // From Firebase Console
 
 export const requestNotificationPermission = async () => {
   try {
