@@ -80,6 +80,10 @@ export default defineConfig({
     },
   },
   server:{
-    host:'192.168.0.193'
+    host:'192.168.1.105' // Parthib
+//    host:'192.168._._' // Parambrata
+//    host:'192.168._._' // Shramana
+//    host:'192.168._._' // Hiro Alom
+    
   }
 },)

@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
-import { requestNotificationPermission, onMessageListener } from "./notification";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import {
+  requestNotificationPermission,
+  onMessageListener,
+} from "./notification";
 import "./App.css";
 import LandingPage from "./components/landingpage/LandingPage";
+import Register from "./components/authPage/Register";
+import { ToastContainer } from "react-toastify";
+import Login from "./components/authPage/login";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
-  
+
   useEffect(() => {
     async function setupNotifications() {
       try {
@@ -21,7 +28,7 @@ function App() {
             console.log("Message received:", payload);
             // Display notification to the user
           })
-          .catch(err => {
+          .catch((err) => {
             console.error("Error with message listener:", err);
             setNotificationsSupported(false);
           });
@@ -30,19 +37,28 @@ function App() {
         setNotificationsSupported(false);
       }
     }
-    
+
     setupNotifications();
   }, []);
 
   return (
-    <div className="app-container border border-gray-300 ">
-      <LandingPage/>
-      {!notificationsSupported && (
-      <p className="text-orange-500">
-        Note: Push notifications are not supported in this browser.
-      </p>
-      )}
-    </div>
+    <><Router>
+      <div className="app-container border border-gray-300">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+
+
+          {/* Example additional route */}
+        </Routes>
+        {!notificationsSupported && (
+          <p className="text-orange-500">
+            Note: Push notifications are not supported in this browser.
+          </p>
+        )}
+      </div>
+    </Router><ToastContainer /></>
   );
 }
 
