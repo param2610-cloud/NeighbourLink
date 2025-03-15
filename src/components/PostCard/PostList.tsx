@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import { db } from "../../firebase"; // Import your Firebase configuration
+import { doc, getDoc } from "firebase/firestore";
 
 interface Post {
   category: string;
@@ -22,6 +24,26 @@ interface Comment {
 const PostList = ({ post }: { post: Post }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, "Users", post.userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserName(`${userData.firstName} ${userData.lastName}`);
+        } else {
+          setUserName("Unknown User");
+        }
+      } catch (error) {
+        console.error("Error fetching user name:", error);
+        setUserName("Unknown User");
+      }
+    };
+
+    fetchUserName();
+  }, [post.userId]);
 
   // Function to handle adding a new comment
   const handleAddComment = () => {
@@ -39,7 +61,6 @@ const PostList = ({ post }: { post: Post }) => {
 
   // Function to handle sending a request
   const handleSendRequest = () => {
-    // alert("Request sent!");
     toast.success("Request sent successfully!", {
       position: "top-center",
     });
@@ -57,7 +78,7 @@ const PostList = ({ post }: { post: Post }) => {
               className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
             />
             <div className="ml-2 md:ml-3">
-              <h3 className="font-semibold text-gray-800 text-xs md:text-base">{post.userId}</h3>
+              <h3 className="font-semibold text-gray-800 text-xs md:text-base">{userName}</h3>
               <p className="text-xs md:text-sm text-gray-500">
                 {isNaN(new Date(post.createdAt).getTime()) ? "Invalid Date" : new Date(post.createdAt).toLocaleDateString()}
               </p>

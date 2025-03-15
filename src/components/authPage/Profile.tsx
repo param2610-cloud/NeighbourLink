@@ -145,7 +145,7 @@ function Profile() {
       <div className="min-h-screen bg-gray-100 px-2 py-4 md:px-0 md:py-2">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-4 w-full mx-auto">
           {posts.map((post) => (
-            <PostList key={post.userId} post={post} />
+            <PostList key={post.title} post={post} />
           ))}
         </div>
       </div>
