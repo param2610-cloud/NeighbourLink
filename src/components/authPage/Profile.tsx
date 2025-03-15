@@ -100,7 +100,7 @@ function Profile() {
 
       {/* Sidebar */}
       <div
-        className={`w-full md:w-80 bg-white shadow-md p-4 fixed md:static transform transition-transform duration-200 ease-in-out ${
+        className={`w-full md:w-125 bg-white shadow-md p-4 fixed md:static transform transition-transform duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -111,7 +111,7 @@ function Profile() {
             alt="Profile"
             className="w-12 h-12 rounded-full"
           />
-          <span className="ml-3 font-semibold text-2xl text-gray-700">
+          <span className="ml-3 font-semibold text-xl text-gray-700">
             {userDetails?.firstName} {userDetails?.lastName}
           </span>
         </div>

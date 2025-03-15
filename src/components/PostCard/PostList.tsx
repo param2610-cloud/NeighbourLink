@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { db } from "../../firebase"; // Import your Firebase configuration
+import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 interface Post {
   category: string;
-  createdAt: string;
+  createdAt: any;
   description: string;
   location: string;
   photoUrl: string;
@@ -52,7 +52,7 @@ const PostList = ({ post }: { post: Post }) => {
         id: Math.random().toString(36).substr(2, 9), // Generate a unique ID
         text: newComment,
         userId: "currentUserId", // Replace with the actual logged-in user ID
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toLocaleDateString(),
       };
       setComments([...comments, comment]);
       setNewComment("");
@@ -109,7 +109,7 @@ const PostList = ({ post }: { post: Post }) => {
           className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mb-3 md:mb-4 text-sm md:text-base"
           onClick={handleSendRequest}
         >
-          Send Request
+          Send Response
         </button>
         {/* Comments Section */}
         <div className="mt-3 md:mt-4">
