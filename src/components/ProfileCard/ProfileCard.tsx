@@ -7,6 +7,14 @@ import { toast } from "react-toastify";
 function ProfileCard() {
   const [userDetails, setUserDetails] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
+  // Add missing state variables for edit functionality
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
@@ -45,6 +53,50 @@ function ProfileCard() {
       }
     }
   }
+
+  // Add the missing handleEditProfile function
+  const handleEditProfile = () => {
+    setIsEditModalOpen(true);
+  };
+
+  // Add the missing handleSaveChanges function
+  const handleSaveChanges = async () => {
+    try {
+      if (!auth.currentUser) {
+        toast.error("User not authenticated");
+        return;
+      }
+
+      const userId = auth.currentUser.uid;
+      const userRef = doc(db, "Users", userId);
+      
+      // Update object for Firestore
+      const updateData: Record<string, any> = {
+        firstName: name,
+        phone: phone,
+        email: email,
+        address: address,
+      };
+
+      // Handle photo upload if a new photo was selected
+      if (photoFile) {
+        const storageRef = ref(storage, `profile_photos/${userId}`);
+        await uploadBytes(storageRef, photoFile);
+        const downloadURL = await getDownloadURL(storageRef);
+        updateData.photo = downloadURL;
+        setPhotoUrl(downloadURL);
+      }
+
+      await updateDoc(userRef, updateData);
+      setUserDetails({ ...userDetails, ...updateData });
+      
+      toast.success("Profile updated successfully!");
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
 
   async function handleQform() {
     window.location.href = "/profile/rqform";
