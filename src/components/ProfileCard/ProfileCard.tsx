@@ -4,7 +4,7 @@ import { doc, getDoc } from "firebase/firestore";
 
 function ProfileCard() {
   const [userDetails, setUserDetails] = useState<any>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
+  // const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
 
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
@@ -41,14 +41,14 @@ function ProfileCard() {
     }
   }
 
-  async function handleQform() {
-    window.location.href = "/profile/rqform";
-  }
+  // async function handleQform() {
+  //   window.location.href = "/profile/rqform";
+  // }
 
-  // Function to toggle sidebar visibility
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  // // Function to toggle sidebar visibility
+  // const toggleSidebar = () => {
+  //   setIsSidebarOpen(!isSidebarOpen);
+  // };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
