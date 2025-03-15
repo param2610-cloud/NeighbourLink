@@ -6,14 +6,14 @@ import { toast } from "react-toastify";
 
 function ProfileCard() {
   const [userDetails, setUserDetails] = useState<any>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
+  // const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
   // Add missing state variables for edit functionality
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [, setPhotoUrl] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const fetchUserData = async () => {
@@ -98,14 +98,14 @@ function ProfileCard() {
     }
   };
 
-  async function handleQform() {
-    window.location.href = "/profile/rqform";
-  }
+  // async function handleQform() {
+  //   window.location.href = "/profile/rqform";
+  // }
 
-  // Function to toggle sidebar visibility
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  // // Function to toggle sidebar visibility
+  // const toggleSidebar = () => {
+  //   setIsSidebarOpen(!isSidebarOpen);
+  // };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
