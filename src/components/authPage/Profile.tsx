@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import PostList from "../PostCard/PostList";
 
 function Profile() {
   const [userDetails, setUserDetails] = useState<any>(null);
@@ -50,6 +51,37 @@ function Profile() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  interface Post {
+    category: string;
+    createdAt: string;
+    description: string;
+    location: string;
+    photoUrl: string;
+    title: string;
+    urgency: boolean;
+    userId: string;
+  }
+
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  // Fetch posts from Firebase Firestore
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "posts"));
+        const postsData: Post[] = [];
+        querySnapshot.forEach((doc: any) => {
+          postsData.push({ id: doc.id, ...doc.data() } as Post);
+        });
+        setPosts(postsData);
+      } catch (error) {
+        console.error("Error fetching posts: ", error);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
       {/* Sidebar Toggle Button */}
@@ -58,102 +90,66 @@ function Profile() {
         onClick={toggleSidebar}
       >
         <img
-              // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
-              src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
-              alt="Profile"
-              className="w-12 h-12 rounded-full"
-            />
+          // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
+          src="../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+          alt="Profile"
+          className="w-12 h-12 rounded-full"
+        />
         {/* {isSidebarOpen ? "✕" : "☰"} */}
       </button>
 
       {/* Sidebar */}
       <div
-        className={`w-full md:w-40 bg-white shadow-md p-4 fixed md:static transform transition-transform duration-200 ease-in-out ${
+        className={`w-full md:w-80 bg-white shadow-md p-4 fixed md:static transform transition-transform duration-200 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
         <div className="flex items-center mb-8">
           <img
             // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
-            src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+            src="../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
             alt="Profile"
             className="w-12 h-12 rounded-full"
           />
-          <span className="ml-3 font-semibold text-gray-700">
-            {userDetails?.firstName}
+          <span className="ml-3 font-semibold text-2xl text-gray-700">
+            {userDetails?.firstName} {userDetails?.lastName}
           </span>
         </div>
         <nav>
           <ul>
-            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              <a href="/profile" >
-                Home
-              </a>
+            <li className="mb-4 w-full text-center px-2 py-2 bg-white border-1 border-indigo-600 text-indigo-600 text-sm rounded-md shadow-sm hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="/profile">Home</a>
             </li>
-            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              <a href="/profileCard">
-                Profile
-              </a>
+            <li className="mb-4 w-full text-center px-2 py-2 bg-white border-1 border-indigo-600 text-indigo-600 text-sm rounded-md shadow-sm hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="/profileCard">Profile</a>
             </li>
-            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              <a href="#" >
-                Friends
-              </a>
+            <li className="mb-4 w-full text-center px-2 py-2 bg-white text-indigo-600 text-sm rounded-md shadow-sm hover:bg-indigo-600 hover:text-white border-1 border-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="#">Friends</a>
             </li>
-            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              <a href="/profile/rqform">
-                Query Form
-              </a>
+            <li className="mb-4 w-full text-center px-2 py-2 bg-white border-1 border-indigo-600 text-indigo-600 text-sm rounded-md shadow-sm hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+              <a href="/profile/rqform">Query Form</a>
             </li>
           </ul>
           <button
-              className="w-20  bottom-10 px-2 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
+            className="w-full  bottom-10 px-2 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
         </nav>
       </div>
 
       {/* Main Content */}
-      
 
-        {/* Social Media Scroll Section */}
-        <div className="mt-8">
-          <h2 className="text-xl font-bold mb-4">Social Feed</h2>
-          <div className="overflow-y-auto h-64 bg-white shadow-md rounded p-4">
-            <div className="mb-4">
-              <p className="text-sm text-gray-700">
-                Post 1: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-              </p>
-            </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-700">
-                Post 2: Sed do eiusmod tempor incididunt ut labore et dolore
-                magna aliqua.
-              </p>
-            </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-700">
-                Post 3: Ut enim ad minim veniam, quis nostrud exercitation
-                ullamco laboris.
-              </p>
-            </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-700">
-                Post 4: Duis aute irure dolor in reprehenderit in voluptate
-                velit esse cillum dolore.
-              </p>
-            </div>
-            <div className="mb-4">
-              <p className="text-sm text-gray-700">
-                Post 5: Excepteur sint occaecat cupidatat non proident, sunt in
-                culpa qui officia deserunt.
-              </p>
-            </div>
-          </div>
+      {/* Social Media Scroll Section */}
+      <div className="min-h-screen bg-gray-100 px-2 py-4 md:px-0 md:py-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-4 w-full mx-auto">
+          {posts.map((post) => (
+            <PostList key={post.userId} post={post} />
+          ))}
         </div>
       </div>
+    </div>
   );
 }
 

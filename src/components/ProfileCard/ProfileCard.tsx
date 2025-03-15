@@ -1,21 +1,32 @@
 import { useEffect, useState } from "react";
-import { auth, db } from "../../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth, db, storage } from "../../firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { toast } from "react-toastify";
 
 function ProfileCard() {
   const [userDetails, setUserDetails] = useState<any>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State to manage edit modal visibility
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoUrl, setPhotoUrl] = useState("");
 
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
       if (user) {
-        console.log(user);
-
         const docRef = doc(db, "Users", user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setUserDetails(docSnap.data());
-          console.log(docSnap.data());
+          const data = docSnap.data();
+          setUserDetails(data);
+          setName(data.firstName || "");
+          setPhone(data.phone || "");
+          setEmail(data.email || "");
+          setAddress(data.address || "");
+          setPhotoUrl(data.photo || "");
         } else {
           console.log("No such document!");
         }
@@ -29,7 +40,7 @@ function ProfileCard() {
     fetchUserData();
   }, []);
 
-  async function handleLogout() {
+  const handleLogout = async () => {
     try {
       await auth.signOut();
       window.location.href = "/login";
@@ -39,76 +50,107 @@ function ProfileCard() {
         console.error("Error logging out:", error.message);
       }
     }
-  }
+  };
 
-  async function handleQform() {
-    window.location.href = "/profile/rqform";
-  }
+  const handleEditProfile = () => {
+    setIsEditModalOpen(true);
+  };
 
-  // Function to toggle sidebar visibility
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  const handleSaveChanges = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, "Users", user.uid);
+
+        // Upload new photo if selected
+        let newPhotoUrl = photoUrl;
+        if (photoFile) {
+          const storageRef = ref(storage, `profilePhotos/${user.uid}`);
+          await uploadBytes(storageRef, photoFile);
+          newPhotoUrl = await getDownloadURL(storageRef);
+        }
+
+        // Update user details in Firestore
+        await updateDoc(userRef, {
+          firstName: name,
+          phone,
+          email,
+          address,
+          photo: newPhotoUrl,
+        });
+
+        // Update local state
+        setUserDetails({
+          ...userDetails,
+          firstName: name,
+          phone,
+          email,
+          address,
+          photo: newPhotoUrl,
+        });
+        setPhotoUrl(newPhotoUrl);
+
+        // Close the modal
+        setIsEditModalOpen(false);
+        toast.success("Profile updated successfully!", {
+          position: "top-center",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile. Please try again.", {
+        position: "bottom-center",
+      });
+    }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
-      {/*Sidebar Toggle Button */}
-      {/* <button
-        className="fixed top-4 right-4 z-50 p-2 bg-indigo-500 text-white rounded-md shadow-sm md:hidden"
-        onClick={toggleSidebar}
-      >
-        <img
-              // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
-              src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
-              alt="Profile"
-              className="w-12 h-12 rounded-full"
-            />
-         {isSidebarOpen ? "✕" : "☰"}
-      </button> */}
-
-      
-
       {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center mb-6">
           <button
-            className=" left-2 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="left-2 px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             onClick={() => (window.location.href = "/")}
           >
             Back to Home
           </button>
-          {/* <div className="md:hidden">
-            <img
-              // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
-              src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avifgh"
-              alt="Profile"
-              className="w-12 h-12 rounded-full"
-            />
-          </div> */}
         </div>
 
         {userDetails ? (
           <div className="w-full max-w-md mx-auto p-6 bg-white shadow-md rounded">
             <div className="flex justify-center mb-4">
               <img
-                // src={userDetails.photo}
-                src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+                src={userDetails.photo || "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
                 alt="Profile"
                 className="w-32 h-32 rounded-full"
               />
             </div>
             <h3 className="text-2xl font-bold text-center mb-4">
-              Welcome {userDetails.firstName} 🙏🙏
+              Welcome {userDetails.firstName} {userDetails.lastName} 🙏
             </h3>
             <div className="mb-4">
-              <p className="text-sm text-gray-700">Email: {userDetails.email}</p>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm font-bold text-gray-700">Email: {userDetails.email}</p>
+              <p className="text-sm font-bold text-gray-700">
                 First Name: {userDetails.firstName}
+              </p>
+              <p className="text-sm font-bold text-gray-700">
+                Phone: {userDetails.phone || "Not provided"}
+              </p>
+              <p className="text-sm font-bold text-gray-700">
+                Address: {userDetails.address || "Not provided"}
               </p>
             </div>
 
             <button
-              className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full px-4 py-2 bg-indigo-600 mb-3 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              onClick={handleEditProfile}
+            >
+              Edit Profile
+            </button>
+
+            <button
+              className="w-full px-4 py-2 bg-red-600 text-white font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               onClick={handleLogout}
             >
               Logout
@@ -116,6 +158,65 @@ function ProfileCard() {
           </div>
         ) : (
           <p>Loading...</p>
+        )}
+
+        {/* Edit Profile Modal */}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="mt-6 flex justify-end space-x-4">
+                <button
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  onClick={handleSaveChanges}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

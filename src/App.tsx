@@ -22,11 +22,11 @@ import ProfileCard from "./components/ProfileCard/ProfileCard";
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
   const [user, setUser] = useState<any>();
-  useEffect(()=>{
-    auth.onAuthStateChanged((user)=>{
+  useEffect(() => {
+    auth.onAuthStateChanged((user) => {
       setUser(user);
-    })
-  })
+    });
+  });
 
   useEffect(() => {
     async function setupNotifications() {
@@ -56,19 +56,23 @@ function App() {
     setupNotifications();
   }, []);
 
-
-
   return (
     <>
       <Router>
         <div className="app-container border border-gray-300">
           <Routes>
-            <Route path="/" element={user ? <Navigate to="/profile" /> : <LandingPage />} />
+            <Route
+              path="/"
+              element={user ? <Navigate to="/profile" /> : <LandingPage />}
+            />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profileCard" element={<ProfileCard />} />
-            <Route path="/profile/rqform" element={<ResourceForm userId={user?.uid} />} />
+            <Route
+              path="/profile/rqform"
+              element={<ResourceForm userId={user?.uid} />}
+            />
           </Routes>
           {!notificationsSupported && (
             <p className="text-orange-500">
@@ -78,7 +82,6 @@ function App() {
         </div>
       </Router>
       <ToastContainer />
-      
     </>
   );
 }
