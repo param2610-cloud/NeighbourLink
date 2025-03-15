@@ -6,13 +6,7 @@ import { toast } from "react-toastify";
 
 function ProfileCard() {
   const [userDetails, setUserDetails] = useState<any>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // State to manage edit modal visibility
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
 
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
@@ -50,58 +44,15 @@ function ProfileCard() {
         console.error("Error logging out:", error.message);
       }
     }
-  };
+  }
 
-  const handleEditProfile = () => {
-    setIsEditModalOpen(true);
-  };
+  async function handleQform() {
+    window.location.href = "/profile/rqform";
+  }
 
-  const handleSaveChanges = async () => {
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const userRef = doc(db, "Users", user.uid);
-
-        // Upload new photo if selected
-        let newPhotoUrl = photoUrl;
-        if (photoFile) {
-          const storageRef = ref(storage, `profilePhotos/${user.uid}`);
-          await uploadBytes(storageRef, photoFile);
-          newPhotoUrl = await getDownloadURL(storageRef);
-        }
-
-        // Update user details in Firestore
-        await updateDoc(userRef, {
-          firstName: name,
-          phone,
-          email,
-          address,
-          photo: newPhotoUrl,
-        });
-
-        // Update local state
-        setUserDetails({
-          ...userDetails,
-          firstName: name,
-          phone,
-          email,
-          address,
-          photo: newPhotoUrl,
-        });
-        setPhotoUrl(newPhotoUrl);
-
-        // Close the modal
-        setIsEditModalOpen(false);
-        toast.success("Profile updated successfully!", {
-          position: "top-center",
-        });
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile. Please try again.", {
-        position: "bottom-center",
-      });
-    }
+  // Function to toggle sidebar visibility
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   return (
