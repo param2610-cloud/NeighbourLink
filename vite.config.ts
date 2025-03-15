@@ -74,6 +74,13 @@ export default defineConfig({
     }),
     tailwindcss()
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        'firebase-messaging-sw': 'public/firebase-messaging-sw.js',
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
