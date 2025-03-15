@@ -7,8 +7,30 @@ body {
     scroll-behavior: smooth;
 }
 
-.gradient-bg {
-    background: linear-gradient(120deg, #4F46E5 0%, #7C3AED 100%);
+
+.bg-1 {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("/src/assets/courosel1.jpg");
+}
+
+.bg-2 {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("/src/assets/courosel2.jpeg");
+}
+
+.bg-3 {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("/src/assets/courosel3.jpg");
+}
+
+.bg-4 {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("/src/assets/courosel4.jpg");
+}
+
+.bg-property {
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.bg-base {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
 }
 
 .feature-card {
@@ -68,6 +90,11 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
+.feature-card-bg {
+    background: rgb(201, 202, 240);
+    background: linear-gradient(318deg, rgba(201, 202, 240, 1) 4%, rgba(237, 237, 237, 0) 14%, rgba(242, 242, 242, 0) 24%, rgba(254, 254, 254, 0) 32%, rgba(254, 254, 254, 0) 100%);
+}
+
 .pulse-animation {
     animation: pulse 2s infinite;
 }
@@ -77,10 +104,12 @@ body {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.05);
         opacity: 0.8;
     }
+
     100% {
         transform: scale(1);
         opacity: 1;

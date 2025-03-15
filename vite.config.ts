@@ -80,6 +80,6 @@ export default defineConfig({
     },
   },
   server:{
-    host:'192.168.0.193'
+    host:'192.168.56.1'
   }
 },)
