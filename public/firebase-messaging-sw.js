@@ -1,18 +1,15 @@
-
 // Give the service worker access to Firebase Messaging.
-// Note that you can only use Firebase Messaging here. Other Firebase libraries
-// are not available in the service worker.
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
 // Initialize the Firebase app in the service worker by passing in your app's Firebase config object.
 firebase.initializeApp({
-  apiKey: self.FIREBASE_CONFIG.apiKey,
-  authDomain: self.FIREBASE_CONFIG.authDomain,
-  projectId: self.FIREBASE_CONFIG.projectId,
-  storageBucket: self.FIREBASE_CONFIG.storageBucket,
-  messagingSenderId: self.FIREBASE_CONFIG.messagingSenderId,
-  appId: self.FIREBASE_CONFIG.appId
+  apiKey: "AIzaSyBgY_u8JRYyn6pdezJVlaB_teB8ZPyzorI",
+  authDomain: "neighbourlink-b1b32.firebaseapp.com",
+  projectId: "neighbourlink-b1b32",
+  storageBucket: "neighbourlink-b1b32.firebasestorage.app",
+  messagingSenderId: "343739130102",
+  appId: "1:343739130102:web:bf146d1ac264f266e98cd7"
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
