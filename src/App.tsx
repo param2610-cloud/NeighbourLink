@@ -17,6 +17,7 @@ import Login from "./components/authPage/Login";
 import Profile from "./components/authPage/Profile";
 import { auth } from "./firebase";
 import ResourceForm from "./components/Forms/ResourceForm";
+import ProfileCard from "./components/ProfileCard/ProfileCard";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -66,6 +67,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profileCard" element={<ProfileCard />} />
             <Route path="/profile/rqform" element={<ResourceForm userId={user?.uid} />} />
           </Routes>
           {!notificationsSupported && (

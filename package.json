@@ -12,12 +12,17 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.0.14",
     "aws-sdk": "^2.1692.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "firebase": "^11.4.0",
+    "lucide-react": "^0.482.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.3.0",
     "react-toastify": "^11.0.5",
+    "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.14",
+    "tailwindcss-animate": "^1.0.7",
     "vite-plugin-pwa": "^0.21.1"
   },
   "devDependencies": {

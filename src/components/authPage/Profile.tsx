@@ -1,9 +1,10 @@
-import  { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 function Profile() {
   const [userDetails, setUserDetails] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // State to manage sidebar visibility
 
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
@@ -40,55 +41,119 @@ function Profile() {
     }
   }
 
-  async function handleQform() {
-    window.location.href = "/profile/rqform";
-    
-  }
+  // async function handleQform() {
+  //   window.location.href = "/profile/rqform";
+  // }
+
+  // Function to toggle sidebar visibility
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-    <button
-        className="absolute top-4 left-4 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        onClick={() => (window.location.href = "/")}
-    >
-        Back to Home
-    </button>
-      {userDetails ? (
-        <div className="w-full max-w-md p-6 bg-white shadow-md rounded">
-          <div className="flex justify-center mb-4">
-            <img
-              src={userDetails.photo}
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
+      {/* Sidebar Toggle Button */}
+      <button
+        className="fixed top-4 right-4 z-50 p-2 bg-indigo-500 text-white rounded-md shadow-sm md:hidden"
+        onClick={toggleSidebar}
+      >
+        <img
+              // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
+              src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
               alt="Profile"
-              className="w-32 h-32 rounded-full"
+              className="w-12 h-12 rounded-full"
             />
-          </div>
-          <h3 className="text-2xl font-bold text-center mb-4">
-            Welcome {userDetails.firstName} 🙏🙏
-          </h3>
-          <div className="mb-4">
-            <p className="text-sm text-gray-700">Email: {userDetails.email}</p>
-            <p className="text-sm text-gray-700">First Name: {userDetails.firstName}</p>
-            {/* <p className="text-sm text-gray-700">Last Name: {userDetails.lastName}</p> */}
-          </div>
+        {/* {isSidebarOpen ? "✕" : "☰"} */}
+      </button>
 
-          <button
-            className="w-full px-4 py-2 bg-indigo-600 mb-3 text-white font-medium rounded-md shadow-sm hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            onClick={handleQform}
-          >
-            Querry Form
-          </button>
-
-          <button
-            className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+      {/* Sidebar */}
+      <div
+        className={`w-full md:w-40 bg-white shadow-md p-4 fixed md:static transform transition-transform duration-200 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
+      >
+        <div className="flex items-center mb-8">
+          <img
+            // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
+            src= "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+            alt="Profile"
+            className="w-12 h-12 rounded-full"
+          />
+          <span className="ml-3 font-semibold text-gray-700">
+            {userDetails?.firstName}
+          </span>
         </div>
-      ) : (
-        <p>Loading...</p>
-      )}
-    </div>
+        <nav>
+          <ul>
+            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="/profile" >
+                Home
+              </a>
+            </li>
+            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="/profileCard">
+                Profile
+              </a>
+            </li>
+            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="#" >
+                Friends
+              </a>
+            </li>
+            <li className="mb-4 w-full px-2 py-2 bg-indigo-600 text-white text-sm rounded-md shadow-sm hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              <a href="/profile/rqform">
+                Query Form
+              </a>
+            </li>
+          </ul>
+          <button
+              className="w-20  bottom-10 px-2 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+        </nav>
+      </div>
+
+      {/* Main Content */}
+      
+
+        {/* Social Media Scroll Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-4">Social Feed</h2>
+          <div className="overflow-y-auto h-64 bg-white shadow-md rounded p-4">
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                Post 1: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                Post 2: Sed do eiusmod tempor incididunt ut labore et dolore
+                magna aliqua.
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                Post 3: Ut enim ad minim veniam, quis nostrud exercitation
+                ullamco laboris.
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                Post 4: Duis aute irure dolor in reprehenderit in voluptate
+                velit esse cillum dolore.
+              </p>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-700">
+                Post 5: Excepteur sint occaecat cupidatat non proident, sunt in
+                culpa qui officia deserunt.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
   );
 }
 
