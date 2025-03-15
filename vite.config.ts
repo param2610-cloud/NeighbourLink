@@ -6,9 +6,17 @@ import tailwindcss from "@tailwindcss/vite"
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),
+  plugins: [
+    react(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: 'auto',
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        clientsClaim: true,
+        skipWaiting: true,
+      },
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: "NeighbourLink",
         short_name: "NeighbourLink",
@@ -68,30 +76,25 @@ export default defineConfig({
         ],
         
       },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-      },
     }),
     tailwindcss()
   ],
-  build: {
-    rollupOptions: {
-      input: {
-        'firebase-messaging-sw': 'public/firebase-messaging-sw.js',
-      },
-    },
-  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: "dist",
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        'firebase-messaging-sw': 'public/firebase-messaging-sw.js',
+      },
+    },
+  },
   server:{
-    // host:'192.168.1.105' // Parthib
-  //  host:'192.168.0.193' // Parambrata
-//    host:'192.168._._' // Shramana
-//    host:'192.168._._' // Hiro Alom
     host: process.env.VITE_IP
-    
   }
-},)
+})
