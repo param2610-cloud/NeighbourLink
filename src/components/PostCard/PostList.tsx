@@ -18,13 +18,45 @@ interface Comment {
   id: string;
   text: string;
   userId: string;
-  createdAt: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | string;
 }
 
 const PostList = ({ post }: { post: Post }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [userName, setUserName] = useState("");
+
+  const shortOptions: Intl.DateTimeFormatOptions = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric'
+  };
+
+  const formatTimestamp = (timestamp: any) => {
+    // Handle Firestore timestamp (which has seconds and nanoseconds properties)
+    if (timestamp && timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      const options: Intl.DateTimeFormatOptions = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      };
+      return date.toLocaleString('en-US', options);
+    }
+    // Handle regular Date objects or strings
+    else if (timestamp) {
+      const date = new Date(timestamp);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleString('en-US', shortOptions);
+      }
+    }
+    return "Invalid Date";
+  };
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -42,6 +74,7 @@ const PostList = ({ post }: { post: Post }) => {
       }
     };
 
+    console.log("post data=", post);
     fetchUserName();
   }, [post.userId]);
 
@@ -52,7 +85,7 @@ const PostList = ({ post }: { post: Post }) => {
         id: Math.random().toString(36).substr(2, 9), // Generate a unique ID
         text: newComment,
         userId: "currentUserId", // Replace with the actual logged-in user ID
-        createdAt: new Date().toLocaleDateString(),
+        createdAt: new Date().toISOString(), // Use ISO string for consistent formatting
       };
       setComments([...comments, comment]);
       setNewComment("");
@@ -80,7 +113,9 @@ const PostList = ({ post }: { post: Post }) => {
             <div className="ml-2 md:ml-3">
               <h3 className="font-semibold text-gray-800 text-xs md:text-base">{userName}</h3>
               <p className="text-xs md:text-sm text-gray-500">
-                {isNaN(new Date(post.createdAt).getTime()) ? "Invalid Date" : new Date(post.createdAt).toLocaleDateString()}
+                {post.createdAt && post.createdAt.seconds ? 
+                  formatTimestamp(post.createdAt) : 
+                  "Invalid Date"}
               </p>
             </div>
           </div>
@@ -106,7 +141,9 @@ const PostList = ({ post }: { post: Post }) => {
         )}
         {/* Send Request Button */}
         <button
-          className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mb-3 md:mb-4 text-sm md:text-base"
+          className={`w-full px-3 py-1.5 md:px-4 md:py-2 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base
+            ${post.urgency ? "bg-red-600 hover:bg-red-700" : "bg-yellow-600 hover:bg-yellow-700"}
+            `}
           onClick={handleSendRequest}
         >
           Send Response
@@ -125,7 +162,11 @@ const PostList = ({ post }: { post: Post }) => {
                 <div className="ml-2">
                   <p className="text-xs md:text-sm text-gray-800">{comment.text}</p>
                   <p className="text-xs text-gray-500">
-                    {new Date(comment.createdAt).toLocaleString()}
+                    {comment.createdAt && typeof comment.createdAt === 'string' 
+                      ? new Date(comment.createdAt).toLocaleString('en-US', shortOptions)
+                      : (comment.createdAt && typeof comment.createdAt === 'object' && 'seconds' in comment.createdAt
+                          ? formatTimestamp(comment.createdAt)
+                          : "Invalid Date")}
                   </p>
                 </div>
               </div>

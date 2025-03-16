@@ -70,6 +70,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profileCard" element={<ProfileCard />} />
+            <Route path="/home" element={<LandingPage />} />
             <Route
               path="/profile/rqform"
               element={<ResourceForm userId={user?.uid} />}
