@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+// import { getStorage } from "firebase/storage";
 import { getMessaging, isSupported } from "firebase/messaging";
 import 'firebase/auth';
 import 'firebase/firestore';
@@ -39,7 +39,7 @@ if (typeof window !== 'undefined') {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
+// const storage = getStorage(app);
 let messaging;
 const initializeMessaging = async () => {
     try {
@@ -55,4 +55,4 @@ const initializeMessaging = async () => {
     }
 };
 
-export { auth, db, storage, initializeMessaging };
+export { auth, db, initializeMessaging };

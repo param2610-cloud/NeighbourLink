@@ -1,6 +1,6 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
-import { auth, db, storage } from "../../firebase";
+import { auth, db } from "../../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -20,11 +20,11 @@ function Register() {
       console.log(user);
       if (user) {
         let photoURL = "";
-        if (photo) {
-          const photoRef = ref(storage, `users/${user.uid}/profile.jpg`);
-          await uploadBytes(photoRef, photo);
-          photoURL = await getDownloadURL(photoRef);
-        }
+        // if (photo) {
+        //   const photoRef = ref(storage, `users/${user.uid}/profile.jpg`);
+        //   await uploadBytes(photoRef, photo);
+        //   photoURL = await getDownloadURL(photoRef);
+        // }
 
         await setDoc(doc(db, "Users", user.uid), {
           email: user.email,
@@ -101,14 +101,14 @@ function Register() {
           />
         </div>
 
-        <div className="mb-3">
+        {/* <div className="mb-3">
           <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
           <input
             type="file"
             className="mt-1 block h-8 w-50 text-sm text-indigo-700 border border-gray-300 rounded-md cursor-pointer focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             onChange={(e) => setPhoto(e.target.files ? e.target.files[0] : null)}
           />
-        </div>
+        </div> */}
 
         <div className="mt-6">
           <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">

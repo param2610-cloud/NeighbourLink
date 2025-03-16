@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { auth, db, storage } from "../../firebase";
+import { auth, db } from "../../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
@@ -79,13 +79,7 @@ function ProfileCard() {
       };
 
       // Handle photo upload if a new photo was selected
-      if (photoFile) {
-        const storageRef = ref(storage, `profile_photos/${userId}`);
-        await uploadBytes(storageRef, photoFile);
-        const downloadURL = await getDownloadURL(storageRef);
-        updateData.photo = downloadURL;
-        setPhotoUrl(downloadURL);
-      }
+     
 
       await updateDoc(userRef, updateData);
       setUserDetails({ ...userDetails, ...updateData });
@@ -197,12 +191,12 @@ function ProfileCard() {
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
-                <input
+                {/* <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                /> */}
               </div>
               <div className="mt-6 flex justify-end space-x-4">
                 <button

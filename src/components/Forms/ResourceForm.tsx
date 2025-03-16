@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { db, storage } from "../../firebase"; // Import Firebase Firestore and Storage
+import { db } from "../../firebase"; // Import Firebase Firestore and Storage
 import { collection, addDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
 
 interface ResourceFormProps {
@@ -16,7 +15,6 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   const [photo, setPhoto] = useState<File | null>(null);
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
-
   // Function to get user's location
   const handleGetLocation = () => {
     if (navigator.geolocation) {
@@ -59,11 +57,11 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     try {
       // Upload photo to Firebase Storage (if provided)
       let photoUrl = "";
-      if (photo) {
-        const storageRef = ref(storage, `resources/${photo.name}`);
-        await uploadBytes(storageRef, photo);
-        photoUrl = await getDownloadURL(storageRef);
-      }
+      // if (photo) {
+      //   const storageRef = ref(storage, `resources/${photo.name}`);
+      //   await uploadBytes(storageRef, photo);
+      //   photoUrl = await getDownloadURL(storageRef);
+      // }
 
       // Save resource post to Firestore
       const resourceData = {
