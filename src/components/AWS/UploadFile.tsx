@@ -1,4 +1,4 @@
-import { uploadFile } from '@/utils/aws/UploadFile';
+import { uploadFileToS3 } from '@/aws';
 import React, { useState } from 'react';
 
 const UploadFiletoAWS = () => {
@@ -15,7 +15,7 @@ const UploadFiletoAWS = () => {
       setError(null);
       
       try {
-        const url = await uploadFile(file, file.name);
+        const url = await uploadFileToS3(file, file.name);
         setPhotoUrl(url);
         console.log("Photo URL:", url);
       } catch (err) {
