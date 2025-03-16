@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import PostList from "../PostCard/PostList";
+import SharedResourceList from "../PostCard/SharedResourceList ";
 
 function Profile() {
   const [userDetails, setUserDetails] = useState<any>(null);
@@ -82,6 +83,39 @@ function Profile() {
     fetchPosts();
   }, []);
 
+  interface SharedResource {
+    id: string;
+    category: string;
+    createdAt: any;
+    description: string;
+    location: string;
+    photoUrl: string;
+    resourceName: string;
+    condition: string;
+    userId: string;
+  }
+
+  const [sharedResources, setSharedResources] = useState<SharedResource[]>([]);
+
+  // Fetch shared resources from Firebase Firestore
+  useEffect(() => {
+    const fetchSharedResources = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "sharedResources"));
+        const resourcesData: SharedResource[] = [];
+        querySnapshot.forEach((doc) => {
+          resourcesData.push({ id: doc.id, ...doc.data() } as SharedResource);
+        });
+        setSharedResources(resourcesData);
+      } catch (error) {
+        console.error("Error fetching shared resources: ", error);
+      }
+    };
+
+    fetchSharedResources();
+  }, []);
+
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
       {/* Sidebar Toggle Button */}
@@ -127,7 +161,10 @@ function Profile() {
               <a href="#">Friends</a>
             </li>
             <li className="mb-4 w-full text-center px-2 py-2 bg-white border-1 border-indigo-600 text-indigo-600 text-sm rounded-md shadow-sm hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
-              <a href="/profile/rqform">Query Form</a>
+              <a href="/profile/rqform">Request Resource</a>
+            </li>
+            <li className="mb-4 w-full text-center px-2 py-2 bg-white border-1 border-indigo-600 text-indigo-600 text-sm rounded-md shadow-sm hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+              <a href="/profile/shareform">Share Resources</a>
             </li>
           </ul>
           <button
@@ -146,6 +183,10 @@ function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-4 w-full mx-auto">
           {posts.map((post) => (
             <PostList key={post.title} post={post} />
+          ))}
+
+{sharedResources.map((resource) => (
+            <SharedResourceList key={resource.id} resource={resource} />
           ))}
         </div>
       </div>
