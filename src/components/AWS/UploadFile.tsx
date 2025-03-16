@@ -1,9 +1,9 @@
-import { uploadFileToS3 } from '@/aws';
-import React, { useState } from 'react';
+import { uploadFileToS3, getSignedImageUrl } from '@/utils/aws/aws';
+import React, { useState, useEffect } from 'react';
 
 const UploadFiletoAWS = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string>('');
+  const [photoUrl, setPhotoUrl] = useState<string | null >(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,10 +44,47 @@ const UploadFiletoAWS = () => {
           <a href={photoUrl} target="_blank" rel="noopener noreferrer">
             View uploaded file
           </a>
+          {
+            photoUrl &&
+
+          <ImageDisplay objectKey={photoUrl}/>
+          }
         </div>
       )}
     </div>
   );
 };
 
+type ImageDisplayProps = {
+  objectKey: string; 
+};
+
+const ImageDisplay = ({ objectKey }: ImageDisplayProps) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadImage = async () => {
+      try {
+        const signedUrl = await getSignedImageUrl(objectKey);
+        setImageUrl(signedUrl);
+      } catch (err) {
+        setError('Failed to load image');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadImage();
+  }, [objectKey]);
+
+  if (loading) return <div>Loading image...</div>;
+  if (error) return <div className="error">{error}</div>;
+  
+  return <img src={imageUrl} alt="S3 Image" className="s3-image" />;
+};
+
 export default UploadFiletoAWS;
+export { ImageDisplay };
