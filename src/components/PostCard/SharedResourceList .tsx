@@ -3,14 +3,14 @@ import { toast } from "react-toastify";
 import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 
-interface Post {
+interface SharedResource {
   category: string;
   createdAt: any;
   description: string;
   location: string;
   photoUrl: string;
-  title: string;
-  urgency: boolean;
+  resourceName: string;
+  condition: string;
   userId: string;
 }
 
@@ -18,33 +18,30 @@ interface Comment {
   id: string;
   text: string;
   userId: string;
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  } | string;
+  createdAt: string;
 }
 
-const PostList = ({ post }: { post: Post }) => {
+const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [userName, setUserName] = useState("");
 
-  const shortOptions: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric'
+  const shortOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric' as const,
+    month: 'short' as const,
+    day: 'numeric' as const
   };
 
   const formatTimestamp = (timestamp: any) => {
     // Handle Firestore timestamp (which has seconds and nanoseconds properties)
     if (timestamp && timestamp.seconds) {
       const date = new Date(timestamp.seconds * 1000);
-      const options: Intl.DateTimeFormatOptions = { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric' as const,
+        month: 'long' as const,
+        day: 'numeric' as const,
+        hour: '2-digit' as const,
+        minute: '2-digit' as const
       };
       return date.toLocaleString('en-US', options);
     }
@@ -61,7 +58,7 @@ const PostList = ({ post }: { post: Post }) => {
   useEffect(() => {
     const fetchUserName = async () => {
       try {
-        const userDoc = await getDoc(doc(db, "Users", post.userId));
+        const userDoc = await getDoc(doc(db, "Users", resource.userId));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setUserName(`${userData.firstName} ${userData.lastName}`);
@@ -74,9 +71,8 @@ const PostList = ({ post }: { post: Post }) => {
       }
     };
 
-    console.log("post data=", post);
     fetchUserName();
-  }, [post.userId]);
+  }, [resource.userId]);
 
   // Function to handle adding a new comment
   const handleAddComment = () => {
@@ -102,51 +98,52 @@ const PostList = ({ post }: { post: Post }) => {
   return (
     <div className="w-full p-3 ">
       <div className="w-full h-full bg-white shadow-md rounded-lg p-3 md:p-6">
-        {/* Post Header */}
+        {/* Resource Header */}
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center">
             <img
-              src={post.photoUrl || "/src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
-              alt="Post"
+              src={resource.photoUrl || "/src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+              alt="Resource"
               className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
             />
             <div className="ml-2 md:ml-3">
               <h3 className="font-semibold text-gray-800 text-xs md:text-base">{userName}</h3>
               <p className="text-xs md:text-sm text-gray-500">
-                {post.createdAt && post.createdAt.seconds ? 
-                  formatTimestamp(post.createdAt) : 
+                {resource.createdAt && resource.createdAt.seconds ?
+                  formatTimestamp(resource.createdAt) :
                   "Invalid Date"}
               </p>
             </div>
           </div>
-          
         </div>
-        {/* Post Content */}
+        {/* Resource Content */}
         <div className="mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">{post.title}</h2>
-          <p className="text-sm md:text-base text-gray-700">{post.description}</p>
-          {post.urgency && (
-            <span className="px-2 py-1 bg-red-100 text-red-600 text-xs md:text-sm rounded-full">
-              Urgent
-            </span>
-          )}
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">{resource.resourceName}</h2>
+          <p className="text-sm md:text-base text-gray-700">{resource.description}</p>
+          <p className="text-sm md:text-base text-gray-700">
+            <span className="font-semibold">Category:</span> {resource.category}
+          </p>
+          <p className="text-sm md:text-base text-gray-700">
+            <span className="font-semibold">Condition:</span> {resource.condition}
+          </p>
+          <p className="text-sm md:text-base text-gray-700">
+            <span className="font-semibold">Location:</span> {resource.location}
+          </p>
         </div>
-        {/* Post Photo */}
-        {post.photoUrl && (
+        {/* Resource Photo */}
+        {resource.photoUrl && (
           <img
-            src={post.photoUrl}
-            alt="Post"
+            src={resource.photoUrl}
+            alt="Resource"
             className="w-full h-40 md:h-64 object-cover rounded-lg mb-3 md:mb-4"
           />
         )}
         {/* Send Request Button */}
         <button
-          className={`w-full px-3 py-1.5 md:px-4 md:py-2 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base
-            ${post.urgency ? "bg-red-600 hover:bg-red-700" : "bg-yellow-600 hover:bg-yellow-700"}
-            `}
+          className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mb-3 md:mb-4 text-sm md:text-base"
           onClick={handleSendRequest}
         >
-          Send Response
+          Ask For Resource
         </button>
         {/* Comments Section */}
         <div className="mt-3 md:mt-4">
@@ -162,11 +159,11 @@ const PostList = ({ post }: { post: Post }) => {
                 <div className="ml-2">
                   <p className="text-xs md:text-sm text-gray-800">{comment.text}</p>
                   <p className="text-xs text-gray-500">
-                    {comment.createdAt && typeof comment.createdAt === 'string' 
+                    {comment.createdAt && typeof comment.createdAt === 'string'
                       ? new Date(comment.createdAt).toLocaleString('en-US', shortOptions)
                       : (comment.createdAt && typeof comment.createdAt === 'object' && 'seconds' in comment.createdAt
-                          ? formatTimestamp(comment.createdAt)
-                          : "Invalid Date")}
+                        ? formatTimestamp(comment.createdAt)
+                        : "Invalid Date")}
                   </p>
                 </div>
               </div>
@@ -194,4 +191,4 @@ const PostList = ({ post }: { post: Post }) => {
   );
 };
 
-export default PostList;
+export default SharedResourceList;

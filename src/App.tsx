@@ -18,6 +18,7 @@ import Profile from "./components/authPage/Profile";
 import { auth } from "./firebase";
 import ResourceForm from "./components/Forms/ResourceForm";
 import ProfileCard from "./components/ProfileCard/ProfileCard";
+import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -69,9 +70,14 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/profileCard" element={<ProfileCard />} />
+            <Route path="/home" element={<LandingPage />} />
             <Route
               path="/profile/rqform"
               element={<ResourceForm userId={user?.uid} />}
+            />
+            <Route
+              path="/profile/shareform"
+              element={<ResourceSharingForm userId={user?.uid} />}
             />
           </Routes>
           {!notificationsSupported && (
