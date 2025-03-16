@@ -79,14 +79,14 @@ function ProfileCard() {
         email: email,
         address: address,
       };
-
-      if (photoFile) {
-        const storageRef = ref(storage, `profile_photos/${userId}`);
-        await uploadBytes(storageRef, photoFile);
-        const downloadURL = await getDownloadURL(storageRef);
-        updateData.photo = downloadURL;
-        setPhotoUrl(downloadURL);
-      }
+//error 6ilo tai comment out kore diye6ii
+      // if (photoFile) {
+      //   const storageRef = ref(storage, `profile_photos/${userId}`);
+      //   await uploadBytes(storageRef, photoFile);
+      //   const downloadURL = await getDownloadURL(storageRef);
+      //   updateData.photo = downloadURL;
+      //   setPhotoUrl(downloadURL);
+      // }
 
       await updateDoc(userRef, updateData);
       setUserDetails({ ...userDetails, ...updateData });
@@ -102,7 +102,7 @@ function ProfileCard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-400 to-purple-200 py-5">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-400 to-purple-200 py-5">
       {/* Header Navigation */}
       <div className="max-w-7xl mx-5 mb-4">
         <div className="flex justify-between items-center">

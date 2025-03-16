@@ -55,19 +55,19 @@ const LandingPage = () => {
       </div>
       <div className="landing-page absolute top-0 left-0">
         {/* Navigation */}
-        <nav className="bg-white shadow-md fixed w-full z-10">
+        <nav className="bg-white dark:bg-neutral-800 shadow-md fixed w-full z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
               <div className="flex">
                 <div className="flex-shrink-0 flex items-center">
-                  <span className="text-2xl font-bold text-indigo-600">Neighbour<span className="text-purple-600">Link</span></span>
+                  <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Neighbour<span className="text-purple-600 dark:text-purple-400">Link</span></span>
                 </div>
               </div>
-              <div className="hidden md:flex items-center font-extrabold space-x-8">
-                <a href="#features" className="text-gray-600 hover:text-indigo-600 transition duration-300">Features</a>
-                <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition duration-300">How It Works</a>
-                <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition duration-300">Testimonials</a>
-                <a href="#download" className="text-gray-600 hover:text-indigo-600 transition duration-300">Download</a>
+              <div className="hidden md:flex items-center font-extrabold  space-x-8">
+                <a href="#features" className="text-gray-600 dark:text-gray-200 hover:text-indigo-600 transition duration-300">Features</a>
+                <a href="#how-it-works" className="text-gray-600 dark:text-gray-200 hover:text-indigo-600 transition duration-300">How It Works</a>
+                <a href="#testimonials" className="text-gray-600 dark:text-gray-200 hover:text-indigo-600 transition duration-300">Testimonials</a>
+                <a href="#download" className="text-gray-600 dark:text-gray-200 hover:text-indigo-600 transition duration-300">Download</a>
               </div>
 
 
@@ -157,10 +157,10 @@ const LandingPage = () => {
         {/* <div className="feature-card feature-card-bg rounded-lg shadow-md p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-500"> */}
         {/* <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full"> */}
         {/* Features Section */}
-        <section id="features" className="py-20 bg-white">
+        <section id="features" className="py-20 bg-white dark:bg-neutral-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-200 sm:text-4xl">
                 Everything you need to build a stronger community
               </h2>
               <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500">

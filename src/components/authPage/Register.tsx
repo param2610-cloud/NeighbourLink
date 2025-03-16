@@ -5,7 +5,7 @@ import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { uploadFile } from "@/utils/aws/UploadFile";
+// import { uploadFile } from "@/utils/aws/UploadFile"; //error 6ilo tai comment out kore diye6ii
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -21,11 +21,12 @@ function Register() {
       console.log(user);
       if (user) {
         let photoURL = "";
-        if (photo) {
-          const url =  await uploadFile(photo,`${user.uid}profile-image`);
-          console.log(url);
+        //error 6ilo tai comment out kore diye6ii
+        // if (photo) {
+        //   const url =  await uploadFile(photo,`${user.uid}profile-image`);
+        //   console.log(url);
          
-        }
+        // }
 
         await setDoc(doc(db, "Users", user.uid), {
           email: user.email,
