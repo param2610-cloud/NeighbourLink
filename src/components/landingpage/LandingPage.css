@@ -117,7 +117,7 @@ body {
 }
 
 .download-section-bg{
-    background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("https://www.cdc.gov/social-connectedness/media/images/SocialConnectedness-CircleGroup-891187194.jpg");
+    background-image:linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("/src/assets/social_circle.avif");
     background-repeat: no-repeat;
     background-size: cover;
 }

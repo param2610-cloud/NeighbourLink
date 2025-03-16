@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import './LandingPage.css';
+import { motion } from 'framer-motion';
 
-const LandingPage= () => {
+const LandingPage = () => {
 
   const [bgImage, setBgImage] = useState('bg-1')
   const [prevImage, setPrevImage] = useState('');
@@ -47,23 +48,23 @@ const LandingPage= () => {
       </div>
       <div className="landing-page absolute top-0 left-0">
         {/* Navigation */}
-      <nav className="bg-white shadow-md fixed w-full z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-        <div className="flex">
-          <div className="flex-shrink-0 flex items-center">
-            <span className="text-2xl font-bold text-indigo-600">Neighbour<span className="text-purple-600">Link</span></span>
-          </div>
-        </div>
-        <div className="hidden md:flex items-center font-extrabold space-x-8">
-          <a href="#features" className="text-gray-600 hover:text-indigo-600 transition duration-300">Features</a>
-          <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition duration-300">How It Works</a>
-          <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition duration-300">Testimonials</a>
-          <a href="#download" className="text-gray-600 hover:text-indigo-600 transition duration-300">Download</a>
-        </div>
+        <nav className="bg-white shadow-md fixed w-full z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex">
+                <div className="flex-shrink-0 flex items-center">
+                  <span className="text-2xl font-bold text-indigo-600">Neighbour<span className="text-purple-600">Link</span></span>
+                </div>
+              </div>
+              <div className="hidden md:flex items-center font-extrabold space-x-8">
+                <a href="#features" className="text-gray-600 hover:text-indigo-600 transition duration-300">Features</a>
+                <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition duration-300">How It Works</a>
+                <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition duration-300">Testimonials</a>
+                <a href="#download" className="text-gray-600 hover:text-indigo-600 transition duration-300">Download</a>
+              </div>
 
-        
-        {/* <div className="flex items-center">
+
+              {/* <div className="flex items-center">
           <a href="register" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign Up</a>
           <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,29 +73,33 @@ const LandingPage= () => {
           </button>
         </div> */}
 
-        <div className="flex items-center">
-          <a href="login" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign In</a>
-          <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
+              <div className="flex items-center">
+                <a href="login" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign In</a>
+                <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden">
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <a href="#features" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Features</a>
-          <a href="#how-it-works" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">How It Works</a>
-          <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Testimonials</a>
-          <a href="#download" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Download</a>
-          <a href="/register" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign Up</a>
-          <a href="/login" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign In</a>
-        </div>
-          </div>
-        )}
-      </nav>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{scale:0 }} // start from the right
+              animate={{ scale:1 }} // animate to the left
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="md:hidden">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#features" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Features</a>
+                <a href="#how-it-works" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">How It Works</a>
+                <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Testimonials</a>
+                <a href="#download" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Download</a>
+                <a href="/register" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign Up</a>
+                <a href="/login" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign In</a>
+              </div>
+            </motion.div>
+          )}
+        </nav>
 
 
         {/* Hero Section */}
@@ -103,20 +108,32 @@ const LandingPage= () => {
             <div className="lg:grid lg:grid-cols-12 lg:gap-8">
               <div className="lg:col-span-6">
                 <div className="mt-12 lg:mt-24">
-                  <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight motion-preset-slide-right">
+                  <motion.div
+                    initial={{ x: '-50%' }} // start from the right
+                    animate={{ x: 0 }} // animate to the left
+                    transition={{ duration: 0.5, ease: 'easeInOut' }}
+                    className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight motion-preset-slide-right">
                     Connect with your neighbors like never before
-                  </h1>
-                  <p className="mt-6 text-xl text-indigo-100 max-w-3xl motion-preset-slide-right">
+                  </motion.div>
+                  <motion.div
+                    initial={{ x: '-70%' }} // start from the right
+                    animate={{ x: 0 }} // animate to the left
+                    transition={{ duration: 0.5, ease: 'easeInOut' }}
+                    className="mt-6 text-xl text-indigo-100 max-w-3xl motion-preset-slide-right">
                     NeighbourLink is a hyperlocal platform that helps you share resources, find urgent assistance, and build a stronger community—all within your neighborhood.
-                  </p>
-                  <div className="mt-10 flex space-x-4 motion-preset-slide-up">
+                  </motion.div>
+                  <motion.button
+                    initial={{ scale: 0 }} // start from the right
+                    animate={{ scale: 1 }} // animate to the left
+                    transition={{ duration: 0.5, ease: 'easeInOut' }}
+                    className="mt-10 flex space-x-4 motion-preset-slide-up">
                     <a href="#download" className="cta-button inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-8 shadow-lg">
                       Get Started
                     </a>
                     <a href="#how-it-works" className="cta-button inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-500 bg-opacity-70 hover:bg-opacity-80 md:py-4 md:text-lg md:px-8">
                       How It Works
                     </a>
-                  </div>
+                  </motion.button>
                 </div>
               </div>
               <div className="mt-12 lg:mt-0 lg:col-span-6">
@@ -125,8 +142,8 @@ const LandingPage= () => {
           </div>
         </div>
 
-              {/* <div className="feature-card feature-card-bg rounded-lg shadow-md p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-500"> */}
-                {/* <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full"> */}
+        {/* <div className="feature-card feature-card-bg rounded-lg shadow-md p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-500"> */}
+        {/* <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full"> */}
         {/* Features Section */}
         <section id="features" className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -141,7 +158,7 @@ const LandingPage= () => {
 
             <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Feature 1 */}
-              <div className="feature-card feature-card-bg rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,_rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/resource_sharing.png" className='' alt="" />
                 </div>
@@ -152,7 +169,7 @@ const LandingPage= () => {
               </div>
 
               {/* Feature 2 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,_rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/emergency_alert.png" className='' alt="" />
                 </div>
@@ -163,7 +180,7 @@ const LandingPage= () => {
               </div>
 
               {/* Feature 3 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,_rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/secure_communication.png" className='' alt="" />
                 </div>
@@ -174,9 +191,9 @@ const LandingPage= () => {
               </div>
 
               {/* Feature 4 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,_rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
-                <img src="/src/assets/trust_building.png" className='' alt="" />
+                  <img src="/src/assets/trust_building.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Trust Building</h3>
                 <p className="text-gray-600">
@@ -185,9 +202,9 @@ const LandingPage= () => {
               </div>
 
               {/* Feature 5 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,_rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full ">
-                <img src="/src/assets/hyperlocal_focus.png" className='' alt="" />
+                  <img src="/src/assets/hyperlocal_focus.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Hyperlocal Focus</h3>
                 <p className="text-gray-600">
@@ -196,9 +213,9 @@ const LandingPage= () => {
               </div>
 
               {/* Feature 6 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[rgba(50,50,93,0.25)_0px_6px_12px_-2px,_rgba(0,0,0,0.3)_0px_3px_7px_-3px] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full ">
-                <img src="/src/assets/safety_privacy.png" className='' alt="" />
+                  <img src="/src/assets/safety_privacy.png" className='' alt="" />
 
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Safety & Privacy</h3>
