@@ -55,7 +55,7 @@ const LandingPage= () => {
             <span className="text-2xl font-bold text-indigo-600">Neighbour<span className="text-purple-600">Link</span></span>
           </div>
         </div>
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden md:flex items-center font-extrabold space-x-8">
           <a href="#features" className="text-gray-600 hover:text-indigo-600 transition duration-300">Features</a>
           <a href="#how-it-works" className="text-gray-600 hover:text-indigo-600 transition duration-300">How It Works</a>
           <a href="#testimonials" className="text-gray-600 hover:text-indigo-600 transition duration-300">Testimonials</a>
