@@ -163,7 +163,7 @@ function Profile() {
               className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="all">All</option>
-              <option value="post">Posts</option>
+              <option value="post">Requestes</option>
               <option value="resource">Resources</option>
             </select>
           </div>
