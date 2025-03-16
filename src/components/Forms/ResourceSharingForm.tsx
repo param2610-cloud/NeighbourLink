@@ -101,7 +101,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-400 to-purple-300">
       <button
         className="absolute top-4 left-4 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         onClick={() => (window.location.href = "/")}

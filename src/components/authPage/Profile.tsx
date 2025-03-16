@@ -170,7 +170,7 @@ function Profile() {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-4 w-full mx-auto px-2 py-4 md:px-0 md:py-2">
+        <div className=" grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-4 w-full mx-auto px-2 py-4 md:px-0 md:py-2">
           {filteredContent.length > 0 ? (
             filteredContent.map((item) =>
               item.type === "post" ? (

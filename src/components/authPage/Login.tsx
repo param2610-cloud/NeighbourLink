@@ -80,8 +80,8 @@ function Login() {
                 Submit
               </button>
             </div>
-            <p className="mt-4 text-sm text-center text-gray-600">
-              New user <a href="/register" className="text-indigo-600 hover:text-indigo-500">Register Here</a>
+            <p className="mt-4 text-lg text-center text-white">
+              New user ? <a href="/register" className="text-indigo-700 hover:text-indigo-500">Register Here</a>
             </p>
           </motion.div>
 

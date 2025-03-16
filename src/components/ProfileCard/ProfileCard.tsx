@@ -102,7 +102,7 @@ function ProfileCard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 py-5">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-400 to-purple-200 py-5">
       {/* Header Navigation */}
       <div className="max-w-7xl mx-5 mb-4">
         <div className="flex justify-between items-center">
@@ -177,14 +177,14 @@ function ProfileCard() {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
-                  className="w-[50%] px-4 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-medium rounded-lg shadow-md hover:from-indigo-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300"
+                  className="w-[50%] px-4 py-3 bg-white text-indigo-500 border border-indigo-500 font-medium rounded-lg shadow-md hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300"
                   onClick={handleEditProfile}
                 >
                   Edit Profile
                 </button>
 
                 <button
-                  className="w-[50%] px-4 py-3 bg-white text-red-500 font-medium rounded-lg shadow-md border border-red-200 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300"
+                  className="w-[50%] px-4 py-3 bg-white text-red-500 font-medium rounded-lg shadow-md border border-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300"
                   onClick={handleLogout}
                 >
                   Logout

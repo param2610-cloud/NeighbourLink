@@ -131,7 +131,7 @@ function Register() {
                 Sign Up
               </button>
             </div>
-            <p className="mt-4 text-sm text-center text-gray-700">
+            <p className="mt-4 text-lg text-center text-white">
               Already registered? <a href="/login" className="text-indigo-600 hover:text-indigo-500">Login</a>
             </p>
           </motion.div>
