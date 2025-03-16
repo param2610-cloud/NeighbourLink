@@ -19,7 +19,7 @@ import { auth } from "./firebase";
 import ResourceForm from "./components/Forms/ResourceForm";
 import ProfileCard from "./components/ProfileCard/ProfileCard";
 import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
-import UploadFiletoAWS from "./components/AWS/uploadFile";
+import UploadFiletoAWS from "./components/AWS/UploadFile";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
