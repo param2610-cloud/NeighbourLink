@@ -174,11 +174,11 @@ function Profile() {
           {filteredContent.length > 0 ? (
             filteredContent.map((item) =>
               item.type === "post" ? (
-                <PostList key={`post-${item.id}`} post={item} />
+                <PostList key={`post-${item.id}`} post={item as Post} />
               ) : (
                 <SharedResourceList
                   key={`resource-${item.id}`}
-                  resource={item}
+                  resource={item as SharedResource}
                 />
               )
             )
