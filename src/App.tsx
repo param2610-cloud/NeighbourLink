@@ -19,6 +19,7 @@ import { auth } from "./firebase";
 import ResourceForm from "./components/Forms/ResourceForm";
 import ProfileCard from "./components/ProfileCard/ProfileCard";
 import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
+import UploadFiletoAWS from "./components/AWS/uploadFile";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -66,6 +67,7 @@ function App() {
               path="/"
               element={user ? <Navigate to="/profile" /> : <LandingPage />}
             />
+            <Route path="/upload" element={<UploadFiletoAWS/>} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />

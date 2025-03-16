@@ -1,11 +1,11 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { uploadFile } from "@/utils/aws/UploadFile";
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -13,7 +13,6 @@ function Register() {
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
-
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -22,11 +21,11 @@ function Register() {
       console.log(user);
       if (user) {
         let photoURL = "";
-        // if (photo) {
-        //   const photoRef = ref(storage, `users/${user.uid}/profile.jpg`);
-        //   await uploadBytes(photoRef, photo);
-        //   photoURL = await getDownloadURL(photoRef);
-        // }
+        if (photo) {
+          const url =  await uploadFile(photo,`${user.uid}profile-image`);
+          console.log(url);
+         
+        }
 
         await setDoc(doc(db, "Users", user.uid), {
           email: user.email,

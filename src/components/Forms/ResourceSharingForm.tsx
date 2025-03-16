@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { db, storage } from "../../firebase"; // Import Firebase Firestore and Storage
+import { db } from "../../firebase"; // Import Firebase Firestore and Storage
 import { collection, addDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
@@ -59,11 +59,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
     try {
       // Upload photo to Firebase Storage (if provided)
       let photoUrl = "";
-      if (photo) {
-        const storageRef = ref(storage, `resources/${photo.name}`);
-        await uploadBytes(storageRef, photo);
-        photoUrl = await getDownloadURL(storageRef);
-      }
+      
 
       // Save resource post to Firestore
       const resourceData = {
