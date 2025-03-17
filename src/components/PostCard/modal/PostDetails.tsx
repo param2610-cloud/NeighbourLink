@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Post as PostType } from '../PostList';
 import { auth, db } from "../../../firebase";
-import { collection, doc, updateDoc, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
+import { collection, doc, updateDoc, arrayUnion, getDoc, runTransaction, arrayRemove } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 interface UserData {
@@ -10,6 +10,7 @@ interface UserData {
     lastName: string;
     email: string;
     photoURL?: string;
+    accepted?: boolean;
 }
 
 // New interface for responder data
@@ -47,7 +48,9 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
 
         if (!userId) {
             console.error("User not authenticated");
-            // Consider adding state update for UI feedback
+            toast.error("You must be logged in to respond", {
+                position: "top-center",
+            });
             return;
         }
 
@@ -88,21 +91,99 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
             });
 
             console.log("Successfully added user to responders");
-            // Add success state update here if needed
             toast.success("Your response has been submitted!", {
                 position: "top-center",
             });
             
+            // Add the current user to responders state
+            if (auth.currentUser) {
+                const userDocRef = doc(db, 'Users', auth.currentUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    setResponders(prev => [
+                        ...prev,
+                        {
+                            id: auth.currentUser!.uid,
+                            firstName: userData.firstName || 'Unknown',
+                            lastName: userData.lastName || '',
+                            email: userData.email || 'No email',
+                            photoURL: userData.photoURL,
+                            accepted: false
+                        }
+                    ]);
+                }
+            }
+            
         } catch (err: unknown) {
             if (err instanceof Error && err.message === "ALREADY_RESPONDED") {
                 console.log("User already responded to this post");
-                // Update state to show error message to user
-                // Example: setError("You've already responded to this post");
             } else {
                 console.error("Error updating responders:", err);
-                // Update state with generic error message
-                // Example: setError("Failed to update response");
+                toast.error("Failed to respond. Please try again.", {
+                    position: "top-center",
+                });
             }
+        }
+    };
+    
+    // Fixed handleAcceptResponse function to ensure state persistence
+    const handleAcceptResponse = async (userId: string): Promise<void> => {
+        try {
+            const postRef = doc(db, 'posts', post.id);
+            
+            await runTransaction(db, async (transaction) => {
+                const postDoc = await transaction.get(postRef);
+                
+                if (!postDoc.exists()) {
+                    throw new Error("Post not found");
+                }
+                
+                const postData = postDoc.data();
+                const responders = postData.responders || [];
+                
+                // Find the responder with the given userId
+                const responderIndex = responders.findIndex(
+                    (responder: ResponderData) => responder.userId === userId
+                );
+                
+                if (responderIndex === -1) {
+                    throw new Error("Responder not found");
+                }
+                
+                // Create a new responders array with the updated data
+                const updatedResponders = [...responders];
+                updatedResponders[responderIndex] = {
+                    ...updatedResponders[responderIndex],
+                    accepted: true
+                };
+                
+                // Update the entire responders array in the document
+                transaction.update(postRef, {
+                    responders: updatedResponders
+                });
+            });
+            
+            // Update the local state to reflect the change immediately
+            setResponders(prevResponders => 
+                prevResponders.map(responder => {
+                    if (responder.id === userId) {
+                        return { ...responder, accepted: true };
+                    }
+                    return responder;
+                })
+            );
+            
+            toast.success("Response accepted!", {
+                position: "top-center",
+            });
+            
+        } catch (error) {
+            console.error("Error accepting response:", error);
+            toast.error("Failed to accept response. Please try again.", {
+                position: "top-center",
+            });
         }
     };
     
@@ -111,16 +192,17 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
             console.log('Current post responders:', post.responders);
             if (!post.responders || post.responders.length === 0) {
                 console.log('No responders found');
+                setResponders([]);
                 return;
             }
 
             setLoading(true);
+            setResponders([]); // Clear previous responders
             try {
                 const usersData = await Promise.all(
                     post.responders.map(async (responder: ResponderData) => {
                         console.log('Fetching user:', responder.userId);
-                        // Fix: Use proper path to users collection
-                        const userDocRef = doc(db, 'Users', responder.userId); // Changed from 'users' to 'Users'
+                        const userDocRef = doc(db, 'Users', responder.userId); // Using Users collection
                         const userDoc = await getDoc(userDocRef);
 
                         if (userDoc.exists()) {
@@ -131,27 +213,20 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                                 firstName: userData.firstName || 'Unknown',
                                 lastName: userData.lastName || '',
                                 email: userData.email || 'No email',
-                                photoURL: userData.photoURL
+                                photoURL: userData.photoURL,
+                                accepted: responder.accepted // Using the accepted value from responder data
                             };
                             
-                            // Include the accepted status
-                            const userWithAcceptedStatus = {
-                                ...typedUserData,
-                                accepted: responder.accepted
-                            };
-                            
-                            setResponders((prevState) => [...prevState, userWithAcceptedStatus as UserData]);
-                            return userWithAcceptedStatus;
+                            return typedUserData;
                         }
                         console.log('User not found:', responder.userId);
                         return null;
                     })
                 );
 
-                // const filteredUsers = usersData.filter((user): user is UserData => user !== null);
-                // console.log('Filtered users:', filteredUsers);
-                // setResponders(filteredUsers);
-                // console.log('Filtered user data:', filteredUsers);
+                const filteredUsers = usersData.filter((user): user is UserData => user !== null);
+                console.log('Filtered users:', filteredUsers);
+                setResponders(filteredUsers);
             } catch (error) {
                 console.error('Error fetching responders:', error);
             } finally {
@@ -208,14 +283,13 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                             </p>
                         </div>
                         {
-                            auth.currentUser?.uid != post.userId && (
+                            auth.currentUser?.uid !== post.userId && (
                                 <button
                                     className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors mb-4"
-                                    onClick={() => handleResponse()}
+                                    onClick={handleResponse}
                                 >
                                     Respond
                                 </button>
-
                             )
                         }
 
@@ -238,10 +312,10 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                             </div>
                         ) : responders.length > 0 ? (
                             <div className="space-y-3">
-                                {responders.map((user: any) => (
+                                {responders.map((user) => (
                                     <div
                                         key={user.id}
-                                        className="p-3 px-7 bg-gray-100 dark:bg-neutral-700 rounded-lg flex items-center justify-between gap-3"
+                                        className={`p-3 px-7 ${user.accepted ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500' : 'bg-gray-100 dark:bg-neutral-700'} rounded-lg flex items-center justify-between gap-3`}
                                     >
                                         <div className='flex justify-center items-center gap-3'>
                                             <img
@@ -250,11 +324,18 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                                                 className="w-8 h-8 rounded-full object-cover"
                                             />
                                             <div>
-                                                <p className="text-gray-900 dark:text-gray-200 font-medium">{user.firstName} {user.lastName}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-gray-900 dark:text-gray-200 font-medium">{user.firstName} {user.lastName}</p>
+                                                    {user.accepted && (
+                                                        <span className="flex items-center text-green-500 text-xs font-semibold">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                            Accepted
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-gray-500 dark:text-gray-400 text-sm">{user.email}</p>
-                                                {user.accepted && (
-                                                    <span className="text-green-500 text-xs font-semibold">Accepted</span>
-                                                )}
                                             </div>
                                         </div>
                                         {
@@ -268,7 +349,7 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                                                     {!user.accepted && (
                                                         <button
                                                             className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                                            // onClick={() => handleAcceptResponse(user.id)}
+                                                            onClick={() => handleAcceptResponse(user.id)}
                                                         >
                                                             Accept
                                                         </button>
