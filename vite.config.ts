@@ -96,5 +96,6 @@ export default defineConfig({
   },
   server:{
     host: process.env.VITE_IP
+    // host: '192.168.0.193'
   }
 })

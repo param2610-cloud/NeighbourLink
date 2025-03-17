@@ -31,7 +31,7 @@ function Login() {
   return (
     <>
       <div className="h-screen w-full relative overflow-hidden">
-        <img src="/src/assets/base-img.jpg" className="h-full w-full" alt="" style={{
+        <img src="/assets/base-img.jpg" className="h-full w-full" alt="" style={{
           filter: 'brightness(0.5) contrast(1.2)'
         }} />
       </div>

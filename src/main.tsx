@@ -8,7 +8,6 @@ import { StateProvider } from './contexts/StateContext'
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <StateProvider>
-
       <PlayGround />
     </StateProvider>
   </React.StrictMode>,
