@@ -43,7 +43,7 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
                         {userDetails?.firstName} {userDetails?.lastName}
                     </span>
                 </div>
-                <nav>
+                <nav className="flex flex-col justify-between h-[85%]">
                     <ul>
                         <li className="mb-4 w-full text-center px-2 py-2 bg-indigo-50 border-1 text-indigo-800 text-sm rounded-md shadow-md hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-neutral-700 dark:border-neutral-800 dark:text-gray-200 dark:hover:bg-indigo-500 dark:focus:ring-white">
                             <a href="/home">Home</a>
@@ -68,7 +68,7 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
                         </li>
                     </ul>
                     <button
-                        className="w-full  bottom-10 px-2 py-2 bg-red-800 text-white font-medium rounded-md shadow-md hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className="w-full flex justify-center px-2 py-2 bg-red-800 text-white font-medium rounded-md shadow-md hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         onClick={handleLogout}
                     >
                         Logout
