@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { db } from "../../firebase";
+import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import PostDetails from "./modal/PostDetails";
 import { MdDeleteForever } from "react-icons/md";
+import { FaRegEdit } from "react-icons/fa";
+import PostCardDelete from "./modal/PostCardDelete";
 
 export interface Post {
   id: string
@@ -27,12 +29,17 @@ interface Comment {
     nanoseconds: number;
   } | string;
 }
+interface PostListProps {
+  post: Post;
+  setUpdated: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-const PostList = ({ post }: { post: Post }) => {
+const PostList = ({ post, setUpdated }: PostListProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [userName, setUserName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const shortOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -119,9 +126,26 @@ const PostList = ({ post }: { post: Post }) => {
               </p>
             </div>
           </div>
-          <div className="text-red-600 dark:text-red-400 hover:cursor-pointer">
-            <MdDeleteForever size={20} />
-          </div>
+          {
+            auth.currentUser?.uid === post.userId && (
+              <div className="flex justify-center items-center gap-2">
+                <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
+                  <FaRegEdit />
+                </div>
+                <div className="text-red-600 dark:text-red-400 hover:cursor-pointer" onClick={() => setIsDeleteModalOpen(true)}>
+                  <MdDeleteForever size={20} />
+                </div>
+              </div>
+            )
+          }
+          <PostCardDelete
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            itemId={post.id}
+            itemType="post"
+            onDelete={() => setUpdated((prev) => !prev)}
+          />
+          
         </div>
         {/* Post Content */}
         <div className="mb-3 md:mb-4 ">
@@ -194,6 +218,7 @@ const PostList = ({ post }: { post: Post }) => {
       {/* Post Modal */}
       <PostDetails post={post} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
+   
   );
 };
 

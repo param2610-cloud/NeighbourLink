@@ -42,6 +42,7 @@ function Profile() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mixedContent, setMixedContent] = useState<ContentItem[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
+  const [updated, setUpdated]=useState(false);
 
   const fetchUserData = async () => {
     auth.onAuthStateChanged(async (user) => {
@@ -117,7 +118,7 @@ function Profile() {
     };
 
     fetchMixedContent();
-  }, []);
+  }, [updated]);
 
   // Filter content based on selected filter
   const filteredContent = mixedContent.filter((item) =>
@@ -176,11 +177,12 @@ function Profile() {
           {filteredContent.length > 0 ? (
             filteredContent.map((item) =>
               item.type === "post" ? (
-                <PostList key={`post-${item.id}`} post={item as Post} />
+                <PostList key={`post-${item.id}`} post={item as Post} setUpdated={setUpdated} />
               ) : (
                 <SharedResourceList
                   key={`resource-${item.id}`}
                   resource={item as SharedResource}
+                  setUpdated={setUpdated}
                 />
               )
             )

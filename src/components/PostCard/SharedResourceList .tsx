@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { db } from "../../firebase";
+import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { MdDeleteForever } from "react-icons/md";
+import { FaRegEdit } from "react-icons/fa";
+import PostCardDelete from "./modal/PostCardDelete";
 
 interface SharedResource {
+  id:string;
   category: string;
   createdAt: any;
   description: string;
@@ -21,11 +24,16 @@ interface Comment {
   userId: string;
   createdAt: string;
 }
+interface SharedResourceListProps {
+  resource: SharedResource;
+  setUpdated: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
+const SharedResourceList = ({ resource, setUpdated }: SharedResourceListProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [userName, setUserName] = useState("");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const shortOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric' as const,
@@ -116,9 +124,28 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
               </p>
             </div>
           </div>
-          <div className="text-red-600 dark:text-red-400 hover:cursor-pointer">
-          <MdDeleteForever size={20}/>
-          </div>
+          {
+            auth.currentUser?.uid ===resource.userId && (
+              <div className="flex justify-center items-center gap-2">
+
+                <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
+                  <FaRegEdit />
+                </div>
+                <div className="text-red-600 dark:text-red-400 hover:cursor-pointer"
+                onClick={() => setIsDeleteModalOpen(true)}
+                >
+                  <MdDeleteForever size={20} />
+                </div>
+              </div>
+            )
+          }
+          <PostCardDelete
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            itemId={resource.id}
+            itemType="post"
+            onDelete={() => setUpdated((prev) => !prev)}
+          />
         </div>
         {/* Resource Content */}
         <div className="mb-3 md:mb-4">
