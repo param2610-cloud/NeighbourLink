@@ -49,7 +49,7 @@ const LandingPage = () => {
   return (
     <>
       <div className='h-screen w-full flex justify-center items-center fixed'>
-        <img src="/src/assets/base-img.jpg" alt="" className='h-full w-full'
+        <img src="/assets/base-img.jpg" alt="" className='h-full w-full'
           style={{
             filter: 'brightness(0.5) contrast(1.2)'
           }} />
@@ -174,7 +174,7 @@ const LandingPage = () => {
               <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
                   p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
-                  <img src="/src/assets/resource_sharing.png" className='' alt="" />
+                  <img src="/assets/resource_sharing.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Resource Sharing</h3>
                 <p className="text-gray-600 dark:text-gray-300">
@@ -186,7 +186,7 @@ const LandingPage = () => {
               <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
                   p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
-                  <img src="/src/assets/emergency_alert.png" className='' alt="" />
+                  <img src="/assets/emergency_alert.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Emergency Alerts</h3>
                 <p className="text-gray-600 dark:text-gray-300">
@@ -198,7 +198,7 @@ const LandingPage = () => {
               <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
                   p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
-                  <img src="/src/assets/secure_communication.png" className='' alt="" />
+                  <img src="/assets/secure_communication.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Secure Communication</h3>
                 <p className="text-gray-600 dark:text-gray-300">
@@ -210,7 +210,7 @@ const LandingPage = () => {
               <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
                   p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
-                  <img src="/src/assets/trust_building.png" className='' alt="" />
+                  <img src="/assets/trust_building.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Trust Building</h3>
                 <p className="text-gray-600 dark:text-gray-300">
@@ -222,7 +222,7 @@ const LandingPage = () => {
               <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
                   p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full ">
-                  <img src="/src/assets/hyperlocal_focus.png" className='' alt="" />
+                  <img src="/assets/hyperlocal_focus.png" className='' alt="" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Hyperlocal Focus</h3>
                 <p className="text-gray-600 dark:text-gray-300">
@@ -234,7 +234,7 @@ const LandingPage = () => {
               <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
                   p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full ">
-                  <img src="/src/assets/safety_privacy.png" className='' alt="" />
+                  <img src="/assets/safety_privacy.png" className='' alt="" />
 
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Safety & Privacy</h3>
