@@ -7,6 +7,8 @@ import GuestLayout from "@/layouts/GuestLayout";
 import GuestRouter from "./GuestRouter";
 import { ToastContainer } from "react-toastify";
 import { auth } from "@/firebase";
+import { AiOutlineEllipsis, AiOutlineLoading3Quarters } from "react-icons/ai";
+
 // ... other imports
 
 function PlayGround() {
@@ -24,20 +26,26 @@ function PlayGround() {
 
     // Show loading indicator while auth state is being determined
     if (loading) {
-        return <div>Loading...</div>;
+        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
+            <AiOutlineEllipsis className="animate-spin text-6xl text-blue-600" />
+        </div>;
     }
 
     return (
         <Router>
             {user ? (
                 <AuthLayout>
-                    <Suspense fallback={<div>Loading...</div>}>
+                    <Suspense fallback={<div>
+                        <AiOutlineLoading3Quarters />
+                    </div>}>
                         <AuthRouter />
                     </Suspense>
                 </AuthLayout>
             ) : (
                 <GuestLayout>
-                    <Suspense fallback={<div>Loading...</div>}>
+                    <Suspense fallback={<div>
+                        <AiOutlineLoading3Quarters />
+                    </div>}>
                         <GuestRouter />
                     </Suspense>
                 </GuestLayout>

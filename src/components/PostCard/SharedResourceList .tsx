@@ -97,7 +97,7 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
 
   return (
     <div className="w-full p-3 ">
-      <div className="w-full h-full bg-white shadow-md rounded-lg p-3 md:p-6">
+      <div className="w-full h-full bg-white dark:bg-neutral-700 shadow-md rounded-lg p-3 md:p-6">
         {/* Resource Header */}
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center">
@@ -107,8 +107,8 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
               className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
             />
             <div className="ml-2 md:ml-3">
-              <h3 className="font-semibold text-gray-800 text-xs md:text-base">{userName}</h3>
-              <p className="text-xs md:text-sm text-gray-500">
+              <h3 className="font-semibold text-gray-800 text-xs dark:text-gray-300 md:text-base">{userName}</h3>
+              <p className="text-xs md:text-sm dark:text-gray-400 text-gray-500">
                 {resource.createdAt && resource.createdAt.seconds ?
                   formatTimestamp(resource.createdAt) :
                   "Invalid Date"}
@@ -118,15 +118,15 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
         </div>
         {/* Resource Content */}
         <div className="mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">{resource.resourceName}</h2>
-          <p className="text-sm md:text-base text-gray-700">{resource.description}</p>
-          <p className="text-sm md:text-base text-gray-700">
+          <h2 className="text-lg md:text-xl font-bold dark:text-white text-gray-900 mb-1 md:mb-2">{resource.resourceName}</h2>
+          <p className="text-sm md:text-base dark:text-gray-200 text-gray-700">{resource.description}</p>
+          <p className="text-sm md:text-base dark:text-gray-200 text-gray-700">
             <span className="font-semibold">Category:</span> {resource.category}
           </p>
-          <p className="text-sm md:text-base text-gray-700">
+          <p className="text-sm md:text-base dark:text-gray-200 text-gray-700">
             <span className="font-semibold">Condition:</span> {resource.condition}
           </p>
-          <p className="text-sm md:text-base text-gray-700">
+          <p className="text-sm md:text-base dark:text-gray-200 text-gray-700">
             <span className="font-semibold">Location:</span> {resource.location}
           </p>
         </div>
@@ -147,7 +147,7 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
         </button>
         {/* Comments Section */}
         <div className="mt-3 md:mt-4">
-          <h3 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">Comments</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-300 mb-2 text-sm md:text-base">Comments</h3>
           <div className="space-y-2">
             {comments.map((comment) => (
               <div key={comment.id} className="flex items-start">

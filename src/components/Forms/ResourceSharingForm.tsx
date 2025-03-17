@@ -96,18 +96,18 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-400 to-purple-300">
+    <div className="flex items-center justify-center min-h-screen dark:bg-gradient-to-br dark:from-gray-900 dark:to-blue-900 bg-gradient-to-r from-indigo-500 to-blue-300">
       <button
         className="absolute top-4 left-4 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         onClick={() => (window.location.href = "/")}
       >
         Back to Home
       </button>
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto mt-6 border-4 border-indigo-500">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Share a Resource</h2>
+      <div className="bg-white p-6 dark:bg-gray-700 rounded-lg shadow-md max-w-md mx-auto mt-6 border-4 dark:border-blue-600 border-indigo-500">
+        <h2 className="text-2xl font-bold mb-4 dark:text-gray-200 text-gray-800 text-center">Share a Resource</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Resource Name:</label>
+            <label className="block text-sm font-medium dark:text-gray-200 text-gray-700">Resource Name:</label>
             <input
               type="text"
               value={resourceName}
@@ -118,7 +118,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Category:</label>
+            <label className="block text-sm font-medium dark:text-gray-200 text-gray-700">Category:</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -132,7 +132,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Description:</label>
+            <label className="block text-sm font-medium dark:text-gray-200 text-gray-700">Description:</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -142,7 +142,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Condition:</label>
+            <label className="block text-sm dark:text-gray-200 font-medium text-gray-700">Condition:</label>
             <select
               value={condition}
               onChange={(e) => setCondition(e.target.value)}
@@ -156,7 +156,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Location:</label>
+            <label className="block text-sm font-medium dark:text-gray-200 text-gray-700">Location:</label>
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -175,7 +175,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Upload Photo (Optional):</label>
+            <label className="block text-sm font-medium dark:text-gray-200 text-gray-700">Upload Photo (Optional):</label>
             <input
               type="file"
               onChange={(e) => {
