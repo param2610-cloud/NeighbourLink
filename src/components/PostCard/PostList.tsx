@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import PostDetails from "./modal/PostDetails";
 
-interface Post {
+export interface Post {
+  id:string
   category: string;
   createdAt: any;
   description: string;
@@ -12,6 +14,7 @@ interface Post {
   title: string;
   urgency: boolean;
   userId: string;
+  responders?: string[];
 }
 
 interface Comment {
@@ -28,6 +31,7 @@ const PostList = ({ post }: { post: Post }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [userName, setUserName] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const shortOptions: Intl.DateTimeFormatOptions = { 
     year: 'numeric', 
@@ -36,7 +40,6 @@ const PostList = ({ post }: { post: Post }) => {
   };
 
   const formatTimestamp = (timestamp: any) => {
-    // Handle Firestore timestamp (which has seconds and nanoseconds properties)
     if (timestamp && timestamp.seconds) {
       const date = new Date(timestamp.seconds * 1000);
       const options: Intl.DateTimeFormatOptions = { 
@@ -47,9 +50,7 @@ const PostList = ({ post }: { post: Post }) => {
         minute: '2-digit'
       };
       return date.toLocaleString('en-US', options);
-    }
-    // Handle regular Date objects or strings
-    else if (timestamp) {
+    } else if (timestamp) {
       const date = new Date(timestamp);
       if (!isNaN(date.getTime())) {
         return date.toLocaleString('en-US', shortOptions);
@@ -78,13 +79,12 @@ const PostList = ({ post }: { post: Post }) => {
     fetchUserName();
   }, [post.userId]);
 
-  // Function to handle adding a new comment
   const handleAddComment = () => {
     if (newComment.trim()) {
       const comment: Comment = {
         id: Math.random().toString(36).substr(2, 9), // Generate a unique ID
         text: newComment,
-        userId: "currentUserId", // Replace with the actual logged-in user ID
+        userId: "currentUser Id", // Replace with the actual logged-in user ID
         createdAt: new Date().toISOString(), // Use ISO string for consistent formatting
       };
       setComments([...comments, comment]);
@@ -92,7 +92,6 @@ const PostList = ({ post }: { post: Post }) => {
     }
   };
 
-  // Function to handle sending a request
   const handleSendRequest = () => {
     toast.success("Request sent successfully!", {
       position: "top-center",
@@ -119,7 +118,6 @@ const PostList = ({ post }: { post: Post }) => {
               </p>
             </div>
           </div>
-          
         </div>
         {/* Post Content */}
         <div className="mb-3 md:mb-4 ">
@@ -139,14 +137,12 @@ const PostList = ({ post }: { post: Post }) => {
             className="w-full h-40 md:h-64 object-cover rounded-lg mb-3 md:mb-4"
           />
         )}
-        {/* Send Request Button */}
+        {/* View Details Button */}
         <button
-          className={`w-full px-3 py-1.5 md:px-4 md:py-2 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base
-            ${post.urgency ? "bg-red-600 hover:bg-red-700 dark:bg-red-800 dark:hover:bg-red-900" : "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800"}
-            `}
-          onClick={handleSendRequest}
+          onClick={() => setIsModalOpen(true)}
+          className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base"
         >
-          Send Response
+          View Details
         </button>
         {/* Comments Section */}
         <div className="mt-3 md:mt-4">
@@ -156,7 +152,7 @@ const PostList = ({ post }: { post: Post }) => {
               <div key={comment.id} className="flex items-start">
                 <img
                   src="https://via.placeholder.com/40"
-                  alt="User"
+                  alt="User "
                   className="w-6 h-6 md:w-8 md:h-8 rounded-full"
                 />
                 <div className="ml-2">
@@ -190,6 +186,9 @@ const PostList = ({ post }: { post: Post }) => {
           </div>
         </div>
       </div>
+
+      {/* Post Modal */}
+      <PostDetails post={post} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 };
