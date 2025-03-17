@@ -151,7 +151,7 @@ function Profile() {
             <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-              className="px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="px-4 dark:bg-gray-600 dark:text-white py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="all">All</option>
               <option value="post">Requestes</option>
