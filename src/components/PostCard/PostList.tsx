@@ -7,6 +7,13 @@ import { MdDeleteForever } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import PostCardDelete from "./modal/PostCardDelete";
 
+
+
+interface ResponderData {
+  userId: string;
+  accepted: boolean;
+}
+
 export interface Post {
   id: string
   category: string;
@@ -17,7 +24,7 @@ export interface Post {
   title: string;
   urgency: boolean;
   userId: string;
-  responders?: string[];
+  responders: ResponderData[];
 }
 
 interface Comment {

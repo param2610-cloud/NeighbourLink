@@ -35,7 +35,7 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
             >
                 <div className="flex items-center mb-8">
                     <img
-                        src={profilePhoto ? profilePhoto: "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+                        src={profilePhoto ? profilePhoto: "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
                         alt="Profile"
                         className="w-12 h-12 rounded-full"
                     />
@@ -59,6 +59,12 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
                         </li>
                         <li className="mb-4 w-full text-center px-2 py-2 bg-indigo-50 border-1 text-indigo-800 text-sm rounded-md shadow-md hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white dark:bg-neutral-700 dark:border-neutral-800 dark:text-gray-200 dark:hover:bg-indigo-500 dark:focus:ring-white">
                             <a href="/profile/shareform">Share Resources</a>
+                        </li>
+                        <li className="mb-4 w-full text-center px-2 py-2 bg-indigo-50 border-1 text-indigo-800 text-sm rounded-md shadow-md hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white dark:bg-neutral-700 dark:border-neutral-800 dark:text-gray-200 dark:hover:bg-indigo-500 dark:focus:ring-white">
+                            <a href="/profile/auth/requests">My Requests</a>
+                        </li>
+                        <li className="mb-4 w-full text-center px-2 py-2 bg-indigo-50 border-1 text-indigo-800 text-sm rounded-md shadow-md hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white dark:bg-neutral-700 dark:border-neutral-800 dark:text-gray-200 dark:hover:bg-indigo-500 dark:focus:ring-white">
+                            <a href="/profile/auth/shared-resources">My Resources</a>
                         </li>
                     </ul>
                     <button

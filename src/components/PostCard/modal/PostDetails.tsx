@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Post } from '../PostList';
+import { Post as PostType } from '../PostList';
 import { auth, db } from "../../../firebase";
 import { collection, doc, updateDoc, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -10,6 +10,23 @@ interface UserData {
     lastName: string;
     email: string;
     photoURL?: string;
+}
+
+// New interface for responder data
+interface ResponderData {
+    userId: string;
+    accepted: boolean;
+}
+
+// Update the Post interface to reflect the new responders structure
+interface Post {
+    id: string;
+    userId: string;
+    title: string;
+    description: string;
+    photoUrl?: string;
+    createdAt: { seconds: number };
+    responders: ResponderData[];
 }
 
 interface PostDetailsProps {
@@ -46,21 +63,36 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                 }
 
                 const responders = postDoc.data().responders || [];
+                
+                // Check if user already responded by checking if any object in responders array has the current userId
+                const alreadyResponded = responders.some((responder: ResponderData) => 
+                    responder.userId === userId
+                );
 
-                if (responders.includes(userId)) {
-                    toast.error("You have already resopnded to this request!", {
+                if (alreadyResponded) {
+                    toast.error("You have already responded to this request!", {
                         position: "top-center",
                     });
                     throw new Error("ALREADY_RESPONDED");
                 }
 
+                // Create responder object with userId and accepted status
+                const responderData: ResponderData = {
+                    userId: userId,
+                    accepted: false  // Default to false when first responding
+                };
+
                 transaction.update(postRef, {
-                    responders: arrayUnion(userId)
+                    responders: arrayUnion(responderData)
                 });
             });
 
             console.log("Successfully added user to responders");
             // Add success state update here if needed
+            toast.success("Your response has been submitted!", {
+                position: "top-center",
+            });
+            
         } catch (err: unknown) {
             if (err instanceof Error && err.message === "ALREADY_RESPONDED") {
                 console.log("User already responded to this post");
@@ -73,6 +105,7 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
             }
         }
     };
+    
     useEffect(() => {
         const fetchResponders = async () => {
             console.log('Current post responders:', post.responders);
@@ -84,10 +117,10 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
             setLoading(true);
             try {
                 const usersData = await Promise.all(
-                    post.responders.map(async (userId) => {
-                        console.log('Fetching user:', userId);
+                    post.responders.map(async (responder: ResponderData) => {
+                        console.log('Fetching user:', responder.userId);
                         // Fix: Use proper path to users collection
-                        const userDocRef = doc(db, 'Users', userId); // Changed from 'users' to 'Users'
+                        const userDocRef = doc(db, 'Users', responder.userId); // Changed from 'users' to 'Users'
                         const userDoc = await getDoc(userDocRef);
 
                         if (userDoc.exists()) {
@@ -100,16 +133,17 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                                 email: userData.email || 'No email',
                                 photoURL: userData.photoURL
                             };
-                            setResponders((prevState) => [...prevState, typedUserData]);
-                            return {
-                                id: userDoc.id,
-                                firstName: userData.firstName || 'Unknown',
-                                lastName: userData.lastName || '',
-                                email: userData.email || 'No email',
-                                photoURL: userData.photoURL
-                            } as UserData;
+                            
+                            // Include the accepted status
+                            const userWithAcceptedStatus = {
+                                ...typedUserData,
+                                accepted: responder.accepted
+                            };
+                            
+                            setResponders((prevState) => [...prevState, userWithAcceptedStatus as UserData]);
+                            return userWithAcceptedStatus;
                         }
-                        console.log('User not found:', userId);
+                        console.log('User not found:', responder.userId);
                         return null;
                     })
                 );
@@ -204,34 +238,41 @@ const PostDetails: React.FC<PostDetailsProps> = ({ post, isOpen, onClose }) => {
                             </div>
                         ) : responders.length > 0 ? (
                             <div className="space-y-3">
-                                {responders.map((user) => (
+                                {responders.map((user: any) => (
                                     <div
                                         key={user.id}
                                         className="p-3 px-7 bg-gray-100 dark:bg-neutral-700 rounded-lg flex items-center justify-between gap-3"
                                     >
                                         <div className='flex justify-center items-center gap-3'>
-
-                                            {/* {user.photoURL && ( */}
                                             <img
                                                 src={user.photoURL ? user.photoURL : "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
                                                 alt='ProfileImg'
                                                 className="w-8 h-8 rounded-full object-cover"
                                             />
-                                            {/* )} */}
                                             <div>
                                                 <p className="text-gray-900 dark:text-gray-200 font-medium">{user.firstName} {user.lastName}</p>
                                                 <p className="text-gray-500 dark:text-gray-400 text-sm">{user.email}</p>
+                                                {user.accepted && (
+                                                    <span className="text-green-500 text-xs font-semibold">Accepted</span>
+                                                )}
                                             </div>
                                         </div>
                                         {
                                             auth.currentUser?.uid === post.userId && (
-
-                                                <div className=''>
+                                                <div className='flex gap-2'>
                                                     <button
                                                         className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                                                     >
                                                         Contact
                                                     </button>
+                                                    {!user.accepted && (
+                                                        <button
+                                                            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                                            // onClick={() => handleAcceptResponse(user.id)}
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )
                                         }

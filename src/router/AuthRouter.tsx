@@ -7,6 +7,8 @@ import ResourceForm from '@/components/Forms/ResourceForm';
 import ResourceSharingForm from '@/components/Forms/ResourceSharingForm';
 import { auth } from "../firebase";
 import LandingPage from '@/components/landingpage/LandingPage';
+import UserRequests from '@/components/PostCard/UserRequests';
+import UserSharedResources from '@/components/PostCard/UserSharedResources';
 
 // Import your auth-related components here
 // import Login from '../pages/Login';
@@ -36,6 +38,15 @@ const AuthRouter: React.FC = () => {
               path="/profile/shareform"
               element={<ResourceSharingForm userId={user?.uid} />}
             />
+
+            <Route path='/profile/auth/requests' 
+            element={<UserRequests/>}
+            />
+            <Route
+            path='/profile/auth/shared-resources'
+            element={<UserSharedResources/>}
+            />
+
             <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
     );

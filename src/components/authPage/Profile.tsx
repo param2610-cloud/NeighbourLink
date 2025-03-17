@@ -9,6 +9,11 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 // Define types for better type safety
 type FilterType = "all" | "post" | "resource";
 
+interface ResponderData {
+  userId: string;
+  accepted: boolean;
+}
+
 interface Post {
   id: string;
   category: string;
@@ -20,6 +25,7 @@ interface Post {
   urgency: boolean;
   userId: string;
   type: string;
+  responders: ResponderData[];
 }
 
 interface SharedResource {

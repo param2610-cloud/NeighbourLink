@@ -77,7 +77,7 @@ function ProfileCard() {
         email: email,
         address: address,
       };
-//error 6ilo tai comment out kore diye6ii
+      //error 6ilo tai comment out kore diye6ii
       // if (photoFile) {
       //   const storageRef = ref(storage, `profile_photos/${userId}`);
       //   await uploadBytes(storageRef, photoFile);
@@ -100,12 +100,12 @@ function ProfileCard() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-400 to-purple-200 py-5">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-400 to-purple-200 dark:from-indigo-900 dark:to-purple-900 py-5">
       {/* Header Navigation */}
       <div className="max-w-7xl mx-5 mb-4">
         <div className="flex justify-between items-center">
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-600 font-medium rounded-lg shadow hover:bg-indigo-50 transition-all duration-300 border border-indigo-200"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 font-medium rounded-lg shadow hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all duration-300 border border-indigo-200 dark:border-indigo-800"
             onClick={() => (window.location.href = "/")}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -119,54 +119,54 @@ function ProfileCard() {
       {/* Profile Card */}
       <div className="max-w-md mx-auto">
         {userDetails ? (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
             {/* Profile Header with Background */}
-            <div className="h-28 bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+            <div className="h-28 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-700 dark:to-purple-800"></div>
             
             {/* Profile Image - Positioned to overlap the background */}
             <div className="flex justify-center -mt-16">
               <img
-                src={userDetails.photo || "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+                src={userDetails.photo || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
                 alt="Profile"
-                className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg object-cover"
               />
             </div>
             
             {/* User Details */}
             <div className="px-6 py-3">
-              <h3 className="text-2xl font-bold text-center text-gray-800 mb-3">
+              <h3 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100 mb-3">
                 Welcome {userDetails.firstName} {userDetails.lastName} ✨
               </h3>
               
               <div className="space-y-3 mb-4">
-                <div className="flex items-center text-gray-700 px-4 py-3 bg-gray-50 rounded-lg">
-                  <AiOutlineMail className="text-indigo-500 mr-3 flex-shrink-0" size={20} />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <AiOutlineMail className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">EMAIL</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">EMAIL</p>
                     <p className="font-medium">{userDetails.email}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center text-gray-700 px-4 py-3 bg-gray-50 rounded-lg">
-                  <AiOutlineUser className="text-indigo-500 mr-3 flex-shrink-0" size={20} />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <AiOutlineUser className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">NAME</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">NAME</p>
                     <p className="font-medium">{userDetails.firstName} {userDetails.lastName}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center text-gray-700 px-4 py-3 bg-gray-50 rounded-lg">
-                  <AiOutlinePhone className="text-indigo-500 mr-3 flex-shrink-0" size={20} />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <AiOutlinePhone className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">PHONE</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">PHONE</p>
                     <p className="font-medium">{userDetails.phone || "Not provided"}</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center text-gray-700 px-4 py-3 bg-gray-50 rounded-lg">
-                  <AiOutlineHome className="text-indigo-500 mr-3 flex-shrink-0" size={20} />
+                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <AiOutlineHome className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">ADDRESS</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">ADDRESS</p>
                     <p className="font-medium">{userDetails.address || "Not provided"}</p>
                   </div>
                 </div>
@@ -175,14 +175,14 @@ function ProfileCard() {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <button
-                  className="w-[50%] px-4 py-3 bg-white text-indigo-500 border border-indigo-500 font-medium rounded-lg shadow-md hover:bg-indigo-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300"
+                  className="w-[50%] px-4 py-3 bg-white dark:bg-gray-700 text-indigo-500 dark:text-indigo-400 border border-indigo-500 dark:border-indigo-400 font-medium rounded-lg shadow-md hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-all duration-300"
                   onClick={handleEditProfile}
                 >
                   Edit Profile
                 </button>
 
                 <button
-                  className="w-[50%] px-4 py-3 bg-white text-red-500 font-medium rounded-lg shadow-md border border-red-500 hover:bg-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300"
+                  className="w-[50%] px-4 py-3 bg-white dark:bg-gray-700 text-red-500 dark:text-red-400 font-medium rounded-lg shadow-md border border-red-500 dark:border-red-400 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 transition-all duration-300"
                   onClick={handleLogout}
                 >
                   Logout
@@ -191,69 +191,69 @@ function ProfileCard() {
             </div>
           </div>
         ) : (
-          <div className="h-96 w-full flex items-center justify-center bg-white rounded-2xl shadow-xl">
-            <AiOutlineLoading3Quarters size={60} className="animate-spin text-indigo-500" />
+          <div className="h-96 w-full flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
+            <AiOutlineLoading3Quarters size={60} className="animate-spin text-indigo-500 dark:text-indigo-400" />
           </div>
         )}
 
-        {/* Edit Profile Modal - Improved styling */}
+        {/* Edit Profile Modal - Improved styling with dark mode */}
         {isEditModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-50">
-            <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl transform transition-all">
-              <h2 className="text-2xl font-bold mb-6 text-gray-800">Edit Profile</h2>
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl transform transition-all">
+              <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Edit Profile</h2>
               
               <div className="space-y-4">
                 {/* Name Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                   <input
                     type="text"
                     placeholder="Enter your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
                   />
                 </div>
                 
                 {/* Phone Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
                   <input
                     type="text"
                     placeholder="Enter your phone number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
                   />
                 </div>
                 
                 {/* Email Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                   <input
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
                   />
                 </div>
                 
                 {/* Address Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
                   <input
                     type="text"
                     placeholder="Enter your address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
                   />
                 </div>
                 
                 {/* Photo Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profile Photo</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Photo</label>
                   <div className="flex items-center space-x-3">
                     {photoUrl && (
                       <img 
@@ -262,8 +262,8 @@ function ProfileCard() {
                         className="h-12 w-12 rounded-full object-cover"
                       />
                     )}
-                    <label className="cursor-pointer bg-gray-100 px-4 py-3 rounded-lg border border-gray-300 hover:bg-gray-200 transition-colors duration-300 flex-grow">
-                      <span className="text-sm text-gray-700">
+                    <label className="cursor-pointer bg-gray-100 dark:bg-gray-700 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300 flex-grow">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
                         {photoFile ? photoFile.name : "Choose a new photo"}
                       </span>
                       <input
@@ -280,14 +280,14 @@ function ProfileCard() {
               {/* Action Buttons */}
               <div className="mt-8 flex justify-end space-x-4">
                 <button
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-300 font-medium"
+                  className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium"
                   onClick={() => setIsEditModalOpen(false)}
                   disabled={isLoading}
                 >
                   Cancel
                 </button>
                 <button
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 font-medium flex items-center"
+                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-700 dark:hover:to-indigo-800 transition-all duration-300 font-medium flex items-center"
                   onClick={handleSaveChanges}
                   disabled={isLoading}
                 >
