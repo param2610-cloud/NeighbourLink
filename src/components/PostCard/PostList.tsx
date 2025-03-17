@@ -100,8 +100,8 @@ const PostList = ({ post }: { post: Post }) => {
   };
 
   return (
-    <div className="w-full p-3 ">
-      <div className="w-full h-full bg-white shadow-md rounded-lg p-3 md:p-6">
+    <div className="w-full p-3">
+      <div className="w-full h-full bg-white dark:bg-neutral-700 shadow-md rounded-lg p-4 md:p-6">
         {/* Post Header */}
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center">
@@ -111,8 +111,8 @@ const PostList = ({ post }: { post: Post }) => {
               className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
             />
             <div className="ml-2 md:ml-3">
-              <h3 className="font-semibold text-gray-800 text-xs md:text-base">{userName}</h3>
-              <p className="text-xs md:text-sm text-gray-500">
+              <h3 className="font-semibold text-gray-800 dark:text-gray-300 text-xs md:text-base">{userName}</h3>
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                 {post.createdAt && post.createdAt.seconds ? 
                   formatTimestamp(post.createdAt) : 
                   "Invalid Date"}
@@ -122,9 +122,9 @@ const PostList = ({ post }: { post: Post }) => {
           
         </div>
         {/* Post Content */}
-        <div className="mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1 md:mb-2">{post.title}</h2>
-          <p className="text-sm md:text-base text-gray-700">{post.description}</p>
+        <div className="mb-3 md:mb-4 ">
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-200 mb-1 md:mb-2">{post.title}</h2>
+          <p className="text-sm md:text-base text-gray-700 dark:text-neutral-300 font-light mb-2">{post.description}</p>
           {post.urgency && (
             <span className="px-2 py-1 bg-red-100 text-red-600 text-xs md:text-sm rounded-full">
               Urgent
@@ -142,7 +142,7 @@ const PostList = ({ post }: { post: Post }) => {
         {/* Send Request Button */}
         <button
           className={`w-full px-3 py-1.5 md:px-4 md:py-2 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base
-            ${post.urgency ? "bg-red-600 hover:bg-red-700" : "bg-yellow-600 hover:bg-yellow-700"}
+            ${post.urgency ? "bg-red-600 hover:bg-red-700 dark:bg-red-800 dark:hover:bg-red-900" : "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800"}
             `}
           onClick={handleSendRequest}
         >
@@ -150,7 +150,7 @@ const PostList = ({ post }: { post: Post }) => {
         </button>
         {/* Comments Section */}
         <div className="mt-3 md:mt-4">
-          <h3 className="font-semibold text-gray-800 mb-2 text-sm md:text-base">Comments</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-300 mb-2 text-sm md:text-base">Comments</h3>
           <div className="space-y-2">
             {comments.map((comment) => (
               <div key={comment.id} className="flex items-start">

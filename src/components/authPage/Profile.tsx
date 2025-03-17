@@ -125,7 +125,7 @@ function Profile() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-neutral-800">
 
 
       {/* Responsive Sidebar */}
@@ -144,10 +144,10 @@ function Profile() {
       <div className=" md:pt-0 md:ml-64">
 
         {/* Filter Controls */}
-        <div className="flex gap-5 justify-end p-4 bg-white shadow-sm">
+        <div className="flex gap-5 justify-end p-4 bg-white dark:bg-neutral-900 shadow-sm">
 
           <div className="flex items-center space-x-2">
-            <label className="text-gray-700">Filter by:</label>
+            <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
             <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
