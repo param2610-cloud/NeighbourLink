@@ -1,3 +1,5 @@
+import { getPreSignedUrl } from "@/utils/aws/aws";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
     userDetails: {
@@ -10,6 +12,20 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => {
+    const [profilePhoto,setProfilephoto] = useState<string | null>(null)
+
+    useEffect(()=>{
+        
+        const fetchProfilePhoto = async ()=>{
+            if(userDetails.photo){
+                let photoUrl =  await getPreSignedUrl(userDetails.photo)
+                if(photoUrl){
+                    setProfilephoto(photoUrl);
+                }
+            }
+        }
+        fetchProfilePhoto()
+    },[userDetails])
     return (
         <>
             <div
@@ -19,8 +35,7 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
             >
                 <div className="flex items-center mb-8">
                     <img
-                        // src={userDetails?.photo || "https://via.placeholder.com/150"} // fix please
-                        src="../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+                        src={profilePhoto ? profilePhoto: "../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
                         alt="Profile"
                         className="w-12 h-12 rounded-full"
                     />

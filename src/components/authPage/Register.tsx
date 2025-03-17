@@ -1,13 +1,10 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
-import { getPreSignedUrl, uploadFileToS3 } from "@/utils/aws/aws";
-import { OlaMaps } from 'olamaps-web-sdk'
-import { OlaMapsInit } from "@/utils/ola/MapInit";
-import LocationViewer from "@/utils/ola/LocationViewer";
+import {  uploadFileToS3 } from "@/utils/aws/aws";
 // import { uploadFile } from "@/utils/aws/UploadFile"; //error 6ilo tai comment out kore diye6ii
 
 function Register() {
@@ -23,7 +20,6 @@ function Register() {
   const [radius, setRadius] = useState(2); // Default 2km radius
   const [lat, setLat] = useState<number>();
   const [lon, setLon] = useState<number>();
-  const [locationPermission, setLocationPermission] = useState<"granted" | "denied" | "prompt">("prompt");
   const [notifyEmergency, setNotifyEmergency] = useState(true);
   const [notifyMatches, setNotifyMatches] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
@@ -439,7 +435,7 @@ function Register() {
               <div className="flex justify-between mt-auto pt-6">
                 {currentStep > 1 ? (
                   <button
-                    type="button"
+                    type="button" // Explicitly set type as button to prevent form submission
                     onClick={handlePrevStep}
                     className="px-6 py-2 border border-white/30 text-white rounded-md font-medium hover:bg-white/10 transition-colors"
                   >
@@ -451,7 +447,7 @@ function Register() {
 
                 {currentStep < 4 ? (
                   <button
-                    type="button"
+                    type="button" // Explicitly set type as button to prevent form submission
                     onClick={handleNextStep}
                     className="px-6 py-2 bg-yellow-400 text-blue-900 rounded-md font-medium hover:bg-yellow-300 transition-colors"
                   >
@@ -459,7 +455,7 @@ function Register() {
                   </button>
                 ) : (
                   <button
-                    type="submit"
+                    type="submit" // Only the final button should be type="submit"
                     disabled={loading}
                     className={`px-8 py-2 bg-yellow-400 text-blue-900 rounded-md font-medium ${loading ? "opacity-70 cursor-not-allowed" : "hover:bg-yellow-300"
                       } transition-colors`}
