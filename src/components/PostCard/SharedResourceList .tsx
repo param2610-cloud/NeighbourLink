@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { MdDeleteForever } from "react-icons/md";
 
 interface SharedResource {
   category: string;
@@ -102,7 +103,7 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center">
             <img
-              src={resource.photoUrl || "/src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+              src={resource.photoUrl || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
               alt="Resource"
               className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
             />
@@ -114,6 +115,9 @@ const SharedResourceList = ({ resource }: { resource: SharedResource }) => {
                   "Invalid Date"}
               </p>
             </div>
+          </div>
+          <div className="text-red-600 dark:text-red-400 hover:cursor-pointer">
+          <MdDeleteForever size={20}/>
           </div>
         </div>
         {/* Resource Content */}

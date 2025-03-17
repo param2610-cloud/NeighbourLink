@@ -3,9 +3,10 @@ import { toast } from "react-toastify";
 import { db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import PostDetails from "./modal/PostDetails";
+import { MdDeleteForever } from "react-icons/md";
 
 export interface Post {
-  id:string
+  id: string
   category: string;
   createdAt: any;
   description: string;
@@ -33,18 +34,18 @@ const PostList = ({ post }: { post: Post }) => {
   const [userName, setUserName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const shortOptions: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'short', 
+  const shortOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
     day: 'numeric'
   };
 
   const formatTimestamp = (timestamp: any) => {
     if (timestamp && timestamp.seconds) {
       const date = new Date(timestamp.seconds * 1000);
-      const options: Intl.DateTimeFormatOptions = { 
-        year: 'numeric', 
-        month: 'long', 
+      const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'long',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
@@ -105,18 +106,21 @@ const PostList = ({ post }: { post: Post }) => {
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center">
             <img
-              src={post.photoUrl || "/src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+              src={post.photoUrl || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
               alt="Post"
               className="w-8 h-8 md:w-12 md:h-12 rounded-full object-cover"
             />
             <div className="ml-2 md:ml-3">
               <h3 className="font-semibold text-gray-800 dark:text-gray-300 text-xs md:text-base">{userName}</h3>
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                {post.createdAt && post.createdAt.seconds ? 
-                  formatTimestamp(post.createdAt) : 
+                {post.createdAt && post.createdAt.seconds ?
+                  formatTimestamp(post.createdAt) :
                   "Invalid Date"}
               </p>
             </div>
+          </div>
+          <div className="text-red-600 dark:text-red-400 hover:cursor-pointer">
+            <MdDeleteForever size={20} />
           </div>
         </div>
         {/* Post Content */}
@@ -158,11 +162,11 @@ const PostList = ({ post }: { post: Post }) => {
                 <div className="ml-2">
                   <p className="text-xs md:text-sm text-gray-800">{comment.text}</p>
                   <p className="text-xs text-gray-500">
-                    {comment.createdAt && typeof comment.createdAt === 'string' 
+                    {comment.createdAt && typeof comment.createdAt === 'string'
                       ? new Date(comment.createdAt).toLocaleString('en-US', shortOptions)
                       : (comment.createdAt && typeof comment.createdAt === 'object' && 'seconds' in comment.createdAt
-                          ? formatTimestamp(comment.createdAt)
-                          : "Invalid Date")}
+                        ? formatTimestamp(comment.createdAt)
+                        : "Invalid Date")}
                   </p>
                 </div>
               </div>

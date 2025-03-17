@@ -164,7 +164,7 @@ function Profile() {
             onClick={toggleSidebar}
           >
             <img
-              src="../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+              src="/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
               alt="Profile"
               className="w-12 h-12 rounded-full"
             />
