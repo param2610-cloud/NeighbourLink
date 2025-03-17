@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { db } from "../../firebase"; // Import Firebase Firestore and Storage
 import { collection, addDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
 
 interface ResourceSharingFormProps {
@@ -13,7 +12,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({ userId }) => 
   const [category, setCategory] = useState("Medical");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("New");
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [, setPhoto] = useState<File | null>(null);
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
 

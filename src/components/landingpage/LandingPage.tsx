@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './LandingPage.css';
 import { motion } from 'framer-motion';
 import { auth } from '@/firebase';
@@ -6,8 +6,8 @@ import { auth } from '@/firebase';
 const LandingPage = () => {
 
   const [bgImage, setBgImage] = useState('bg-1')
-  const [prevImage, setPrevImage] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [, setPrevImage] = useState('');
+  const [mobileMenuOpen, ] = useState(false);
   const [user, setUser] = useState<any>();
   useEffect(() => {
     auth.onAuthStateChanged((user) => {

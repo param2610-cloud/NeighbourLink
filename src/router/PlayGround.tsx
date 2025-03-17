@@ -10,7 +10,6 @@ import { auth } from "@/firebase";
 // ... other imports
 
 function PlayGround() {
-    const [notificationsSupported, setNotificationsSupported] = useState(true);
     const [loading, setLoading] = useState(true); // Add loading state
     const { user } = useStateContext();
 

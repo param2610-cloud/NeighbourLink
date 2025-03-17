@@ -12,7 +12,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   const [category, setCategory] = useState("Medical");
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState(false);
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [, setPhoto] = useState<File | null>(null);
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
   // Function to get user's location

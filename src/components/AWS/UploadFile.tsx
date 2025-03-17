@@ -2,7 +2,7 @@ import { uploadFileToS3, getSignedImageUrl } from '@/utils/aws/aws';
 import React, { useState, useEffect } from 'react';
 
 const UploadFiletoAWS = () => {
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [, setPhotoFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null >(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
