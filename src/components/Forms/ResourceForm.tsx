@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { db } from "../../firebase"; // Import Firebase Firestore and Storage
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
+import { IoMdArrowRoundBack } from "react-icons/io";
 
 interface ResourceFormProps {
   userId: string;
@@ -99,18 +100,19 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-400 to-purple-300">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-400 to-purple-300 dark:bg-gradient-to-br dark:from-gray-900 dark:to-blue-900">
       <button
-        className="absolute top-4 left-4 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        onClick={() => (window.location.href = "/")}
+        className="absolute top-4 left-10 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        onClick={() => (window.location.href = "/profile")}
     >
-        Back to Home
+        <IoMdArrowRoundBack />
+
     </button>
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto mt-6 border-4 border-indigo-500">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center">Post a Resource Request/Offer</h2>
+      <div className="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-md max-w-md mx-auto mt-6 border-4 border-indigo-500 dark:border-blue-500">
+        <h2 className="text-2xl font-bold mb-4 dark:text-white text-gray-800 text-center">Post a Resource Request/Offer</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title:</label>
+            <label className="block text-sm dark:text-white font-medium text-gray-700">Title:</label>
             <input
               type="text"
               value={title}
@@ -121,7 +123,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Category:</label>
+            <label className="block text-sm dark:text-white font-medium text-gray-700">Category:</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -135,7 +137,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Description:</label>
+            <label className="block text-sm font-medium dark:text-white text-gray-700">Description:</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -145,18 +147,18 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
             />
           </div>
           <div>
-            <label className="flex items-center space-x-2">
+            <label className="flex dark:text-white items-center space-x-2">
               <input
                 type="checkbox"
                 checked={urgency}
                 onChange={(e) => setUrgency(e.target.checked)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <span className="text-sm text-gray-700">Mark as Urgent</span>
+              <span className="text-sm dark:text-white text-gray-700">Mark as Urgent</span>
             </label>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Location:</label>
+            <label className="block text-sm font-medium dark:text-white text-gray-700">Location:</label>
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -175,7 +177,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Upload Photo (Optional):</label>
+            <label className="block text-sm font-medium dark:text-white  text-gray-700">Upload Photo (Optional):</label>
             <input
               type="file"
               onChange={(e) => {
