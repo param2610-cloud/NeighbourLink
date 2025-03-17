@@ -126,23 +126,12 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Mobile Toggle Button */}
-      <button
-        className="fixed top-4 right-4 z-50 p-2 bg-indigo-500 text-white rounded-md shadow-sm md:hidden"
-        onClick={toggleSidebar}
-      >
-        <img
-          src="../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
-          alt="Profile"
-          className="w-12 h-12 rounded-full"
-        />
-      </button>
+
 
       {/* Responsive Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 w-64 transform ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 transition-transform duration-300 z-40`}
+        className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0 transition-transform duration-300 z-40`}
       >
         <Sidebar
           userDetails={userDetails}
@@ -152,9 +141,11 @@ function Profile() {
       </div>
 
       {/* Main Content Area */}
-      <div className="pt-20 md:pt-0 md:ml-64">
+      <div className=" md:pt-0 md:ml-64">
+
         {/* Filter Controls */}
-        <div className="flex justify-end p-4 bg-white shadow-sm">
+        <div className="flex gap-5 justify-end p-4 bg-white shadow-sm">
+
           <div className="flex items-center space-x-2">
             <label className="text-gray-700">Filter by:</label>
             <select
@@ -167,6 +158,17 @@ function Profile() {
               <option value="resource">Resources</option>
             </select>
           </div>
+          {/* Mobile Toggle Button */}
+          <button
+            className=" text-white rounded-full shadow-md hover:cursor-pointer md:hidden"
+            onClick={toggleSidebar}
+          >
+            <img
+              src="../src/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+              alt="Profile"
+              className="w-12 h-12 rounded-full"
+            />
+          </button>
         </div>
 
         {/* Content Grid */}

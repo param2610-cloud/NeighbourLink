@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import './LandingPage.css';
 import { motion } from 'framer-motion';
 import { auth } from '@/firebase';
+import '@fortawesome/fontawesome-svg-core/styles.css';
 
 const LandingPage = () => {
 
   const [bgImage, setBgImage] = useState('bg-1')
   const [, setPrevImage] = useState('');
-  const [mobileMenuOpen, ] = useState(false);
+  const [mobileMenuOpen,] = useState(false);
   const [user, setUser] = useState<any>();
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
@@ -170,68 +171,74 @@ const LandingPage = () => {
 
             <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Feature 1 */}
-              <div className="feature-card feature-card-bg rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
+                  p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/resource_sharing.png" className='' alt="" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Resource Sharing</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Resource Sharing</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Share underutilized items like tools, medical equipment, or books with trusted neighbors.
                 </p>
               </div>
 
               {/* Feature 2 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
+                  p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/emergency_alert.png" className='' alt="" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Emergency Alerts</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Emergency Alerts</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Broadcast urgent needs to neighbors within a 2km radius via push notifications and SMS.
                 </p>
               </div>
 
               {/* Feature 3 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
+                  p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/secure_communication.png" className='' alt="" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Secure Communication</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Secure Communication</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Chat privately with neighbors using our end-to-end encrypted messaging system.
                 </p>
               </div>
 
               {/* Feature 4 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
+                  p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full">
                   <img src="/src/assets/trust_building.png" className='' alt="" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Trust Building</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Trust Building</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Earn "Trusted Neighbor" badges through ID verification and positive community interactions.
                 </p>
               </div>
 
               {/* Feature 5 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
+                  p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full ">
                   <img src="/src/assets/hyperlocal_focus.png" className='' alt="" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Hyperlocal Focus</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Hyperlocal Focus</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Connect with neighbors within 1-5km radius, creating a truly local community network.
                 </p>
               </div>
 
               {/* Feature 6 */}
-              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] p-6 border border-gray-100 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
+              <div className="feature-card feature-card-bg bg-white rounded-lg shadow-[0_3px_10px_rgb(0,0,0,0.2)] dark:shadow-[0_3px_10px_rgb(255,255,255,0.3)]
+                  p-6 border dark:border-neutral-800 border-gray-100 dark:hover:border-neutral-600 animate-on-scroll opacity-0 transform translate-y-10 transition-all duration-10000 ease-in-out">
                 <div className="w-12 h-12 mb-4 flex items-center justify-center rounded-full ">
                   <img src="/src/assets/safety_privacy.png" className='' alt="" />
 
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Safety & Privacy</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-200 mb-2">Safety & Privacy</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Coordinate safe pickup locations and maintain privacy with anonymous posting options.
                 </p>
               </div>
@@ -293,10 +300,10 @@ const LandingPage = () => {
         </section>
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-20 bg-white">
+        <section id="testimonials" className="py-20 bg-neutral-50 dark:bg-neutral-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-400 sm:text-4xl">
                 What Our Users Are Saying
               </h2>
               <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500">
@@ -306,7 +313,7 @@ const LandingPage = () => {
 
             <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {/* Testimonial 1 */}
-              <div className="bg-white rounded-xl shadow-md overflow-hidden p-6 border border-gray-100">
+              <div className="bg-neutral-50 dark:bg-slate-800 rounded-xl shadow-md overflow-hidden p-6 border dark:border-slate-600 border-gray-100">
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-xl font-semibold text-gray-500">JS</span>
@@ -316,7 +323,7 @@ const LandingPage = () => {
                     <p className="text-gray-500 text-sm">Oakland, CA</p>
                   </div>
                 </div>
-                <p className="text-gray-600 italic">
+                <p className="text-gray-600 dark:text-gray-300 italic">
                   "When my son needed crutches after a sports injury, I posted an urgent request on NeighbourLink. Within 30 minutes, a neighbor three blocks away offered to lend us a pair. We saved hundreds of dollars and made a new friend!"
                 </p>
                 <div className="mt-4 flex text-yellow-400">
@@ -329,7 +336,7 @@ const LandingPage = () => {
               </div>
 
               {/* Testimonial 2 */}
-              <div className="bg-white rounded-xl shadow-md overflow-hidden p-6 border border-gray-100">
+              <div className="bg-neutral-50 dark:bg-slate-800 rounded-xl shadow-md overflow-hidden p-6 border dark:border-slate-600 border-gray-100">
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-xl font-semibold text-gray-500">MR</span>
@@ -339,7 +346,7 @@ const LandingPage = () => {
                     <p className="text-gray-500 text-sm">Austin, TX</p>
                   </div>
                 </div>
-                <p className="text-gray-600 italic">
+                <p className="text-gray-600 dark:text-gray-300 italic">
                   "During the last power outage, NeighbourLink's emergency alert system helped our street coordinate sharing generators and refrigerator space. It turned a stressful situation into a block party!"
                 </p>
                 <div className="mt-4 flex text-yellow-400">
@@ -352,7 +359,7 @@ const LandingPage = () => {
               </div>
 
               {/* Testimonial 3 */}
-              <div className="bg-white rounded-xl shadow-md overflow-hidden p-6 border border-gray-100">
+              <div className="bg-neutral-50 dark:bg-slate-800 rounded-xl shadow-md overflow-hidden p-6 border dark:border-gray-600 border-gray-100">
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-xl font-semibold text-gray-500">AP</span>
@@ -362,7 +369,7 @@ const LandingPage = () => {
                     <p className="text-gray-500 text-sm">Chicago, IL</p>
                   </div>
                 </div>
-                <p className="text-gray-600 italic">
+                <p className="text-gray-600 dark:text-gray-300 italic">
                   "As a new mom working from home, I felt isolated until I found NeighbourLink. I've borrowed baby equipment, found a babysitting swap, and finally feel connected to my neighborhood after living here for years."
                 </p>
                 <div className="mt-4 flex text-yellow-400">
