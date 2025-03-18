@@ -2,7 +2,6 @@ import ThemeToggle from "@/ThemeToggle";
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
 import { Home, User, Users, FileText, Share, Inbox, Archive } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   userDetails: {
@@ -17,7 +16,7 @@ interface SidebarProps {
 const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [activePage, setActivePage] = useState("/home");
-  const navigate= useNavigate();
+//   const navigate= useNavigate();
 
   useEffect(() => {
     // Get current path and set active page
