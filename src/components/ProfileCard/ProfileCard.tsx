@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { AiOutlineLoading3Quarters, AiOutlineUser, AiOutlineMail, AiOutlinePhone, AiOutlineHome } from "react-icons/ai";
+import {  AiOutlineUser, AiOutlineMail, AiOutlinePhone, AiOutlineHome } from "react-icons/ai";
 import { deleteFileFromS3, getPreSignedUrl, uploadFileToS3 } from "@/utils/aws/aws";
 import { useNavigate } from "react-router-dom";
 import Bottombar from "../authPage/structures/Bottombar";
@@ -20,8 +20,8 @@ function ProfileCard() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const navigate=useNavigate();
-  
+  const navigate = useNavigate();
+
   // Handle photo change from file input
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -30,7 +30,7 @@ function ProfileCard() {
       setPhotoPreview(URL.createObjectURL(file));
     }
   };
-  
+
   // Fetch profile photo using AWS pre-signed URL
   const fetchProfilePhoto = useCallback(async () => {
     if (userDetails?.photo) {
@@ -85,11 +85,11 @@ function ProfileCard() {
   // Initialize user data on component mount
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
-    
+
     fetchUserData().then(unsubFn => {
       unsubscribe = unsubFn;
     });
-    
+
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -122,9 +122,9 @@ function ProfileCard() {
         toast.error("User not authenticated");
         return;
       }
-      
+
       let photoURL = photoUrl; // Keep existing photo URL by default
-      
+
       // Handle photo update if a new photo was selected
       if (photoFile) {
         try {
@@ -148,17 +148,17 @@ function ProfileCard() {
         email: email,
         address: address,
       };
-      
+
       // Only update photo if it changed
       if (photoURL !== photoUrl) {
         updateData.photo = photoURL;
       }
 
       await updateDoc(userRef, updateData);
-      
+
       // Update local state with the new data
       setUserDetails({ ...userDetails, ...updateData });
-      
+
       // Update preview if photo was changed
       if (photoURL !== photoUrl) {
         setPhotoUrl(photoURL);
@@ -168,7 +168,7 @@ function ProfileCard() {
 
       toast.success("Profile updated successfully!");
       setIsEditModalOpen(false);
-      
+
       // Reset the photo file and preview
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -181,221 +181,230 @@ function ProfileCard() {
   };
 
   // Rest of your component remains the same
+  // Helper components for cleaner code
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-400 to-purple-200 dark:from-indigo-900 dark:to-purple-900 py-5">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header Navigation */}
-      <div className="max-w-7xl mx-5 mb-4">
-        <div className="flex justify-between items-center">
-          <button
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 font-medium rounded-lg shadow hover:bg-indigo-50 dark:hover:bg-gray-700 transition-all duration-300 border border-indigo-200 dark:border-indigo-800"
-            onClick={() => navigate('/')}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-            </svg>
-            Back to Home
-          </button>
-        </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="font-medium">Back to Dashboard</span>
+        </button>
       </div>
 
       {/* Profile Card */}
-      <div className="max-w-md mx-auto">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {userDetails ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
-            {/* Profile Header with Background */}
-            <div className="h-28 bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-700 dark:to-purple-800"></div>
-            
-            {/* Profile Image - Positioned to overlap the background */}
-            <div className="flex justify-center -mt-16">
-              <img
-                src={profilePhoto || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
-                alt="Profile"
-                className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg object-cover"
-              />
-            </div>
-            
-            {/* User Details */}
-            <div className="px-6 py-3">
-              <h3 className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100 mb-3">
-                Welcome {userDetails.firstName} {userDetails.lastName} ✨
-              </h3>
-              
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <AiOutlineMail className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">EMAIL</p>
-                    <p className="font-medium">{userDetails.email}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <AiOutlineUser className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">NAME</p>
-                    <p className="font-medium">{userDetails.firstName} {userDetails.lastName}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <AiOutlinePhone className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">PHONE</p>
-                    <p className="font-medium">{userDetails.phoneNumber || "Not provided"}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-700 dark:text-gray-300 px-4 py-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <AiOutlineHome className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">ADDRESS</p>
-                    <p className="font-medium">{userDetails.address || "Not provided"}</p>
-                  </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+            {/* Profile Header */}
+            <div className="relative h-40 bg-gradient-to-r from-indigo-100 to-indigo-50 dark:from-gray-700 dark:to-gray-600">
+              <div className="absolute -bottom-16 left-6">
+                <div className="relative group">
+                  <img
+                    src={profilePhoto || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+                    alt="Profile"
+                    className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <label className="absolute bottom-0 right-0 bg-white dark:bg-gray-700 p-2 rounded-full shadow-sm cursor-pointer border border-gray-200 dark:border-gray-600">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                    />
+                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </label>
                 </div>
               </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  className="w-[50%] px-4 py-3 bg-white dark:bg-gray-700 text-indigo-500 dark:text-indigo-400 border border-indigo-500 dark:border-indigo-400 font-medium rounded-lg shadow-md hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-all duration-300"
-                  onClick={handleEditProfile}
-                >
-                  Edit Profile
-                </button>
+            </div>
 
-                <button
-                  className="w-[50%] px-4 py-3 bg-white dark:bg-gray-700 text-red-500 dark:text-red-400 font-medium rounded-lg shadow-md border border-red-500 dark:border-red-400 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 transition-all duration-300"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
+            {/* Profile Content */}
+            <div className="pt-20 px-6 pb-8">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    {userDetails.firstName} {userDetails.lastName}
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">Member since 2025</p>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleEditProfile}
+                    className="px-5 py-2.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-gray-700 rounded-lg border border-indigo-100 dark:border-gray-600 hover:bg-indigo-100 dark:hover:bg-gray-600 transition-colors duration-200"
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="px-5 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-gray-700 rounded-lg border border-red-100 dark:border-gray-600 hover:bg-red-100 dark:hover:bg-gray-600 transition-colors duration-200"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <DetailItem
+                    icon={<AiOutlineUser className="w-5 h-5" />}
+                    label="Full Name"
+                    value={`${userDetails.firstName} ${userDetails.lastName}`}
+                  />
+                  <DetailItem
+                    icon={<AiOutlineMail className="w-5 h-5" />}
+                    label="Email Address"
+                    value={userDetails.email}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <DetailItem
+                    icon={<AiOutlinePhone className="w-5 h-5" />}
+                    label="Phone Number"
+                    value={userDetails.phoneNumber || "Not provided"}
+                  />
+                  <DetailItem
+                    icon={<AiOutlineHome className="w-5 h-5" />}
+                    label="Address"
+                    value={userDetails.address || "Not provided"}
+                  />
+                </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="h-96 w-full flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
-            <AiOutlineLoading3Quarters size={60} className="animate-spin text-indigo-500 dark:text-indigo-400" />
+          <div className="h-96 flex items-center justify-center">
+            <div className="animate-pulse space-y-4">
+              <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64"></div>
+            </div>
           </div>
         )}
 
-        {/* Edit Profile Modal - Improved styling with dark mode */}
+        {/* Edit Modal */}
         {isEditModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-50">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl w-full max-w-md shadow-2xl transform transition-all">
-              <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Edit Profile</h2>
-              
-              <div className="space-y-4">
-                {/* Name Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-                  <input
-                    type="text"
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
-                  />
-                </div>
-                
-                {/* Phone Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-                  <input
-                    type="text"
-                    placeholder="Enter your phone number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
-                  />
-                </div>
-                
-                {/* Email Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
-                  />
-                </div>
-                
-                {/* Address Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
-                  <input
-                    type="text"
-                    placeholder="Enter your address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400"
-                  />
-                </div>
-                
-                {/* Photo Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Photo</label>
-                  <div className="flex items-center space-x-3">
-                    {photoPreview ? (
-                      <img 
-                        src={photoPreview} 
-                        alt="New profile" 
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : profilePhoto ? (
-                      <img 
-                        src={profilePhoto} 
-                        alt="Current profile" 
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : null}
-                    <label className="cursor-pointer bg-gray-100 dark:bg-gray-700 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300 flex-grow">
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {photoFile ? photoFile.name : "Choose a new photo"}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoChange}
-                        className="sr-only"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="mt-8 flex justify-end space-x-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-8 transform transition-all">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Edit Profile</h3>
                 <button
-                  className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 font-medium"
                   onClick={() => setIsEditModalOpen(false)}
-                  disabled={isLoading}
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
-                  Cancel
-                </button>
-                <button
-                  className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-indigo-600 dark:from-indigo-600 dark:to-indigo-700 text-white rounded-lg hover:from-indigo-600 hover:to-indigo-700 dark:hover:from-indigo-700 dark:hover:to-indigo-800 transition-all duration-300 font-medium flex items-center"
-                  onClick={handleSaveChanges}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <AiOutlineLoading3Quarters className="animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
+
+              <form className="space-y-6">
+                <FormInput
+                  label="Full Name"
+                  icon={<AiOutlineUser />}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <FormInput
+                  label="Email Address"
+                  icon={<AiOutlineMail />}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <FormInput
+                  label="Phone Number"
+                  icon={<AiOutlinePhone />}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <FormInput
+                  label="Address"
+                  icon={<AiOutlineHome />}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors duration-200">
+                    <input type="file" className="hidden" onChange={handlePhotoChange} />
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Preview" className="h-full w-full object-cover rounded-lg" />
+                    ) : (
+                      <div className="flex flex-col items-center text-gray-400 dark:text-gray-500">
+                        <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm">Click to upload photo</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-6 py-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveChanges}
+                    disabled={isLoading}
+                    className="px-6 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg font-medium transition-colors duration-200 flex items-center disabled:opacity-70"
+                  >
+                    {isLoading && (
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    {isLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
       </div>
-      <Bottombar/>
+      <Bottombar />
     </div>
   );
 }
 
 export default ProfileCard;
+// Helper components for cleaner code
+const DetailItem = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
+  <div className="flex items-start space-x-4">
+    <div className="flex-shrink-0 text-indigo-600 dark:text-indigo-400">{icon}</div>
+    <div>
+      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase">{label}</dt>
+      <dd className="mt-1 text-gray-900 dark:text-gray-100 font-medium">{value}</dd>
+    </div>
+  </div>
+);
+
+const FormInput = ({ label, icon, ...props }: { label: string; icon: React.ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+    <div className="relative">
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+        {icon}
+      </div>
+      <input
+        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 transition-all duration-200"
+        {...props}
+      />
+    </div>
+  </div>
+);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, getDoc, doc as firestoreDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -16,38 +16,59 @@ interface Post {
     urgencyLevel: number;
     visibilityRadius: number;
 }
+interface User {
+    firstName: string;
+    lastName:string;
+    photoURL?: string;
+    email: string;
+}
+
+interface PostWithUser extends Post {
+    userData?: User;
+}
 
 const EmergencyPosts = () => {
-    const [posts, setPosts] = useState<Post[]>([]);
+    const [posts, setPosts] = useState<PostWithUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const navigate= useNavigate();
-
-    useEffect(() => {
-        const fetchEmergencyPosts = async () => {
-            try {
-                const postsRef = collection(db, 'posts');
-                const q = query(postsRef,
-                    where('urgencyLevel', '==', 3),
-                    where('postType', "==", "request")
-                );
-                const querySnapshot = await getDocs(q);
-
-                const postsData: Post[] = [];
-                querySnapshot.forEach((doc) => {
-                    postsData.push({ id: doc.id, ...doc.data() } as Post);
-                });
-
-                setPosts(postsData);
-                setLoading(false);
-            } catch (error) {
-                console.error('Error fetching emergency posts:', error);
-                setLoading(false);
-            }
-        };
-
-        fetchEmergencyPosts();
-    }, []);
-
+    const navigate = useNavigate();
+    
+        useEffect(() => {
+            const fetchEmergencyPosts = async () => {
+                try {
+                    const postsRef = collection(db, 'posts');
+                    const q = query(postsRef,
+                        where('urgencyLevel', '==', 3),
+                        where('postType', "==", "need")
+                    );
+                    const querySnapshot = await getDocs(q);
+    
+                    const postsData: PostWithUser[] = [];
+                    
+                    // Fetch posts and user data
+                    for (const doc of querySnapshot.docs) {
+                        const postData = { id: doc.id, ...doc.data() } as Post;
+                        
+                        // Fetch user data
+                        const userDoc = await getDoc(firestoreDoc(db, 'Users', postData.userId));
+                        const userData = userDoc.exists() ? userDoc.data() as User : undefined;
+                        
+                        postsData.push({
+                            ...postData,
+                            userData
+                        });
+                    }
+                    
+                    console.log(postsData);
+                    setPosts(postsData);
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Error fetching emergency posts:', error);
+                    setLoading(false);
+                }
+            };
+    
+            fetchEmergencyPosts();
+        }, []);
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -88,9 +109,9 @@ const EmergencyPosts = () => {
                                     />
                                 )}
                                 <div className="p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <span className="inline-block bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400 px-3 py-1 rounded-full text-sm font-medium">
-                                            Urgency Level: {post.urgencyLevel}
+                                    <div className="flex flex-col items-start justify-center mb-4">
+                                        <span className="">
+                                            Posted By: {post.userData?.firstName?`${post.userData.firstName} ${post.userData.lastName}`:post.userData?.firstName|| post.userData?.lastName ||"Anonymous"}
                                         </span>
                                         <span className="text-sm text-gray-500 dark:text-gray-400">
                                             {format(post.createdAt?.toDate(), 'MMM dd, yyyy hh:mm a')}

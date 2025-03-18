@@ -112,7 +112,7 @@ const LandingPage = () => {
                   </>
                 )}
                 {user && (
-                  <a href="/profile" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Profile</a>
+                  <a href="/" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Profile</a>
                 )}
               </div>
             </motion.div>

@@ -7,7 +7,7 @@ import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
 import { BiSearchAlt } from "react-icons/bi";
 import { MdOutlineWarning } from "react-icons/md";
-import { CgProfile } from "react-icons/cg";
+import { GiHamburgerMenu } from "react-icons/gi";
 import { ImageDisplay } from "../components/AWS/UploadFile";
 import { motion } from "framer-motion"; 
 import Sidebar from "../components/authPage/structures/Sidebar"; 
@@ -293,7 +293,7 @@ useEffect(() => {
       {/* Overlay to close sidebar when clicking outside (only on mobile) */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-transparent z-30 md:hidden" 
+          className="fixed inset-0 bg-transparent z-30 md:hidden" 
           onClick={toggleSidebar}
         />
       )}
@@ -307,7 +307,7 @@ useEffect(() => {
               className="flex items-center space-x-2 cursor-pointer" 
               onClick={toggleSidebar}
             >
-              <CgProfile className="text-2xl text-gray-700 dark:text-gray-200" />
+              <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
             </div>
             
             <div className="flex items-center">
