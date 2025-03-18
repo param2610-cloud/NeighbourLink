@@ -20,6 +20,7 @@ import ResourceForm from "./components/Forms/ResourceForm";
 import ProfileCard from "./components/ProfileCard/ProfileCard";
 import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
 import UploadFiletoAWS from "./components/AWS/UploadFile";
+import Home from "./pages/Home";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -43,7 +44,6 @@ function App() {
         onMessageListener()
           .then((payload) => {
             console.log("Message received:", payload);
-            // Display notification to the user
           })
           .catch((err) => {
             console.error("Error with message listener:", err);
@@ -65,7 +65,7 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={user ? <Navigate to="/profile" /> : <LandingPage />}
+              element={user ? <Navigate to="/profile" /> : <Home />}
             />
             <Route path="/upload" element={<UploadFiletoAWS/>} />
             <Route path="/register" element={<Register />} />

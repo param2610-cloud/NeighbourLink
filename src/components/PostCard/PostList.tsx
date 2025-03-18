@@ -96,10 +96,10 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
   const handleAddComment = () => {
     if (newComment.trim()) {
       const comment: Comment = {
-        id: Math.random().toString(36).substr(2, 9), // Generate a unique ID
+        id: Math.random().toString(36).substr(2, 9),
         text: newComment,
-        userId: "currentUser Id", // Replace with the actual logged-in user ID
-        createdAt: new Date().toISOString(), // Use ISO string for consistent formatting
+        userId: "currentUser Id",
+        createdAt: new Date().toISOString(), 
       };
       setComments([...comments, comment]);
       setNewComment("");
@@ -115,7 +115,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
   return (
     <div className="w-full p-3">
       <div className="w-full h-full bg-white dark:bg-neutral-700 shadow-md rounded-lg p-4 md:p-6">
-        {/* Post Header */}
+        
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div className="flex items-center">
             <img
@@ -153,7 +153,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
           />
           
         </div>
-        {/* Post Content */}
+        
         <div className="mb-3 md:mb-4 ">
           <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-200 mb-1 md:mb-2">{post.title}</h2>
           <p className="text-sm md:text-base text-gray-700 dark:text-neutral-300 font-light mb-2">{post.description}</p>
@@ -163,7 +163,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
             </span>
           )}
         </div>
-        {/* Post Photo */}
+        
         {post.photoUrl && (
           <img
             src={post.photoUrl}
@@ -171,14 +171,14 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
             className="w-full h-40 md:h-64 object-cover rounded-lg mb-3 md:mb-4"
           />
         )}
-        {/* View Details Button */}
+        
         <button
           onClick={() => setIsModalOpen(true)}
           className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base"
         >
           View Details
         </button>
-        {/* Comments Section */}
+        
         <div className="mt-3 md:mt-4">
           <h3 className="font-semibold text-gray-800 dark:text-gray-300 mb-2 text-sm md:text-base">Comments</h3>
           <div className="space-y-2">
@@ -202,7 +202,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
               </div>
             ))}
           </div>
-          {/* Add Comment Input */}
+          
           <div className="mt-3 md:mt-4 flex items-center">
             <input
               type="text"
@@ -221,7 +221,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
         </div>
       </div>
 
-      {/* Post Modal */}
+      
       <PostDetails post={post} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
    

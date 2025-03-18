@@ -15,6 +15,8 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         clientsClaim: true,
         skipWaiting: true,
+        // Increase the file size limit to 4MB (or larger if needed)
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
@@ -93,6 +95,8 @@ export default defineConfig({
         'firebase-messaging-sw': 'public/firebase-messaging-sw.js',
       },
     },
+    // Optionally, increase the chunk size warning limit to avoid unnecessary warnings
+    chunkSizeWarningLimit: 3000,
   },
   server:{
     host: process.env.VITE_IP

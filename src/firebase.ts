@@ -1,14 +1,12 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// import { getStorage } from "firebase/storage";
 import { getMessaging, isSupported } from "firebase/messaging";
 import 'firebase/auth';
 import 'firebase/firestore';
 import 'firebase/storage';
 import 'firebase/messaging';
 
-// Extend Window interface to include FIREBASE_CONFIG
 declare global {
   interface Window {
     FIREBASE_CONFIG: any;
@@ -39,7 +37,6 @@ if (typeof window !== 'undefined') {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// const storage = getStorage(app);
 let messaging;
 const initializeMessaging = async () => {
     try {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { db } from "../../firebase"; // Import Firebase Firestore and Storage
+import { db } from "../../firebase"; 
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { IoMdArrowRoundBack } from "react-icons/io";
@@ -19,7 +19,6 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Function to get user's location
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -47,7 +46,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({
     }
   };
 
-  // Function to format location as [12.34° N, 56.78° E]
+  
   const formatLocation = (latitude: number, longitude: number) => {
     const latDirection = latitude >= 0 ? "N" : "S";
     const lonDirection = longitude >= 0 ? "E" : "W";
@@ -56,23 +55,23 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({
     return `[${formattedLat}, ${formattedLon}]`;
   };
 
-  // Function to handle form submission
+  
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Upload photo to Firebase Storage (if provided)
+      
       let photoUrl = "";
 
-      // Save resource post to Firestore
+      
       const resourceData = {
         resourceName,
         category,
         description,
         condition,
         photoUrl,
-        location, // Include location in the data
+        location, 
         userId,
         createdAt: new Date(),
       };
@@ -83,7 +82,7 @@ const ResourceSharingForm: React.FC<ResourceSharingFormProps> = ({
       );
       console.log("Resource shared with ID: ", docRef.id);
 
-      // Reset form
+      
       setResourceName("");
       setCategory("Medical");
       setDescription("");

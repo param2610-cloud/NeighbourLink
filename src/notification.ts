@@ -2,11 +2,10 @@ import { initializeMessaging } from "./firebase";
 import { getToken, onMessage } from "firebase/messaging";
 
 
-const vapidKey = import.meta.env.VITE_VAPIDKEY; // From Firebase Console
+const vapidKey = import.meta.env.VITE_VAPIDKEY; 
 
 export const requestNotificationPermission = async () => {
   try {
-    // Check if the browser supports notifications
     if (!("Notification" in window)) {
       console.log("This browser does not support notifications");
       return null;

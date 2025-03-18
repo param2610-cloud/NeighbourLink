@@ -6,7 +6,6 @@ import SharedResourceList from "../PostCard/SharedResourceList ";
 import Sidebar from "./structures/Sidebar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
-// Define types for better type safety
 type FilterType = "all" | "post" | "resource";
 
 interface ResponderData {
@@ -86,7 +85,6 @@ function Profile() {
   useEffect(() => {
     const fetchMixedContent = async () => {
       try {
-        // Fetch posts
         const postsQuery = query(
           collection(db, "posts"),
           orderBy("createdAt", "desc")
@@ -98,7 +96,6 @@ function Profile() {
           type: "post",
         })) as Post[];
 
-        // Fetch shared resources
         const resourcesQuery = query(
           collection(db, "sharedResources"),
           orderBy("createdAt", "desc")
@@ -110,7 +107,6 @@ function Profile() {
           type: "resource",
         })) as SharedResource[];
 
-        // Combine and sort
         const combined = [...postsData, ...resourcesData].sort((a, b) => {
           const timeA = a.createdAt?.toMillis?.() || 0;
           const timeB = b.createdAt?.toMillis?.() || 0;
@@ -126,7 +122,6 @@ function Profile() {
     fetchMixedContent();
   }, [updated]);
 
-  // Filter content based on selected filter
   const filteredContent = mixedContent.filter((item) =>
     selectedFilter === "all" ? true : item.type === selectedFilter
   );

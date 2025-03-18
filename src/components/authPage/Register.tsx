@@ -5,7 +5,7 @@ import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
 import {  uploadFileToS3 } from "@/utils/aws/aws";
-import { motion, AnimatePresence } from "framer-motion"; // Add framer-motion import
+import { motion, AnimatePresence } from "framer-motion"; 
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ function Register() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [radius, setRadius] = useState(2); // Default 2km radius
+  const [radius, setRadius] = useState(2); 
   const [lat, setLat] = useState<number>();
   const [lon, setLon] = useState<number>();
   const [notifyEmergency, setNotifyEmergency] = useState(true);
@@ -108,7 +108,6 @@ function Register() {
           position: "top-center",
         });
 
-        // Redirect to login or home page
         setTimeout(() => {
           window.location.href = "/login";
         }, 2000);
@@ -126,7 +125,6 @@ function Register() {
     }
   };
 
-  // Animation variants
   const pageVariants = {
     initial: { opacity: 0, x: 100 },
     in: { opacity: 1, x: 0 },
