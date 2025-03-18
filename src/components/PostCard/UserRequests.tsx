@@ -5,10 +5,11 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import PostList from "../PostCard/PostList";
 import { IoMdAdd } from "react-icons/io";
 import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
-interface ResponderData{
-    userId:string;
-    accepted:boolean;
+interface ResponderData {
+    userId: string;
+    accepted: boolean;
 }
 
 interface Post {
@@ -22,7 +23,7 @@ interface Post {
     urgency: boolean;
     userId: string;
     type: string;
-    responders:[ResponderData];
+    responders: [ResponderData];
 }
 
 function UserRequests() {
@@ -31,6 +32,7 @@ function UserRequests() {
     const [updated, setUpdated] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const navigate=useNavigate();
 
     useEffect(() => {
         // Set up auth state listener
@@ -110,7 +112,7 @@ function UserRequests() {
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">My Requests</h1>
                 <div className="flex gap-2 justify-start mb-3 items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
-                onClick={() => window.location.href = "/"}
+                    onClick={() => navigate('/')}
                 ><FaArrowLeft /> Back</div>
 
                 {error && renderIndexingError()}

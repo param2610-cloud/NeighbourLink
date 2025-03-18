@@ -5,21 +5,22 @@ import { Conversation, getUserConversations } from '../../services/messagingServ
 import { formatDistanceToNow } from 'date-fns';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
+import { FaArrowLeft } from 'react-icons/fa';
 
 const MessagesList = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
+  const [userProfiles, setUserProfiles] = useState<{ [key: string]: any }>({});
   const navigate = useNavigate();
   const currentUserId = auth.currentUser?.uid;
 
   useEffect(() => {
     if (!currentUserId) return;
-    
+
     const unsubscribe = getUserConversations(currentUserId, (convoList) => {
       setConversations(convoList);
       setLoading(false);
-      
+
       const userIds = new Set<string>();
       convoList.forEach(convo => {
         convo.participants.forEach(userId => {
@@ -28,23 +29,23 @@ const MessagesList = () => {
           }
         });
       });
-      
+
       fetchUserProfiles(Array.from(userIds));
     });
-    
+
     return () => unsubscribe();
   }, [currentUserId]);
-  
+
   const fetchUserProfiles = async (userIds: string[]) => {
-    const profiles: {[key: string]: any} = {};
-    
-   
+    const profiles: { [key: string]: any } = {};
+
+
     await Promise.all(
       userIds.map(async (userId) => {
         try {
           const { getDoc, doc } = await import('firebase/firestore');
           const userDoc = await getDoc(doc(db, 'users', userId));
-          
+
           if (userDoc.exists()) {
             profiles[userId] = {
               id: userId,
@@ -56,30 +57,30 @@ const MessagesList = () => {
         }
       })
     );
-    
+
     setUserProfiles(profiles);
   };
-  
+
   const getOtherParticipant = (conversation: Conversation) => {
     const otherUserId = conversation.participants.find(id => id !== currentUserId);
     return otherUserId ? userProfiles[otherUserId] : null;
   };
-  
+
   const getConversationTitle = (conversation: Conversation) => {
     const otherUser = getOtherParticipant(conversation);
-    
+
     if (conversation.postTitle) {
       return `Re: ${conversation.postTitle}`;
     }
-    
-    return otherUser ? 
-      (otherUser.displayName || otherUser.firstName || 'Unknown User') : 
+
+    return otherUser ?
+      (otherUser.displayName || otherUser.firstName || 'Unknown User') :
       'Conversation';
   };
-  
+
   const formatTimestamp = (timestamp: any) => {
     if (!timestamp) return '';
-    
+
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
       return formatDistanceToNow(date, { addSuffix: true });
@@ -105,8 +106,11 @@ const MessagesList = () => {
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       <div className="p-4 border-b dark:border-gray-700">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Messages</h1>
+        <div className="flex gap-2 justify-start mb-3 items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
+          onClick={() => navigate('/')}
+        ><FaArrowLeft /> Back</div>
       </div>
-      
+
       {conversations.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,10 +126,10 @@ const MessagesList = () => {
           {conversations.map((conversation) => {
             const otherUser = getOtherParticipant(conversation);
             const unreadCount = conversation.unreadCount?.[currentUserId || ''] || 0;
-            
+
             return (
-              <div 
-                key={conversation.id} 
+              <div
+                key={conversation.id}
                 className="border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={() => conversation.id && navigateToChat(conversation.id)}
               >
@@ -148,7 +152,7 @@ const MessagesList = () => {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Message preview */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline">
@@ -159,16 +163,15 @@ const MessagesList = () => {
                         {formatTimestamp(conversation.lastMessage?.timestamp || conversation.updatedAt)}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-1">
-                      <p className={`text-sm truncate ${
-                        unreadCount > 0 
-                          ? 'text-gray-900 dark:text-white font-medium' 
+                      <p className={`text-sm truncate ${unreadCount > 0
+                          ? 'text-gray-900 dark:text-white font-medium'
                           : 'text-gray-500 dark:text-gray-400'
-                      }`}>
+                        }`}>
                         {conversation.lastMessage?.text || 'No messages yet'}
                       </p>
-                      
+
                       {unreadCount > 0 && (
                         <span className="bg-indigo-600 text-white text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
                           {unreadCount}
