@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { AiOutlineLoading3Quarters, AiOutlineUser, AiOutlineMail, AiOutlinePhone, AiOutlineHome } from "react-icons/ai";
 import { deleteFileFromS3, getPreSignedUrl, uploadFileToS3 } from "@/utils/aws/aws";
 import { useNavigate } from "react-router-dom";
+import Bottombar from "../authPage/structures/Bottombar";
 
 function ProfileCard() {
   // State management
@@ -392,6 +393,7 @@ function ProfileCard() {
           </div>
         )}
       </div>
+      <Bottombar/>
     </div>
   );
 }

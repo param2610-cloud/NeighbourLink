@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { FaArrowLeft } from 'react-icons/fa';
+import Bottombar from '../authPage/structures/Bottombar';
 
 const MessagesList = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -185,6 +186,7 @@ const MessagesList = () => {
           })}
         </div>
       )}
+      <Bottombar/>
     </div>
   );
 };

@@ -5,13 +5,13 @@ import { db, auth } from "../firebase";
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
-import { BiSearchAlt, BiMessageDetail } from "react-icons/bi";
+import { BiSearchAlt } from "react-icons/bi";
 import { MdOutlineWarning } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
-import { AiOutlineHome } from "react-icons/ai";
 import { ImageDisplay } from "../components/AWS/UploadFile";
 import { motion } from "framer-motion"; 
 import Sidebar from "../components/authPage/structures/Sidebar"; 
+import Bottombar from "@/components/authPage/structures/Bottombar";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -599,43 +599,7 @@ useEffect(() => {
           <FaPlus />
         </button>
         
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md md:left-64">
-          <div className="flex justify-around p-3">
-            <button 
-              onClick={() => navigate("/")} 
-              className="flex flex-col items-center text-indigo-600 dark:text-indigo-400"
-            >
-              <AiOutlineHome className="text-xl" />
-              <span className="text-xs mt-1">Home</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/search")} 
-              className="flex flex-col items-center text-gray-600 dark:text-gray-400"
-            >
-              <BiSearchAlt className="text-xl" />
-              <span className="text-xs mt-1">Search</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/messages")} 
-              className="flex flex-col items-center text-gray-600 dark:text-gray-400"
-            >
-              <BiMessageDetail className="text-xl" />
-              <span className="text-xs mt-1">Messages</span>
-            </button>
-            
-            <button 
-              onClick={() => navigate("/profileCard")} 
-              className="flex flex-col items-center text-gray-600 dark:text-gray-400"
-            >
-              <CgProfile className="text-xl" />
-              <span className="text-xs mt-1">Profile</span>
-
-            </button>
-          </div>
-        </div>
+        <Bottombar/>
       </div>
     </div>
   );

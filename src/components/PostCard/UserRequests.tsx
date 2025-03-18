@@ -125,7 +125,7 @@ function UserRequests() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div className="w-full p-3 ">
                             <div className="w-full h-full flex justify-center items-center bg-neutral-50 dark:bg-neutral-600 rounded-lg shadow p-4 md:p-6"
-                                onClick={() => window.location.href = "/profile/rqform"}
+                                onClick={() => navigate('/resource/need')}
                             >
                                 <div className="w-56 h-56 rounded-full p-4 md:p-6 flex items-center justify-center border-4 border-dashed border-gray-300 dark:border-gray-300 text-gray-400 dark:text-gray-300">
                                     <IoMdAdd size={80} />

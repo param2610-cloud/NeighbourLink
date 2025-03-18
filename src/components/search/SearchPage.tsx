@@ -11,6 +11,7 @@ import SharedResourceList from '@/components/PostCard/SharedResourceList ';
 import SearchResultMap from './SearchResultMap';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import Bottombar from '../authPage/structures/Bottombar';
 
 
 type ViewMode = 'list' | 'map';
@@ -553,6 +554,7 @@ const SearchPage: React.FC = () => {
           )}
         </div>
       </div>
+      <Bottombar />
     </div>
   );
 };

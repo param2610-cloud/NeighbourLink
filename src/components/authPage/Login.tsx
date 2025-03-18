@@ -4,17 +4,19 @@ import { auth } from "../../firebase";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate= useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("User logged in Successfully");
-      window.location.href = "/profile";
+      navigate('/')
       toast.success("User logged in Successfully", {
         position: "top-center",
       });
@@ -38,7 +40,7 @@ function Login() {
       <div className="flex items-center justify-center min-h-screen bg-transparent absolute top-0 left-0 w-full">
         <button
           className="absolute flex justify-center items-center gap-3 top-4 left-4 px-4 py-2 bg-transparent text-xl text-gray-100 font-medium focus:outline-none  hover:cursor-pointer"
-          onClick={() => (window.location.href = "/")}
+          onClick={() => navigate('/')}
         >
           <FaArrowAltCircleLeft size={25} /> Back to Home
         </button>

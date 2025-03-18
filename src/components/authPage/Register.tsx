@@ -4,8 +4,10 @@ import { auth, db } from "../../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
-import {  uploadFileToS3 } from "@/utils/aws/aws";
-import { motion, AnimatePresence } from "framer-motion"; 
+import { uploadFileToS3 } from "@/utils/aws/aws";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { useMobileContext } from "@/contexts/MobileContext";
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -17,7 +19,7 @@ function Register() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [radius, setRadius] = useState(2); 
+  const [radius, setRadius] = useState(2);
   const [lat, setLat] = useState<number>();
   const [lon, setLon] = useState<number>();
   const [notifyEmergency, setNotifyEmergency] = useState(true);
@@ -26,6 +28,8 @@ function Register() {
   const [currentStep, setCurrentStep] = useState<number>(1)
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
+  const navigate = useNavigate();
+  const { isMobile } = useMobileContext();
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -62,7 +66,7 @@ function Register() {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleRegister = async (e:any) => {
+  const handleRegister = async (e: any) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -109,7 +113,7 @@ function Register() {
         });
 
         setTimeout(() => {
-          window.location.href = "/login";
+          navigate('/login')
         }, 2000);
       }
     } catch (err: unknown) {
@@ -146,12 +150,12 @@ function Register() {
       />
       <button
         className="absolute flex justify-center items-center gap-3 top-6 left-6 px-4 py-2 text-white font-medium rounded-md shadow-sm focus:outline-none hover:bg-black/20 transition-colors"
-        onClick={() => (window.location.href = "/")}
+        onClick={() => navigate('/')}
       >
         <FaArrowAltCircleLeft size={22} /> Back to Home
       </button>
       <div className="absolute top-0 left-0 flex items-center justify-center min-h-screen w-full px-4 py-8">
-        <motion.div 
+        <motion.div
           className="bg-white/10 backdrop-blur-md rounded-lg shadow-xl overflow-hidden max-w-4xl w-full flex"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,66 +164,78 @@ function Register() {
           {/* Left Panel */}
           <div className="bg-blue-900/70 text-white p-8 w-1/3 flex flex-col">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Create Account</h2>
+              <h2 className={`${isMobile? 'text-lg':'text-2xl'} font-bold mb-4`}>Create Account</h2>
               <div className="h-1 w-16 bg-yellow-400 rounded-full"></div>
             </div>
 
             {/* Steps */}
-            <div className="flex-1">
-              <motion.div 
+            <div className={`flex-1 ${isMobile?'ps-3':''}`}>
+              <motion.div
                 className="flex items-center mb-6"
                 whileHover={{ x: 5 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                <motion.div 
+                <motion.div
                   className={`w-8 h-8 flex items-center justify-center rounded-full ${currentStep >= 1 ? 'bg-yellow-400 text-blue-900' : 'bg-white/20'} mr-4`}
                   animate={{ scale: currentStep === 1 ? 1.1 : 1 }}
                 >
                   <FaUserAlt />
                 </motion.div>
-                <span className={`${currentStep === 1 ? 'font-bold' : ''}`}>Personal Information</span>
+                {
+                  !isMobile &&
+                  <span className={`${currentStep === 1 ? 'font-bold' : ''}`}>Personal Information</span>
+                }
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="flex items-center mb-6"
                 whileHover={{ x: 5 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                <motion.div 
+                <motion.div
                   className={`w-8 h-8 flex items-center justify-center rounded-full ${currentStep >= 2 ? 'bg-yellow-400 text-blue-900' : 'bg-white/20'} mr-4`}
                   animate={{ scale: currentStep === 2 ? 1.1 : 1 }}
                 >
                   <FaMapMarkerAlt />
                 </motion.div>
-                <span className={`${currentStep === 2 ? 'font-bold' : ''}`}>Address & Location</span>
+                {
+                  !isMobile &&
+                  <span className={`${currentStep === 2 ? 'font-bold' : ''}`}>Address & Location</span>
+                }
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="flex items-center mb-6"
                 whileHover={{ x: 5 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                <motion.div 
+                <motion.div
                   className={`w-8 h-8 flex items-center justify-center rounded-full ${currentStep >= 3 ? 'bg-yellow-400 text-blue-900' : 'bg-white/20'} mr-4`}
                   animate={{ scale: currentStep === 3 ? 1.1 : 1 }}
                 >
                   <FaBell />
                 </motion.div>
-                <span className={`${currentStep === 3 ? 'font-bold' : ''}`}>Preferences</span>
+                {
+                  !isMobile &&
+                  <span className={`${currentStep === 3 ? 'font-bold' : ''}`}>Preferences</span>
+                }
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="flex items-center"
                 whileHover={{ x: 5 }}
                 transition={{ type: "spring", stiffness: 400 }}
               >
-                <motion.div 
+                <motion.div
                   className={`w-8 h-8 flex items-center justify-center rounded-full ${currentStep >= 4 ? 'bg-yellow-400 text-blue-900' : 'bg-white/20'} mr-4`}
                   animate={{ scale: currentStep === 4 ? 1.1 : 1 }}
                 >
                   <FaCamera />
                 </motion.div>
-                <span className={`${currentStep === 4 ? 'font-bold' : ''}`}>Profile Image</span>
+                {
+                  !isMobile &&
+                  <span className={`${currentStep === 4 ? 'font-bold' : ''}`}>Profile Image</span>
+                }
               </motion.div>
             </div>
 
@@ -234,7 +250,7 @@ function Register() {
             <form onSubmit={handleRegister} className="h-full flex flex-col">
               <AnimatePresence mode="wait">
                 {currentStep === 1 && (
-                  <motion.div 
+                  <motion.div
                     key="step1"
                     className="flex-1"
                     initial="initial"
@@ -316,7 +332,7 @@ function Register() {
                 )}
 
                 {currentStep === 2 && (
-                  <motion.div 
+                  <motion.div
                     key="step2"
                     className="flex-1"
                     initial="initial"
@@ -354,7 +370,7 @@ function Register() {
                 )}
 
                 {currentStep === 3 && (
-                  <motion.div 
+                  <motion.div
                     key="step3"
                     className="flex-1"
                     initial="initial"
@@ -418,7 +434,7 @@ function Register() {
                 )}
 
                 {currentStep === 4 && (
-                  <motion.div 
+                  <motion.div
                     key="step4"
                     className="flex-1"
                     initial="initial"
@@ -463,7 +479,7 @@ function Register() {
               {/* Error Message */}
               <AnimatePresence>
                 {error && (
-                  <motion.div 
+                  <motion.div
                     className="bg-red-500/20 border border-red-500/30 text-white p-3 rounded-md mb-4"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
