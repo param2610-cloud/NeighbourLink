@@ -3,7 +3,7 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { auth } from "../firebase";
 import Home from '@/pages/Home';
 
-const Profile = lazy(() => import('@/components/authPage/Profile'));
+// const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
 const ResourceForm = lazy(() => import('@/components/Forms/ResourceForm'));
 const LandingPage = lazy(() => import('@/components/landingpage/LandingPage'));
