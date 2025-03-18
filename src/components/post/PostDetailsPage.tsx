@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiOutlineWarning } from 'react-icons/ai';
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
@@ -12,6 +12,7 @@ import LocationViewer from '@/utils/ola/LocationViewer';
 import PostResponders from './PostResponders';
 import ContactResponder from '../PostCard/modal/ContactResponder';
 import { useAuth } from '@/context/AuthContext'; // Import auth context to get current user
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface Post {
   id?: string;
@@ -61,6 +62,20 @@ const PostDetailsPage = () => {
     const [showContactModal, setShowContactModal] = useState<boolean>(false);
     const [selectedResponder, setSelectedResponder] = useState<UserData | null>(null);
     const { currentUser } = useAuth(); // Get current user from auth context
+    const [firebaseUser, setFirebaseUser] = useState<any>(null);
+    
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setFirebaseUser(user);
+            
+            console.log("Auth state changed:", user);
+        });
+        
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, []);
+    console.log(firebaseUser);
+    
     
     const getCategoryIcon = (category: string) => {
         switch (category.toLowerCase()) {
@@ -142,7 +157,7 @@ const PostDetailsPage = () => {
         if (id) {
             fetchData();
         }
-    }, [id, currentUser]); // Added currentUser as dependency
+    }, [id, firebaseUser]); // Added firebaseUser as dependency
     
     
     const navigateImage = (direction: 'next' | 'prev') => {
@@ -162,7 +177,7 @@ const PostDetailsPage = () => {
         if (!post?.userId) return;
         
         // If this is the post owner, navigate to see responders
-        if (currentUser?.uid === post.userId) {
+        if (firebaseUser?.uid === post.userId) {
             navigate(`/messages/${post.userId}`);
         } else {
             // Otherwise, check if there are responders to contact
@@ -173,6 +188,8 @@ const PostDetailsPage = () => {
             }
         }
     };
+    console.log(firebaseUser?.uid !== post?.userId , hasResponders);
+    
     
     const handleSelectResponder = (responder: UserData) => {
         setSelectedResponder(responder);
@@ -183,7 +200,7 @@ const PostDetailsPage = () => {
         if (!post) return "Contact";
         
         // Remove debugging console.log
-        if (currentUser?.uid === post?.userId) {
+        if (firebaseUser?.uid === post?.userId) {
             return "View Messages";
         }
         
@@ -356,7 +373,7 @@ const PostDetailsPage = () => {
                 )}
                 
                 {/* Responders section - only visible to post owner */}
-                {currentUser?.uid === post.userId && (
+                {firebaseUser?.uid === post.userId && (
                     <div className="mb-6">
                         <PostResponders 
                             postId={post.id!} 
@@ -383,11 +400,11 @@ const PostDetailsPage = () => {
                     <button 
                         onClick={handleContact}
                         className={`w-full py-3 ${
-                            currentUser?.uid === post.userId || hasResponders 
+                            firebaseUser?.uid === post.userId || hasResponders 
                                 ? 'bg-indigo-600 hover:bg-indigo-700'
                                 : 'bg-indigo-400 cursor-not-allowed'
                         } text-white rounded-lg flex items-center justify-center font-medium`}
-                        disabled={!currentUser || (currentUser.uid !== post.userId && !hasResponders)}
+                        disabled={ firebaseUser.uid !== post.userId && hasResponders}
                     >
                         <BiMessageDetail className="mr-2" /> {getContactButtonText()}
                     </button>
@@ -403,7 +420,7 @@ const PostDetailsPage = () => {
                         }}
                         responder={selectedResponder}
                         postTitle={post.title}
-                        currentUserId={currentUser?.uid || ''}
+                        currentUserId={firebaseUser?.uid || ''}
                     />
                 )}
                 

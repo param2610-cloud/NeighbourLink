@@ -348,21 +348,6 @@ useEffect(() => {
             </div>
           </div>
           
-          {/* Filter Controls */}
-          <div className="flex gap-5 justify-end p-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-2">
-              <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
-              <select
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-                className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              >
-                <option value="all">All</option>
-                <option value="need">Needs</option>
-                <option value="offer">Offers</option>
-              </select>
-            </div>
-          </div>
         </div>
         
         {/* Emergency Alerts Banner */}
@@ -502,12 +487,18 @@ useEffect(() => {
         <div className="flex-1 px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Feed</h3>
-            <button 
-              onClick={() => navigate("/filter")} 
-              className="text-sm text-indigo-600 dark:text-indigo-400"
-            >
-              Filter
-            </button>
+            <div className="flex items-center space-x-2">
+              <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
+              <select
+                value={selectedFilter}
+                onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
+                className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="all">All</option>
+                <option value="need">Needs</option>
+                <option value="offer">Offers</option>
+              </select>
+            </div>
           </div>
           
           {loading ? (
