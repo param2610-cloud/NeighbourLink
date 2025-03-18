@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v4 as uuidv4 } from 'uuid';
 
 
 const s3Client = new S3Client( {
@@ -82,3 +83,7 @@ export async function getSignedImageUrl(objectKey:string) {
     throw error;
   }
 }
+export const createUniqueFileName = (originalName: string): string => {
+  const extension = originalName.split('.').pop() || '';
+  return `${uuidv4()}.${extension}`;
+};
