@@ -113,7 +113,7 @@ function Register() {
         });
 
         setTimeout(() => {
-          navigate('/login')
+          navigate('/')
         }, 2000);
       }
     } catch (err: unknown) {
