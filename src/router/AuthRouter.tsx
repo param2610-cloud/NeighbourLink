@@ -30,8 +30,7 @@ const AuthRouter: React.FC = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        <Route index element={<Profile />} />
-        <Route path="/profile" element={<Home />} />
+        <Route index element={<Home />} />
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />

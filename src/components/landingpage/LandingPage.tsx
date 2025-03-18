@@ -8,13 +8,17 @@ const LandingPage = () => {
 
   const [bgImage, setBgImage] = useState('bg-1')
   const [, setPrevImage] = useState('');
-  const [mobileMenuOpen,] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>();
+  
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
     });
-  });
+    
+    // Clean up subscription
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -72,15 +76,6 @@ const LandingPage = () => {
               </div>
 
 
-              {/* <div className="flex items-center">
-          <a href="register" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign Up</a>
-          <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div> */}
-
               <div className="flex items-center">
                 {
                   user ?
@@ -88,27 +83,37 @@ const LandingPage = () => {
                     :
                     <a href="login" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign In</a>
                 }
-                {/* <button className="md:hidden p-2 rounded-md text-gray-600 hover:text-indigo-600 focus:outline-none" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                {/* Uncomment and fix mobile menu button */}
+                <button className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-200 hover:text-indigo-600 focus:outline-none" 
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Toggle mobile menu">
                   <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
-                </button> */}
+                </button>
               </div>
             </div>
           </div>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ scale: 0 }} // start from the right
-              animate={{ scale: 1 }} // animate to the left
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="#features" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Features</a>
-                <a href="#how-it-works" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">How It Works</a>
-                <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Testimonials</a>
-                <a href="#download" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-indigo-100 hover:text-indigo-600 transition duration-300">Download</a>
-                <a href="/register" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign Up</a>
-                <a href="/login" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign In</a>
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white dark:bg-neutral-800">
+                <a href="#features" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-200 hover:bg-indigo-100 dark:hover:bg-neutral-700 hover:text-indigo-600 transition duration-300">Features</a>
+                <a href="#how-it-works" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-200 hover:bg-indigo-100 dark:hover:bg-neutral-700 hover:text-indigo-600 transition duration-300">How It Works</a>
+                <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-200 hover:bg-indigo-100 dark:hover:bg-neutral-700 hover:text-indigo-600 transition duration-300">Testimonials</a>
+                <a href="#download" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-200 hover:bg-indigo-100 dark:hover:bg-neutral-700 hover:text-indigo-600 transition duration-300">Download</a>
+                {!user && (
+                  <>
+                    <a href="/register" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign Up</a>
+                    <a href="/login" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Sign In</a>
+                  </>
+                )}
+                {user && (
+                  <a href="/profile" className="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 hover:bg-opacity-90 transition duration-300">Profile</a>
+                )}
               </div>
             </motion.div>
           )}
