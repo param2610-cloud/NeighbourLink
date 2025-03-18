@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc} from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiOutlineWarning } from 'react-icons/ai';
 import { BiMessageDetail } from 'react-icons/bi';
@@ -9,7 +9,9 @@ import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from 'react-icons/fa';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { Timestamp } from 'firebase/firestore';
 import LocationViewer from '@/utils/ola/LocationViewer';
-
+import PostResponders from './PostResponders';
+import ContactResponder from '../PostCard/modal/ContactResponder';
+import { useAuth } from '@/context/AuthContext'; // Import auth context to get current user
 
 interface Post {
   id?: string;
@@ -31,13 +33,20 @@ interface Post {
   createdAt: Timestamp;
 }
 
-
 interface UserInfo {
   displayName: string;
   photoURL: string;
   email: string;
   verified?: boolean;
   rating?: number;
+}
+
+interface UserData {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    photoURL?: string;
 }
 
 const PostDetailsPage = () => {
@@ -48,7 +57,10 @@ const PostDetailsPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [providerInfo, setProviderInfo] = useState<UserInfo | null>(null);
-    
+    const [hasResponders, setHasResponders] = useState<boolean>(false);
+    const [showContactModal, setShowContactModal] = useState<boolean>(false);
+    const [selectedResponder, setSelectedResponder] = useState<UserData | null>(null);
+    const { currentUser } = useAuth(); // Get current user from auth context
     
     const getCategoryIcon = (category: string) => {
         switch (category.toLowerCase()) {
@@ -97,6 +109,12 @@ const PostDetailsPage = () => {
                     if (!postData.isAnonymous) {
                         await fetchUserInfo(postData.userId);
                     }
+                    
+                    // Check if there are any responders
+                    const responsesQuery = query(collection(db, "responses"), where("postId", "==", id));
+                    const responseSnapshots = await getDocs(responsesQuery);
+                    
+                    setHasResponders(!responseSnapshots.empty);
                 } else {
                     setError("Post not found");
                 }
@@ -121,8 +139,10 @@ const PostDetailsPage = () => {
             }
         };
         
-        fetchData();
-    }, [id]);
+        if (id) {
+            fetchData();
+        }
+    }, [id, currentUser]); // Added currentUser as dependency
     
     
     const navigateImage = (direction: 'next' | 'prev') => {
@@ -137,9 +157,41 @@ const PostDetailsPage = () => {
     
     
     const handleContact = () => {
+        console.log(post);
+        
         if (!post?.userId) return;
         
-        navigate(`/messages/${post.userId}`);
+        // If this is the post owner, navigate to see responders
+        if (currentUser?.uid === post.userId) {
+            navigate(`/messages/${post.userId}`);
+        } else {
+            // Otherwise, check if there are responders to contact
+            if (hasResponders) {
+                setShowContactModal(true);
+            } else {
+                navigate(`/messages/${post.userId}`);
+            }
+        }
+    };
+    
+    const handleSelectResponder = (responder: UserData) => {
+        setSelectedResponder(responder);
+        setShowContactModal(true);
+    };
+    
+    const getContactButtonText = () => {
+        if (!post) return "Contact";
+        
+        // Remove debugging console.log
+        if (currentUser?.uid === post?.userId) {
+            return "View Messages";
+        }
+        
+        if (post.postType === 'offer') {
+            return "Request this Resource";
+        } else {
+            return "Offer Help";
+        }
     };
 
     if (loading) {
@@ -303,6 +355,17 @@ const PostDetailsPage = () => {
                     </div>
                 )}
                 
+                {/* Responders section - only visible to post owner */}
+                {currentUser?.uid === post.userId && (
+                    <div className="mb-6">
+                        <PostResponders 
+                            postId={post.id!} 
+                            onSelectResponder={handleSelectResponder} 
+                            postTitle={post.title}
+                        />
+                    </div>
+                )}
+                
                 {/* Action buttons */}
                 <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
                     <div className="flex justify-between mb-3">
@@ -319,11 +382,30 @@ const PostDetailsPage = () => {
                     
                     <button 
                         onClick={handleContact}
-                        className="w-full py-3 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-medium hover:bg-indigo-700"
+                        className={`w-full py-3 ${
+                            currentUser?.uid === post.userId || hasResponders 
+                                ? 'bg-indigo-600 hover:bg-indigo-700'
+                                : 'bg-indigo-400 cursor-not-allowed'
+                        } text-white rounded-lg flex items-center justify-center font-medium`}
+                        disabled={!currentUser || (currentUser.uid !== post.userId && !hasResponders)}
                     >
-                        <BiMessageDetail className="mr-2" /> Contact
+                        <BiMessageDetail className="mr-2" /> {getContactButtonText()}
                     </button>
                 </div>
+                
+                {/* Contact Modal */}
+                {selectedResponder && showContactModal && (
+                    <ContactResponder
+                        isOpen={showContactModal}
+                        onClose={() => {
+                            setShowContactModal(false);
+                            setSelectedResponder(null);
+                        }}
+                        responder={selectedResponder}
+                        postTitle={post.title}
+                        currentUserId={currentUser?.uid || ''}
+                    />
+                )}
                 
                 {/* Spacer for fixed bottom bar */}
                 <div className="h-32"></div>

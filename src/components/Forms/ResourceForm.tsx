@@ -7,6 +7,7 @@ import { uploadFileToS3 } from "@/utils/aws/aws";
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { ImageDisplay } from "../AWS/UploadFile";
+import { useNavigate } from "react-router-dom";
 
 interface ResourceFormProps {
   userId: string;
@@ -460,12 +461,12 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         return null;
     }
   };
-
+const navigate = useNavigate()
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-400 to-purple-300 dark:bg-gradient-to-br dark:from-gray-900 dark:to-blue-900">
       <button
         className="absolute top-4 left-10 px-4 py-2 bg-gray-300 text-gray-800 font-medium rounded-md shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-        onClick={() => (window.location.href = "/profile")}
+        onClick={() => navigate(-1)}
       >
         <IoMdArrowRoundBack />
       </button>
