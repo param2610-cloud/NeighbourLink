@@ -9,6 +9,7 @@ import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from 'react-icons/fa';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { Timestamp } from 'firebase/firestore';
 import LocationViewer from '@/utils/ola/LocationViewer';
+import FallbackMap from '@/components/maps/FallbackMap';
 import PostResponders from './PostResponders';
 import ContactResponder from '../PostCard/modal/ContactResponder';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -63,6 +64,7 @@ const PostDetailsPage = () => {
     const [showContactModal, setShowContactModal] = useState<boolean>(false);
     const [selectedResponder, setSelectedResponder] = useState<UserData | null>(null);
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
+    const [mapError, setMapError] = useState<boolean>(false);
     
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -361,10 +363,23 @@ const PostDetailsPage = () => {
                     <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Location</h2>
                     
                     {post.coordinates && (
-                            <LocationViewer lat={post.coordinates.lat.toString()} lon={post.coordinates.lng.toString()}/>
-                        
-                        
-                        
+                        <>
+                            {!mapError ? (
+                                <div className="relative">
+                                    <LocationViewer 
+                                        lat={post.coordinates.lat.toString()} 
+                                        lon={post.coordinates.lng.toString()} 
+                                        onError={() => setMapError(true)}
+                                    />
+                                </div>
+                            ) : (
+                                <FallbackMap 
+                                    lat={post.coordinates.lat} 
+                                    lng={post.coordinates.lng}
+                                    location={post.location}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
                 

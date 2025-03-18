@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../../firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import { uploadFileToS3 } from "@/utils/aws/aws";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
+import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaMapMarkerAlt } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { ImageDisplay } from "../AWS/UploadFile";
 import { useNavigate } from "react-router-dom";
@@ -34,17 +34,54 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   const totalSteps = 5;
   
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [userDefaultCoordinates, setUserDefaultCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationType, setLocationType] = useState<"default" | "custom">("default");
+  const [locationError, setLocationError] = useState<string>("");
+
+  // Fetch user's default location from Firestore
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      try {
+        const userDoc = await getDoc(doc(db, "Users", userId));
+        if (userDoc.exists() && userDoc.data().location) {
+          const userData = userDoc.data();
+          const userLoc = {
+            lat: userData.location.latitude,
+            lng: userData.location.longitude
+          };
+          setUserDefaultCoordinates(userLoc);
+          setCoordinates(userLoc); // Set default coordinates initially
+          setLocation(userData.address || "");
+        } else {
+          toast.warning("User location not found. Please set your location.", {
+            position: "bottom-center"
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user location:", error);
+      }
+    };
+
+    if (userId) {
+      fetchUserLocation();
+    }
+  }, [userId]);
 
   const handleGetLocation = () => {
+    setLocationError("");
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
           setCoordinates({ lat: latitude, lng: longitude });
+          toast.success("Location fetched successfully!", {
+            position: "bottom-center",
+          });
         },
         (error) => {
           console.error("Error getting location:", error);
+          setLocationError("Unable to retrieve your location. Please enable location access.");
           toast.error("Unable to retrieve your location. Please enable location access.", {
             position: "bottom-center",
           });
@@ -52,14 +89,35 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
+      setLocationError("Geolocation is not supported by your browser.");
       toast.error("Geolocation is not supported by your browser.", {
         position: "bottom-center",
       });
     }
   };
 
-  
+  const useDefaultLocation = () => {
+    if (userDefaultCoordinates) {
+      setCoordinates(userDefaultCoordinates);
+      toast.success("Using your default location", {
+        position: "bottom-center",
+      });
+    } else {
+      toast.error("Default location not available. Please fetch your current location.", {
+        position: "bottom-center",
+      });
+      handleGetLocation();
+    }
+  };
 
+  const handleLocationTypeChange = (type: "default" | "custom") => {
+    setLocationType(type);
+    if (type === "default") {
+      useDefaultLocation();
+    } else {
+      setCoordinates(null); // Clear coordinates to force user to fetch new location
+    }
+  };
   
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -102,18 +160,27 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+    
+    // Validate that coordinates are available
+    if (!coordinates) {
+      toast.error("Location is required. Please set your location to continue.", {
+        position: "bottom-center",
+      });
+      setLocationError("Location is required. Please use your default location or fetch a new one.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      
       const finalCategory = category === "Other" ? customCategory : category;
-      handleGetLocation()
       
       const resourceData = {
         title,
         category: finalCategory,
         description,
-        urgencyLevel: urgency,
+        // Only include urgency for "need" posts
+        ...(postType === "need" && { urgencyLevel: urgency }),
         photoUrls,
         location,
         coordinates,
@@ -127,7 +194,9 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
 
       const docRef = await addDoc(collection(db, "posts"), resourceData);
       const postId = docRef.id;  // Get the ID of the newly created post
-      if (urgency === 3 && coordinates) {
+      
+      // Only send emergency notifications for "need" posts with emergency urgency
+      if (postType === "need" && urgency === 3 && coordinates) {
         // Send emergency notifications to nearby users
         await sendEmergencyNotification(
           postId, 
@@ -339,34 +408,39 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       case 4: 
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold dark:text-white">Urgency & Visibility</h3>
+            <h3 className="text-lg font-semibold dark:text-white">
+              {postType === "need" ? "Urgency & Visibility" : "Visibility Settings"}
+            </h3>
             
-            <div>
-              <label className="block text-sm font-medium dark:text-white text-gray-700">
-                Urgency Level:
-              </label>
-              <div className="mt-2">
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="1"
-                  value={urgency}
-                  onChange={(e) => setUrgency(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                />
+            {/* Only show urgency slider for "need" posts */}
+            {postType === "need" && (
+              <div>
+                <label className="block text-sm font-medium dark:text-white text-gray-700">
+                  Urgency Level:
+                </label>
+                <div className="mt-2">
+                  <input
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="1"
+                    value={urgency}
+                    onChange={(e) => setUrgency(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                  />
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-gray-500 dark:text-gray-400">Normal</span>
+                  <span className="text-yellow-500">Urgent</span>
+                  <span className="text-red-500">Emergency</span>
+                </div>
+                <p className="text-sm mt-1 text-gray-600 dark:text-gray-300">
+                  {urgency === 1 ? "Regular priority" : 
+                  urgency === 2 ? "Neighbors will see this post highlighted as urgent" : 
+                  "Emergency request will be pushed to the top and highly visible"}
+                </p>
               </div>
-              <div className="flex justify-between text-xs mt-1">
-                <span className="text-gray-500 dark:text-gray-400">Normal</span>
-                <span className="text-yellow-500">Urgent</span>
-                <span className="text-red-500">Emergency</span>
-              </div>
-              <p className="text-sm mt-1 text-gray-600 dark:text-gray-300">
-                {urgency === 1 ? "Regular priority" : 
-                 urgency === 2 ? "Neighbors will see this post highlighted as urgent" : 
-                 "Emergency request will be pushed to the top and highly visible"}
-              </p>
-            </div>
+            )}
             
             <div className="pt-2">
               <label className="block text-sm font-medium dark:text-white text-gray-700">
@@ -412,7 +486,63 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       case 5: 
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold dark:text-white">Review Your Post</h3>
+            <h3 className="text-lg font-semibold dark:text-white">Location & Review</h3>
+            
+            {/* Location selection section */}
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
+              <h4 className="text-md font-medium dark:text-white mb-2">Set Location</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                A location is required for your post to be visible to nearby neighbors
+              </p>
+              
+              <div className="flex gap-3 mb-3">
+                <button
+                  type="button"
+                  onClick={() => handleLocationTypeChange("default")}
+                  className={`flex-1 py-2 px-3 rounded-md ${
+                    locationType === "default" 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
+                  }`}
+                >
+                  Use Default Location
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleLocationTypeChange("custom")}
+                  className={`flex-1 py-2 px-3 rounded-md ${
+                    locationType === "custom" 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
+                  }`}
+                >
+                  Set Custom Location
+                </button>
+              </div>
+              
+              {locationType === "custom" && (
+                <button
+                  type="button"
+                  onClick={handleGetLocation}
+                  className="flex items-center justify-center w-full py-2 px-3 bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 rounded-md hover:bg-green-200 dark:hover:bg-green-700"
+                >
+                  <FaMapMarkerAlt className="mr-2" />
+                  Fetch Current Location
+                </button>
+              )}
+              
+              {locationError && (
+                <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded text-sm">
+                  {locationError}
+                </div>
+              )}
+              
+              {coordinates && (
+                <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded text-sm">
+                  Location set successfully! Your post will be visible to neighbors within {visibilityRadius}km.
+                </div>
+              )}
+            </div>
             
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center mb-2">
@@ -422,7 +552,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
                   {postType === "need" ? "Need" : "Offer"}
                 </span>
                 <span className="ml-2 text-sm font-medium dark:text-gray-300">{category === "Other" ? customCategory : category}</span>
-                {urgency > 1 && (
+                {postType === "need" && urgency > 1 && (
                   <span className={`ml-auto px-2 py-1 text-xs rounded ${
                     urgency === 2 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"
                   }`}>
@@ -473,7 +603,9 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         return null;
     }
   };
-const navigate = useNavigate()
+  
+  const navigate = useNavigate();
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-400 to-purple-300 dark:bg-gradient-to-br dark:from-gray-900 dark:to-blue-900">
       <button
