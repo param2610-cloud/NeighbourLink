@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { auth } from '../../firebase';
 import { Message, Conversation, getMessages, markConversationAsRead } from '../../services/messagingService';

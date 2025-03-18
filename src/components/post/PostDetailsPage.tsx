@@ -11,7 +11,6 @@ import { Timestamp } from 'firebase/firestore';
 import LocationViewer from '@/utils/ola/LocationViewer';
 import PostResponders from './PostResponders';
 import ContactResponder from '../PostCard/modal/ContactResponder';
-import { useAuth } from '@/context/AuthContext';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
 

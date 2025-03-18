@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { FiMapPin, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import { sendMessage } from '../../services/messagingService';

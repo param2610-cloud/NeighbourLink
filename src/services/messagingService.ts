@@ -150,7 +150,7 @@ export const sendMessage = async (
   
   // Update conversation with last message
   const participants = conversationData.participants;
-  const unreadCount = { ...conversationData.unreadCount } || {};
+  const unreadCount = conversationData.unreadCount ? { ...conversationData.unreadCount } : {};
   
   // Increment unread count for all participants except sender
   participants.forEach(userId => {

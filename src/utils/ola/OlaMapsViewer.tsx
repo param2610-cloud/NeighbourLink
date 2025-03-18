@@ -38,7 +38,7 @@ const OlaMapsViewer: React.FC<OlaMapsViewerProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapLoaded, ] = useState(false);
   
   // Load OlaMaps script dynamically
 

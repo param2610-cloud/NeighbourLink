@@ -79,7 +79,7 @@ useEffect(() => {
             const q = query(postsRef, orderBy("createdAt", "desc"));
             const querySnapshot = await getDocs(q);
             
-            const postsData: Post[] = [];
+            // const postsData: Post[] = [];
             const emergencyData: Post[] = [];
             
             // Create an array of promises to fetch all user data in parallel
