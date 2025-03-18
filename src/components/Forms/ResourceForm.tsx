@@ -8,6 +8,7 @@ import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { ImageDisplay } from "../AWS/UploadFile";
 import { useNavigate } from "react-router-dom";
+import { sendEmergencyNotification } from "@/services/notificationService";
 
 interface ResourceFormProps {
   userId: string;
@@ -125,6 +126,17 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       };
 
       const docRef = await addDoc(collection(db, "posts"), resourceData);
+      const postId = docRef.id;  // Get the ID of the newly created post
+      if (urgency === 3 && coordinates) {
+        // Send emergency notifications to nearby users
+        await sendEmergencyNotification(
+          postId, 
+          title,
+          description,
+          coordinates,
+          visibilityRadius
+        );
+      }
       console.log("Resource posted with ID: ", docRef.id);
 
       

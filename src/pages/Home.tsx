@@ -93,12 +93,10 @@ useEffect(() => {
                         const userDoc = await getDoc(doc(db, "Users", post.userId));
                         if (userDoc.exists()) {
                             const userData = userDoc.data();
-                            console.log(userData);
                             
                             post.userName = userData.firstName?`${userData.firstName} ${userData.lastName}`:userData.firstName || userData.lastName || userData.displayName || "User";
                             post.userPhoto = userData.photo || null;
                         }
-                        console.log(post);
                         
                     } catch (userError) {
                         console.error("Error fetching user data:", userError);
