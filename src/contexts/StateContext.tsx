@@ -23,11 +23,12 @@ export const useStateContext = () => {
 
 export const StateProvider: React.FC<StateProviderProps> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-
+    
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
             setUser(user);
         });
+        
 
         // Cleanup subscription on unmount
         return () => unsubscribe();

@@ -3,21 +3,37 @@ import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
 import { Home, User, Users, FileText, Share, Inbox, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { auth, db } from "@/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 interface SidebarProps {
-  userDetails: {
-    firstName?: string;
-    lastName?: string;
-    photo?: string;
-  };
+  
   handleLogout: () => void;
   isSidebarOpen: boolean;
 }
 
-const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => {
+const Sidebar = ({  handleLogout, isSidebarOpen }: SidebarProps) => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [activePage, setActivePage] = useState("/home");
+  const [userDetails, setUserDetails] = useState<any>(null);
   const navigate= useNavigate();
+  useEffect(() => {
+    const fetchUserData = async () => {
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          const docRef = doc(db, "Users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserDetails(docSnap.data());
+          } else {
+            console.log("No such document!");
+          }
+        }
+      });
+    };
+
+    fetchUserData();
+  }, []);
 
   useEffect(() => {
     // Get current path and set active page

@@ -284,7 +284,7 @@ useEffect(() => {
         } md:translate-x-0 transition-transform duration-300 z-40`}
       >
         <Sidebar
-          userDetails={userDetails}
+          // userDetails={userDetails}
           handleLogout={handleLogout}
           isSidebarOpen={isSidebarOpen}
         />
