@@ -22,8 +22,6 @@ const QuickResponses = [
 const MessageInput: React.FC<MessageInputProps> = ({ 
   conversationId,
   currentUserId,
-  otherUserId,
-  postId
 }) => {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -53,7 +51,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setUploadProgress(0);
     
     const uploadedUrls: string[] = [];
-    let currentProgress = 0;
+    // let currentProgress = 0;
     
     try {
       for (let i = 0; i < files.length; i++) {

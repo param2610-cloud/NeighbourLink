@@ -21,8 +21,6 @@ import ProfileCard from "./components/ProfileCard/ProfileCard";
 import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
 import UploadFiletoAWS from "./components/AWS/UploadFile";
 import Home from "./pages/Home";
-import MessagesList from './components/messaging/MessagesList';
-import ChatDetail from './components/messaging/ChatDetail';
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);

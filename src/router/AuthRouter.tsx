@@ -4,11 +4,12 @@ import { auth } from "../firebase";
 import Home from '@/pages/Home';
 import MessagesList from '@/components/messaging/MessagesList';
 import ChatDetail from '@/components/messaging/ChatDetail';
+import LandingPage from '@/components/landingpage/LandingPage';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
 const ResourceForm = lazy(() => import('@/components/Forms/ResourceForm'));
-const LandingPage = lazy(() => import('@/components/landingpage/LandingPage'));
+// const LandingPage = lazy(() => import('@/components/landingpage/LandingPage'));
 const UserRequests = lazy(() => import('@/components/PostCard/UserRequests'));
 const UserSharedResources = lazy(() => import('@/components/PostCard/UserSharedResources'));
 const SearchPage = lazy(() => import('@/components/search/SearchPage'));
