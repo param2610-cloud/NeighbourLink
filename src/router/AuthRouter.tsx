@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { auth } from "../firebase";
 import Home from '@/pages/Home';
@@ -46,6 +46,7 @@ const AuthRouter: React.FC = () => {
         <Route path="/messages" element={<MessagesList />} />
         <Route path="/messages/:conversationId" element={<ChatDetail />} />
         <Route path='/emergency/posts' element={<EmergencyPosts/>}/>
+        <Route path='/register' element={<Navigate to="/"/>}/>
       </Routes>
     </Suspense>
   );
