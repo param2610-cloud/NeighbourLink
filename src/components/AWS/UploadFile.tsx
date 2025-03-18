@@ -55,11 +55,12 @@ const UploadFiletoAWS = () => {
   );
 };
 
-type ImageDisplayProps = {
-  objectKey: string; 
-};
+export interface ImageDisplayProps {
+  objectKey: string;
+  className?: string; // Make className optional
+}
 
-const ImageDisplay = ({ objectKey }: ImageDisplayProps) => {
+export const ImageDisplay: React.FC<ImageDisplayProps> = ({ objectKey, className = '' }) => {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,8 +84,7 @@ const ImageDisplay = ({ objectKey }: ImageDisplayProps) => {
   if (loading) return <div>Loading image...</div>;
   if (error) return <div className="error">{error}</div>;
   
-  return <img src={imageUrl} alt="S3 Image" className="s3-image" />;
+  return <img src={imageUrl} alt="S3 Image" className={`s3-image ${className}`} />;
 };
 
 export default UploadFiletoAWS;
-export { ImageDisplay };

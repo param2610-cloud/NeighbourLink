@@ -11,8 +11,9 @@ import { Timestamp } from 'firebase/firestore';
 import LocationViewer from '@/utils/ola/LocationViewer';
 import PostResponders from './PostResponders';
 import ContactResponder from '../PostCard/modal/ContactResponder';
-import { useAuth } from '@/context/AuthContext'; // Import auth context to get current user
+import { useAuth } from '@/context/AuthContext';
 import { onAuthStateChanged } from 'firebase/auth';
+import { getOrCreateConversationWithUser } from '../../services/messagingService';
 
 interface Post {
   id?: string;
@@ -58,10 +59,9 @@ const PostDetailsPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [providerInfo, setProviderInfo] = useState<UserInfo | null>(null);
-    const [hasResponders, setHasResponders] = useState<boolean>(false);
+    const [, setHasResponders] = useState<boolean>(false);
     const [showContactModal, setShowContactModal] = useState<boolean>(false);
     const [selectedResponder, setSelectedResponder] = useState<UserData | null>(null);
-    const { currentUser } = useAuth(); // Get current user from auth context
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
     
     useEffect(() => {
@@ -171,24 +171,34 @@ const PostDetailsPage = () => {
     };
     
     
-    const handleContact = () => {
+    const handleContact = async () => {
         console.log(post);
         
-        if (!post?.userId) return;
+        if (!post?.userId || !firebaseUser?.uid) return;
         
-        // If this is the post owner, navigate to see responders
-        if (firebaseUser?.uid === post.userId) {
-            navigate(`/messages/${post.userId}`);
-        } else {
-            // Otherwise, check if there are responders to contact
-            if (hasResponders) {
-                setShowContactModal(true);
-            } else {
-                navigate(`/messages/${post.userId}`);
+        try {
+            // If this is the post owner, navigate to see responders
+            if (firebaseUser.uid === post.userId) {
+                navigate(`/messages`);
+                return;
             }
+            
+            // Create or get existing conversation about this post
+            const conversationId = await getOrCreateConversationWithUser(
+                firebaseUser.uid,
+                post.userId,
+                post.id,
+                post.title,
+                post.photoUrls?.[0]
+            );
+            
+            // Navigate to the conversation
+            navigate(`/messages/${conversationId}`);
+        } catch (error) {
+            console.error("Error creating conversation:", error);
+            alert("Could not start conversation. Please try again.");
         }
     };
-    console.log(firebaseUser?.uid !== post?.userId , hasResponders);
     
     
     const handleSelectResponder = (responder: UserData) => {
@@ -400,11 +410,9 @@ const PostDetailsPage = () => {
                     <button 
                         onClick={handleContact}
                         className={`w-full py-3 ${
-                            firebaseUser?.uid === post.userId || hasResponders 
-                                ? 'bg-indigo-600 hover:bg-indigo-700'
-                                : 'bg-indigo-400 cursor-not-allowed'
+                            firebaseUser ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-400 cursor-not-allowed'
                         } text-white rounded-lg flex items-center justify-center font-medium`}
-                        disabled={ firebaseUser.uid !== post.userId && hasResponders}
+                        disabled={!firebaseUser}
                     >
                         <BiMessageDetail className="mr-2" /> {getContactButtonText()}
                     </button>

@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom';
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { auth } from "../firebase";
 import Home from '@/pages/Home';
+import MessagesList from '@/components/messaging/MessagesList';
+import ChatDetail from '@/components/messaging/ChatDetail';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
@@ -39,6 +41,8 @@ const AuthRouter: React.FC = () => {
         <Route path="/post/:id" element={<PostDetailsPage/>} />
         <Route path='/profile/auth/requests' element={<UserRequests/>} />
         <Route path='/profile/auth/shared-resources' element={<UserSharedResources/>} />
+        <Route path="/messages" element={<MessagesList />} />
+        <Route path="/messages/:conversationId" element={<ChatDetail />} />
       </Routes>
     </Suspense>
   );

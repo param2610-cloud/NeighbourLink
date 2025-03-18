@@ -30,7 +30,7 @@ const ThemeToggle: React.FC = () => {
   return (
     <button 
       onClick={toggleDarkMode} 
-      className="p-2 rounded-full h-12 w-12 items-center  bg-gray-700 dark:bg-gray-200 flex justify-center items-centerx  "
+      className="p-2 rounded-full h-12 w-12 items-center hidden  bg-gray-700 dark:bg-gray-200 flex justify-center items-centerx  "
     >
       {darkMode ? '🌞' : '🌚'}
     </button>
