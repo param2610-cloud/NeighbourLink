@@ -1,40 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useThemeContext } from './contexts/ThemeContext'; // Update the import path
+import { useStateContext } from './contexts/StateContext';
 
 const ThemeToggle: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  
-  useEffect(() => {
-    if (localStorage.theme === 'dark' || 
-       (!('theme' in localStorage) && 
-        window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-      setDarkMode(true);
-    } else {
-      document.documentElement.classList.remove('dark');
-      setDarkMode(false);
-    }
-  }, []);
-  
-  const toggleDarkMode = (): void => {
-    if (darkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.theme = 'light';
-      setDarkMode(false);
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.theme = 'dark';
-      setDarkMode(true);
-    }
-  };
-  
+  const { theme, toggleTheme } = useThemeContext(); // Use the correct properties
+  const { user } = useStateContext();
+
   return (
-    <button 
-      onClick={toggleDarkMode} 
-      className="p-2 rounded-full h-12 w-12 items-center  bg-gray-700 dark:bg-gray-200 flex justify-center items-centerx  "
-    >
-      {darkMode ? '🌞' : '🌚'}
-    </button>
+    <>
+      {
+        user ?
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded w-full bg-transparent items-center flex justify-center"
+          >
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
+          :
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full h-12 w-12 items-center bg-gray-700 dark:bg-gray-200 flex justify-center"
+          >
+            {theme === 'dark' ? '🌞' : '🌚'}
+          </button>
+      }
+    </>
   );
 }
 
-export default ThemeToggle; 
+export default ThemeToggle;
