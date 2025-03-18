@@ -1,7 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { db } from "../../../firebase";
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { toast } from 'react-toastify';
+import React, { useEffect } from 'react';
 
 interface UserData {
     id: string;
@@ -25,61 +22,61 @@ const ContactResponder: React.FC<ContactResponderProps> = ({
     onClose,
     responder,
     postTitle,
-    currentUserId
+    // currentUserId
 }) => {
-    const [message, setMessage] = useState<string>('');
-    const [loading, setLoading] = useState<boolean>(false);
+    // const [message, setMessage] = useState<string>('');
+    // const [loading, setLoading] = useState<boolean>(false);
 
     if (!isOpen) return null;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
 
-        // if (!message.trim()) {
-        //     toast.error("Please enter a message", {
-        //         position: "top-center",
-        //     });
-        //     return;
-        // }
+    //     // if (!message.trim()) {
+    //     //     toast.error("Please enter a message", {
+    //     //         position: "top-center",
+    //     //     });
+    //     //     return;
+    //     // }
 
-        // setLoading(true);
+    //     // setLoading(true);
 
-        // try {
-        //     // Get current user info
-        //     const currentUserDoc = await getDoc(doc(db, "Users", currentUserId));
-        //     const currentUserData = currentUserDoc.exists() ? currentUserDoc.data() : null;
+    //     // try {
+    //     //     // Get current user info
+    //     //     const currentUserDoc = await getDoc(doc(db, "Users", currentUserId));
+    //     //     const currentUserData = currentUserDoc.exists() ? currentUserDoc.data() : null;
 
-        //     // Create a new message document
-        //     await addDoc(collection(db, "messages"), {
-        //         senderId: currentUserId,
-        //         senderName: currentUserData ? `${currentUserData.firstName} ${currentUserData.lastName}` : "Unknown User",
-        //         senderEmail: currentUserData?.email || "No email",
-        //         senderPhoto: currentUserData?.photoURL || null,
-        //         recipientId: responder.id,
-        //         recipientName: `${responder.firstName} ${responder.lastName}`,
-        //         recipientEmail: responder.email,
-        //         postTitle: postTitle,
-        //         message: message,
-        //         read: false,
-        //         createdAt: serverTimestamp()
-        //     });
+    //     //     // Create a new message document
+    //     //     await addDoc(collection(db, "messages"), {
+    //     //         senderId: currentUserId,
+    //     //         senderName: currentUserData ? `${currentUserData.firstName} ${currentUserData.lastName}` : "Unknown User",
+    //     //         senderEmail: currentUserData?.email || "No email",
+    //     //         senderPhoto: currentUserData?.photoURL || null,
+    //     //         recipientId: responder.id,
+    //     //         recipientName: `${responder.firstName} ${responder.lastName}`,
+    //     //         recipientEmail: responder.email,
+    //     //         postTitle: postTitle,
+    //     //         message: message,
+    //     //         read: false,
+    //     //         createdAt: serverTimestamp()
+    //     //     });
 
-        //     toast.success("Message sent successfully!", {
-        //         position: "top-center",
-        //     });
+    //     //     toast.success("Message sent successfully!", {
+    //     //         position: "top-center",
+    //     //     });
 
-        //     setMessage('');
-        //     onClose();
+    //     //     setMessage('');
+    //     //     onClose();
 
-        // } catch (error) {
-        //     console.error("Error sending message:", error);
-        //     toast.error("Failed to send message. Please try again.", {
-        //         position: "top-center",
-        //     });
-        // } finally {
-        //     setLoading(false);
-        // }
-    };
+    //     // } catch (error) {
+    //     //     console.error("Error sending message:", error);
+    //     //     toast.error("Failed to send message. Please try again.", {
+    //     //         position: "top-center",
+    //     //     });
+    //     // } finally {
+    //     //     setLoading(false);
+    //     // }
+    // };
     useEffect(()=>{
         console.log(responder);
     })

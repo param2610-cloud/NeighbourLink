@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { AiOutlineLoading3Quarters, AiOutlineUser, AiOutlineMail, AiOutlinePhone, AiOutlineHome } from "react-icons/ai";
+import { deleteFileFromS3, getPreSignedUrl, uploadFileToS3 } from "@/utils/aws/aws";
 
 function ProfileCard() {
+  // State management
   const [userDetails, setUserDetails] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [name, setName] = useState("");
@@ -13,36 +15,84 @@ function ProfileCard() {
   const [address, setAddress] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  
+  // Handle photo change from file input
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+  
+  // Fetch profile photo using AWS pre-signed URL
+  const fetchProfilePhoto = useCallback(async () => {
+    if (userDetails?.photo) {
+      try {
+        const photoUrl = await getPreSignedUrl(userDetails.photo);
+        if (photoUrl) {
+          setProfilePhoto(photoUrl);
+        }
+      } catch (error) {
+        console.error("Error fetching profile photo:", error);
+      }
+    }
+  }, [userDetails]);
 
-  const fetchUserData = async () => {
-    auth.onAuthStateChanged(async (user) => {
+  // Update profile photo when userDetails changes
+  useEffect(() => {
+    if (userDetails) {
+      fetchProfilePhoto();
+    }
+  }, [userDetails, fetchProfilePhoto]);
+
+  // Fetch user data from Firestore
+  const fetchUserData = useCallback(async () => {
+    return auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const docRef = doc(db, "Users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setUserDetails(data);
-          setName(data.firstName || "");
-          setPhone(data.phone || "");
-          setEmail(data.email || "");
-          setAddress(data.address || "");
-          setPhotoUrl(data.photo || "");
-        } else {
-          console.log("No such document!");
-          toast.error("User profile not found");
+        try {
+          const docRef = doc(db, "Users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUserDetails(data);
+            setName(data.firstName || "");
+            setPhone(data.phoneNumber || "");
+            setEmail(data.email || "");
+            setAddress(data.address || "");
+            setPhotoUrl(data.photo || "");
+          } else {
+            console.log("No such document!");
+            toast.error("User profile not found");
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          toast.error("Failed to load profile");
         }
       } else {
         console.log("User is not logged in");
         window.location.href = "/login";
       }
     });
-  };
-
-  useEffect(() => {
-    fetchUserData();
   }, []);
 
+  // Initialize user data on component mount
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    
+    fetchUserData().then(unsubFn => {
+      unsubscribe = unsubFn;
+    });
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fetchUserData]);
   const handleLogout = async () => {
     try {
       await auth.signOut();
@@ -54,12 +104,14 @@ function ProfileCard() {
         toast.error("Logout failed");
       }
     }
-  }
+  };
 
+  // Open edit profile modal
   const handleEditProfile = () => {
     setIsEditModalOpen(true);
   };
 
+  // Handle save profile changes
   const handleSaveChanges = async () => {
     try {
       setIsLoading(true);
@@ -67,30 +119,56 @@ function ProfileCard() {
         toast.error("User not authenticated");
         return;
       }
+      
+      let photoURL = photoUrl; // Keep existing photo URL by default
+      
+      // Handle photo update if a new photo was selected
+      if (photoFile) {
+        try {
+          // Only delete old photo if it exists
+          if (userDetails?.photo) {
+            await deleteFileFromS3(userDetails.photo);
+          }
+          photoURL = await uploadFileToS3(photoFile, `${auth.currentUser.uid}_profile_image`);
+        } catch (error) {
+          console.error("Error handling photo upload:", error);
+          toast.warning("Failed to update profile photo, but other details will be saved");
+        }
+      }
 
       const userId = auth.currentUser.uid;
       const userRef = doc(db, "Users", userId);
 
       const updateData: Record<string, any> = {
         firstName: name,
-        phone: phone,
+        phoneNumber: phone, // Fixed key name to match what's used in the Register component
         email: email,
         address: address,
       };
-      //error 6ilo tai comment out kore diye6ii
-      // if (photoFile) {
-      //   const storageRef = ref(storage, `profile_photos/${userId}`);
-      //   await uploadBytes(storageRef, photoFile);
-      //   const downloadURL = await getDownloadURL(storageRef);
-      //   updateData.photo = downloadURL;
-      //   setPhotoUrl(downloadURL);
-      // }
+      
+      // Only update photo if it changed
+      if (photoURL !== photoUrl) {
+        updateData.photo = photoURL;
+      }
 
       await updateDoc(userRef, updateData);
+      
+      // Update local state with the new data
       setUserDetails({ ...userDetails, ...updateData });
+      
+      // Update preview if photo was changed
+      if (photoURL !== photoUrl) {
+        setPhotoUrl(photoURL);
+        // Fetch the updated photo URL
+        fetchProfilePhoto();
+      }
 
       toast.success("Profile updated successfully!");
       setIsEditModalOpen(false);
+      
+      // Reset the photo file and preview
+      setPhotoFile(null);
+      setPhotoPreview(null);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -99,6 +177,7 @@ function ProfileCard() {
     }
   };
 
+  // Rest of your component remains the same
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-400 to-purple-200 dark:from-indigo-900 dark:to-purple-900 py-5">
       {/* Header Navigation */}
@@ -126,7 +205,7 @@ function ProfileCard() {
             {/* Profile Image - Positioned to overlap the background */}
             <div className="flex justify-center -mt-16">
               <img
-                src={userDetails.photo || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
+                src={profilePhoto || "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"}
                 alt="Profile"
                 className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-700 shadow-lg object-cover"
               />
@@ -159,7 +238,7 @@ function ProfileCard() {
                   <AiOutlinePhone className="text-indigo-500 dark:text-indigo-400 mr-3 flex-shrink-0" size={20} />
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">PHONE</p>
-                    <p className="font-medium">{userDetails.phone || "Not provided"}</p>
+                    <p className="font-medium">{userDetails.phoneNumber || "Not provided"}</p>
                   </div>
                 </div>
                 
@@ -255,13 +334,19 @@ function ProfileCard() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Profile Photo</label>
                   <div className="flex items-center space-x-3">
-                    {photoUrl && (
+                    {photoPreview ? (
                       <img 
-                        src={photoUrl} 
+                        src={photoPreview} 
+                        alt="New profile" 
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : profilePhoto ? (
+                      <img 
+                        src={profilePhoto} 
                         alt="Current profile" 
                         className="h-12 w-12 rounded-full object-cover"
                       />
-                    )}
+                    ) : null}
                     <label className="cursor-pointer bg-gray-100 dark:bg-gray-700 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300 flex-grow">
                       <span className="text-sm text-gray-700 dark:text-gray-300">
                         {photoFile ? photoFile.name : "Choose a new photo"}
@@ -269,7 +354,7 @@ function ProfileCard() {
                       <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                        onChange={handlePhotoChange}
                         className="sr-only"
                       />
                     </label>

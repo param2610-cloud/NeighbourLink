@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import PostDetails from "./modal/PostDetails";
@@ -107,11 +106,11 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
     }
   };
 
-  const handleSendRequest = () => {
-    toast.success("Request sent successfully!", {
-      position: "top-center",
-    });
-  };
+  // const handleSendRequest = () => {
+  //   toast.success("Request sent successfully!", {
+  //     position: "top-center",
+  //   });
+  // };
 
   return (
     <div className="w-full p-3">

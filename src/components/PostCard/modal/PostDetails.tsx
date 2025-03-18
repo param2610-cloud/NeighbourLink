@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Post as PostType } from '../PostList';
 import { auth, db } from "../../../firebase";
-import { collection, doc, updateDoc, arrayUnion, getDoc, runTransaction, arrayRemove } from 'firebase/firestore';
+import {  doc, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import ContactResponder from './ContactResponder'; // Import the new component
 

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { MapPin } from "lucide-react";
 import { OlaMapsInit } from "./MapInit";
-import { isDragging } from "framer-motion";
 
 const LocationViewer = ({ lat, lon }:{lat:string,lon:string}) => {
   const [address, setAddress] = useState("");

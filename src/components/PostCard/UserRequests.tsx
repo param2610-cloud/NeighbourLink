@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
-import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import PostList from "../PostCard/PostList";
 import { IoMdAdd } from "react-icons/io";
