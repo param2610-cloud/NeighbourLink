@@ -465,7 +465,7 @@ useEffect(() => {
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/emergency")} 
+              onClick={() => navigate("/emergency/posts")} 
               className="bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
             >
               <motion.div 
@@ -625,7 +625,7 @@ useEffect(() => {
             </button>
             
             <button 
-              onClick={() => navigate("/profile")} 
+              onClick={() => navigate("/profileCard")} 
               className="flex flex-col items-center text-gray-600 dark:text-gray-400"
             >
               <CgProfile className="text-xl" />

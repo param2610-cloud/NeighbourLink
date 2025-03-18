@@ -2,6 +2,7 @@ import ThemeToggle from "@/ThemeToggle";
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
 import { Home, User, Users, FileText, Share, Inbox, Archive } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   userDetails: {
@@ -16,7 +17,7 @@ interface SidebarProps {
 const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [activePage, setActivePage] = useState("/home");
-//   const navigate= useNavigate();
+  const navigate= useNavigate();
 
   useEffect(() => {
     // Get current path and set active page
@@ -74,9 +75,9 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.path}>
-                <a
-                  href={item.path}
-                  className={`flex items-center px-3 py-2.5 rounded-lg font-medium text-sm transition-colors group ${
+                <div
+                 onClick={() => navigate(item.path)}
+                  className={`flex items-center hover:cursor-pointer px-3 py-2.5 rounded-lg font-medium text-sm transition-colors group ${
                     activePage === item.path
                       ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
                       : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -90,7 +91,7 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
                     {item.icon}
                   </span>
                   {item.label}
-                </a>
+                </div>
               </li>
             ))}
           </ul>

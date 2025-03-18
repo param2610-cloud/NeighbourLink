@@ -9,6 +9,8 @@ import { db } from '@/firebase';
 import PostList from '@/components/PostCard/PostList';
 import SharedResourceList from '@/components/PostCard/SharedResourceList ';
 import SearchResultMap from './SearchResultMap';
+import { FaArrowLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 
 type ViewMode = 'list' | 'map';
@@ -28,18 +30,18 @@ interface SearchResult {
   };
   createdAt: any;
   urgencyLevel?: number;
-  
-  
+
+
   urgency?: boolean;
   userId: string;
   photoUrl: string;
   responders?: { userId: string; accepted: boolean }[];
-  
-  
+
+
   resourceName?: string;
   condition?: string;
-  
-  
+
+
   [key: string]: any;
 }
 
@@ -50,27 +52,28 @@ const CATEGORIES = [
 ];
 
 const SearchPage: React.FC = () => {
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [filterSheetState, setFilterSheetState] = useState<FilterSheetState>('closed');
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(true); 
-  const [refreshing, ] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing,] = useState(false);
+  const navigate = useNavigate();
 
-  
-  const [distance, setDistance] = useState([5]); 
+
+  const [distance, setDistance] = useState([5]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [availability, setAvailability] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('recency');
 
-  
+
   const debouncedSearch = useCallback(
-    
+
     debounce((term: string) => {
       if (term.trim()) {
-        
+
         if (!recentSearches.includes(term)) {
           const updatedSearches = [term, ...recentSearches.slice(0, 4)];
           setRecentSearches(updatedSearches);
@@ -78,32 +81,32 @@ const SearchPage: React.FC = () => {
         }
       }
       fetchResults(term);
-    }, 300), 
+    }, 300),
     [recentSearches]
   );
 
-  
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
     debouncedSearch(newSearchTerm);
   };
 
-  
+
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
-    
+
     setLoading(true);
-    
+
     try {
-      
+
       if (!recentSearches.includes(searchTerm)) {
         const updatedSearches = [searchTerm, ...recentSearches.slice(0, 4)];
         setRecentSearches(updatedSearches);
         localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
       }
-      
-      
+
+
       await fetchResults(searchTerm);
     } catch (error) {
       console.error('Search error:', error);
@@ -112,14 +115,14 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  
+
   const fetchResults = async (term?: string) => {
     try {
       setLoading(true);
-      
+
       const postsQuery = query(
         collection(db, "posts"),
-        
+
         orderBy("createdAt", "desc"),
         limit(20)
       );
@@ -127,67 +130,67 @@ const SearchPage: React.FC = () => {
       const postsData = postsSnapshot.docs.map((doc) => {
         const data = doc.data();
         console.log(data);
-        
-        
+
+
         let coordinates = { latitude: 0, longitude: 0 };
-        
-        
+
+
         if (data.coordinates && data.coordinates.latitude && data.coordinates.longitude) {
           coordinates = data.coordinates;
         } else if (data.latitude && data.longitude) {
           coordinates = { latitude: data.latitude, longitude: data.longitude };
         }
-        
+
         return {
           id: doc.id,
           ...data,
           type: "post",
-          
+
           coordinates: coordinates,
-          
+
           userId: data.userId || "",
           photoUrl: data.photoUrl || "",
           urgency: data.urgency || false,
           responders: data.responders || []
         };
       }) as SearchResult[];
-      
+
       let combined = [...postsData];
-      
-      
-      combined = combined.filter(item => 
-        item.coordinates && 
-        typeof item.coordinates.latitude === 'number' && 
+
+
+      combined = combined.filter(item =>
+        item.coordinates &&
+        typeof item.coordinates.latitude === 'number' &&
         typeof item.coordinates.longitude === 'number'
       );
-      
-      
+
+
       const searchTermToUse = term !== undefined ? term : searchTerm;
       if (searchTermToUse) {
-        combined = combined.filter(item => 
+        combined = combined.filter(item =>
           item.title.toLowerCase().includes(searchTermToUse.toLowerCase()) ||
           item.description.toLowerCase().includes(searchTermToUse.toLowerCase()) ||
           item.category.toLowerCase().includes(searchTermToUse.toLowerCase())
         );
       }
-      
-      
+
+
       if (selectedCategories.length > 0) {
-        combined = combined.filter(item => 
+        combined = combined.filter(item =>
           selectedCategories.includes(item.category)
         );
       }
-      
-      
+
+
       if (availability) {
-        combined = combined.filter(item => 
+        combined = combined.filter(item =>
           item.status !== 'completed' && item.status !== 'closed'
         );
       }
 
-      
+
       combined = sortResults(combined, sortBy);
-      
+
       setResults(combined);
     } catch (error) {
       console.error('Error fetching results:', error);
@@ -196,16 +199,16 @@ const SearchPage: React.FC = () => {
     }
   };
 
-  
+
   function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
     let timeout: NodeJS.Timeout | null = null;
-    
-    return function(...args: Parameters<T>) {
+
+    return function (...args: Parameters<T>) {
       const later = () => {
         timeout = null;
         func(...args);
       };
-      
+
       if (timeout !== null) {
         clearTimeout(timeout);
       }
@@ -213,7 +216,7 @@ const SearchPage: React.FC = () => {
     };
   }
 
-  
+
   const sortResults = (data: SearchResult[], sortOption: SortOption) => {
     switch (sortOption) {
       case 'urgency':
@@ -225,15 +228,15 @@ const SearchPage: React.FC = () => {
           return timeB - timeA;
         });
       case 'distance':
-        
-        
+
+
         return data;
       default:
         return data;
     }
   };
 
-  
+
   const handleClearFilters = () => {
     setDistance([5]);
     setSelectedCategories([]);
@@ -243,7 +246,7 @@ const SearchPage: React.FC = () => {
 
 
 
-  
+
   const toggleCategory = (category: string) => {
     setSelectedCategories(prev => {
       if (prev.includes(category)) {
@@ -254,19 +257,19 @@ const SearchPage: React.FC = () => {
     });
   };
 
-  
-  
+
+
   useEffect(() => {
     const savedSearches = localStorage.getItem('recentSearches');
     if (savedSearches) {
       setRecentSearches(JSON.parse(savedSearches));
     }
-    
-    
+
+
     fetchResults();
   }, []);
 
-  
+
   useEffect(() => {
     fetchResults();
   }, [selectedCategories, availability, sortBy]);
@@ -288,10 +291,10 @@ const SearchPage: React.FC = () => {
               />
               <FiSearch className="absolute left-3 top-3 text-gray-400" />
               {searchTerm && (
-                <button 
+                <button
                   onClick={() => {
                     setSearchTerm('');
-                    fetchResults(''); 
+                    fetchResults('');
                   }}
                   className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                 >
@@ -299,7 +302,8 @@ const SearchPage: React.FC = () => {
                 </button>
               )}
             </div>
-            <button 
+
+            <button
               onClick={handleSearch}
               className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700"
             >
@@ -337,9 +341,10 @@ const SearchPage: React.FC = () => {
             </div>
           )}
 
+
           {/* View mode toggle and filter button */}
           <div className="flex justify-between items-center">
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}
@@ -352,6 +357,9 @@ const SearchPage: React.FC = () => {
               >
                 <FiMapPin />
               </button>
+              <button className="flex gap-2 justify-start items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
+                onClick={() => navigate('/')}
+              ><FaArrowLeft /> Back</button>
             </div>
             <button
               onClick={() => setFilterSheetState(filterSheetState === 'closed' ? 'open' : 'closed')}
@@ -360,20 +368,20 @@ const SearchPage: React.FC = () => {
               <FiFilter size={14} />
               <span>Filter</span>
             </button>
+
           </div>
         </div>
 
         {/* Filter Bottom Sheet */}
-        <div 
-          className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 rounded-t-xl shadow-lg transition-transform duration-300 transform z-50 ${
-            filterSheetState === 'open' ? 'translate-y-0' : 'translate-y-full'
-          }`}
+        <div
+          className={`fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 rounded-t-xl shadow-lg transition-transform duration-300 transform z-50 ${filterSheetState === 'open' ? 'translate-y-0' : 'translate-y-full'
+            }`}
           style={{ maxHeight: '80vh', overflowY: 'auto' }}
         >
           <div className="p-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold dark:text-white">Filters</h2>
-              <button 
+              <button
                 onClick={() => setFilterSheetState('closed')}
                 className="text-gray-500 hover:text-gray-700"
               >
@@ -401,12 +409,12 @@ const SearchPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-2">
                 {CATEGORIES.map((category) => (
                   <div key={category} className="flex items-center space-x-2">
-                    <Checkbox 
+                    <Checkbox
                       id={`category-${category}`}
                       checked={selectedCategories.includes(category)}
                       onCheckedChange={() => toggleCategory(category)}
                     />
-                    <label 
+                    <label
                       htmlFor={`category-${category}`}
                       className="text-sm dark:text-gray-300"
                     >
@@ -420,7 +428,7 @@ const SearchPage: React.FC = () => {
             {/* Availability Toggle */}
             <div className="flex items-center justify-between mb-6">
               <span className="text-sm font-medium dark:text-gray-300">Show only available</span>
-              <Switch 
+              <Switch
                 checked={availability}
                 onCheckedChange={setAvailability}
               />
@@ -432,31 +440,28 @@ const SearchPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setSortBy('urgency')}
-                  className={`py-2 px-3 text-sm rounded-lg ${
-                    sortBy === 'urgency' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 dark:bg-neutral-700 dark:text-gray-300'
-                  }`}
+                  className={`py-2 px-3 text-sm rounded-lg ${sortBy === 'urgency'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-neutral-700 dark:text-gray-300'
+                    }`}
                 >
                   Urgency
                 </button>
                 <button
                   onClick={() => setSortBy('distance')}
-                  className={`py-2 px-3 text-sm rounded-lg ${
-                    sortBy === 'distance' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 dark:bg-neutral-700 dark:text-gray-300'
-                  }`}
+                  className={`py-2 px-3 text-sm rounded-lg ${sortBy === 'distance'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-neutral-700 dark:text-gray-300'
+                    }`}
                 >
                   Distance
                 </button>
                 <button
                   onClick={() => setSortBy('recency')}
-                  className={`py-2 px-3 text-sm rounded-lg ${
-                    sortBy === 'recency' 
-                      ? 'bg-blue-600 text-white' 
-                      : 'bg-gray-200 dark:bg-neutral-700 dark:text-gray-300'
-                  }`}
+                  className={`py-2 px-3 text-sm rounded-lg ${sortBy === 'recency'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 dark:bg-neutral-700 dark:text-gray-300'
+                    }`}
                 >
                   Recency
                 </button>
@@ -465,14 +470,14 @@ const SearchPage: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex-1"
                 onClick={handleClearFilters}
               >
                 Clear Filters
               </Button>
-              <Button 
+              <Button
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                 onClick={() => {
                   fetchResults();
@@ -497,8 +502,8 @@ const SearchPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.map((result) => (
                     result.type === 'post' ? (
-                      <PostList 
-                        key={`post-${result.id}`} 
+                      <PostList
+                        key={`post-${result.id}`}
                         post={{
                           id: result.id,
                           category: result.category,
@@ -511,11 +516,11 @@ const SearchPage: React.FC = () => {
                           userId: result.userId,
                           responders: result.responders || []
                         }}
-                        setUpdated={() => {}}
+                        setUpdated={() => { }}
                       />
                     ) : (
-                      <SharedResourceList 
-                        key={`resource-${result.id}`} 
+                      <SharedResourceList
+                        key={`resource-${result.id}`}
                         resource={{
                           id: result.id,
                           category: result.category,
@@ -527,7 +532,7 @@ const SearchPage: React.FC = () => {
                           condition: result.condition || "",
                           userId: result.userId
                         }}
-                        setUpdated={() => {}}
+                        setUpdated={() => { }}
                       />
                     )
                   ))}

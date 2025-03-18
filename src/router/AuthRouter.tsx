@@ -5,6 +5,7 @@ import Home from '@/pages/Home';
 import MessagesList from '@/components/messaging/MessagesList';
 import ChatDetail from '@/components/messaging/ChatDetail';
 import LandingPage from '@/components/landingpage/LandingPage';
+import EmergencyPosts from '@/pages/EmergencyPosts';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
@@ -44,6 +45,7 @@ const AuthRouter: React.FC = () => {
         <Route path='/profile/auth/shared-resources' element={<UserSharedResources/>} />
         <Route path="/messages" element={<MessagesList />} />
         <Route path="/messages/:conversationId" element={<ChatDetail />} />
+        <Route path='/emergency/posts' element={<EmergencyPosts/>}/>
       </Routes>
     </Suspense>
   );
