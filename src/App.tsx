@@ -8,6 +8,8 @@ import {
 import {
   requestNotificationPermission,
   onMessageListener,
+  displayNotification,
+  NotificationType,
 } from "./notification";
 import "./App.css";
 import LandingPage from "./components/landingpage/LandingPage";
@@ -25,6 +27,8 @@ import Home from "./pages/Home";
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
   const [user, setUser] = useState<any>();
+  const [, setNotification] = useState({ title: "", body: "" });
+
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
       setUser(user);
@@ -41,9 +45,22 @@ function App() {
           setNotificationsSupported(false);
         }
 
+        // Listen for foreground messages
         onMessageListener()
-          .then((payload) => {
+          .then((payload: any) => {
             console.log("Message received:", payload);
+
+            // Extract notification data
+            const title = payload.notification?.title || "";
+            const body = payload.notification?.body || "";
+            const type = payload.data?.type || NotificationType.POST_MATCH;
+            const data = payload.data || {};
+
+            // Set notification state
+            setNotification({ title, body });
+
+            // Display notification
+            displayNotification(title, body, type as NotificationType, data);
           })
           .catch((err) => {
             console.error("Error with message listener:", err);
@@ -67,7 +84,7 @@ function App() {
               path="/"
               element={user ? <Navigate to="/profile" /> : <Home />}
             />
-            <Route path="/upload" element={<UploadFiletoAWS/>} />
+            <Route path="/upload" element={<UploadFiletoAWS />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
@@ -81,7 +98,7 @@ function App() {
               path="/profile/shareform"
               element={<ResourceSharingForm userId={user?.uid} />}
             />
-
+            
           </Routes>
           {!notificationsSupported && (
             <p className="text-orange-500">

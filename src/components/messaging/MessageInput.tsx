@@ -3,6 +3,8 @@ import { sendMessage } from '../../services/messagingService';
 import { IoMdSend, IoMdImage, IoMdAttach } from 'react-icons/io';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { createUniqueFileName, uploadFileToS3 } from '@/utils/aws/aws';
+import { sendChatMessageNotification } from '../../services/notificationService';
+import { auth } from '../../firebase';
 
 interface MessageInputProps {
   conversationId: string;
@@ -22,6 +24,7 @@ const QuickResponses = [
 const MessageInput: React.FC<MessageInputProps> = ({ 
   conversationId,
   currentUserId,
+  otherUserId
 }) => {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -35,6 +38,21 @@ const MessageInput: React.FC<MessageInputProps> = ({
     
     try {
       await sendMessage(conversationId, currentUserId, message.trim(), uploadedFiles);
+
+      // Send notification to recipient if it's not the current user
+      if (otherUserId !== currentUserId) {
+        const currentUser = auth.currentUser;
+        const displayName = currentUser?.displayName || "User";
+        const messageText = message.trim();
+
+        await sendChatMessageNotification(
+          conversationId,
+          otherUserId,
+          displayName,
+          messageText.length > 50 ? messageText.substring(0, 47) + "..." : messageText
+        );
+      }
+      
       setMessage('');
       setUploadedFiles([]);
     } catch (error) {
