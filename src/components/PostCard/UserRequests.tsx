@@ -110,7 +110,7 @@ function UserRequests() {
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">My Requests</h1>
                 <div className="flex gap-2 justify-start mb-3 items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
-                onClick={() => window.location.href = "/profile"}
+                onClick={() => window.location.href = "/"}
                 ><FaArrowLeft /> Back</div>
 
                 {error && renderIndexingError()}

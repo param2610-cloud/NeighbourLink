@@ -2,6 +2,7 @@ import ThemeToggle from "@/ThemeToggle";
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
 import { Home, User, Users, FileText, Share, Inbox, Archive } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarProps {
   userDetails: {
@@ -16,6 +17,7 @@ interface SidebarProps {
 const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [activePage, setActivePage] = useState("/home");
+  const navigate= useNavigate();
 
   useEffect(() => {
     // Get current path and set active page
@@ -36,8 +38,8 @@ const Sidebar = ({ userDetails, handleLogout, isSidebarOpen }: SidebarProps) => 
     { path: "/home", label: "Home", icon: <Home size={18} /> },
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
     { path: "#", label: "Friends", icon: <Users size={18} /> },
-    { path: "/profile/rqform", label: "Request Resource", icon: <FileText size={18} /> },
-    { path: "/profile/shareform", label: "Share Resources", icon: <Share size={18} /> },
+    { path: "/resource/need", label: "Request Resource", icon: <FileText size={18} /> },
+    { path: "/resource/offer", label: "Share Resources", icon: <Share size={18} /> },
     { path: "/profile/auth/requests", label: "My Requests", icon: <Inbox size={18} /> },
     { path: "/profile/auth/shared-resources", label: "My Resources", icon: <Archive size={18} /> },
   ];
