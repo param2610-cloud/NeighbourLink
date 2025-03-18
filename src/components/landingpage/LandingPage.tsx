@@ -79,7 +79,7 @@ const LandingPage = () => {
               <div className="flex items-center">
                 {
                   user ?
-                    <a href="profile" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Profile</a>
+                    <a href="/" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">DashBoard</a>
                     :
                     <a href="login" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-300">Sign In</a>
                 }
