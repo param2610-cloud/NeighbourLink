@@ -47,7 +47,7 @@ const Home: React.FC = () => {
   const [emergencyAlerts, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [, setUserDetails] = useState<any>(null);
   const navigate = useNavigate();
 
   

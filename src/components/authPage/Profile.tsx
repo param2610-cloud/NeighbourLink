@@ -43,7 +43,7 @@ interface SharedResource {
 type ContentItem = Post | SharedResource;
 
 function Profile() {
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [, setUserDetails] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [mixedContent, setMixedContent] = useState<ContentItem[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
