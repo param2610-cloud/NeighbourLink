@@ -1,8 +1,10 @@
 import { initializeMessaging } from "./firebase";
 import { getToken, onMessage } from "firebase/messaging";
+import dotenv from 'dotenv'
+dotenv.config()
 
 
-const vapidKey = import.meta.env.VITE_VAPIDKEY; 
+const vapidKey = import.meta.env.VITE_VAPIDKEY ; 
 
 export const requestNotificationPermission = async () => {
   try {

@@ -1,7 +1,7 @@
 import { OlaMaps } from "olamaps-web-sdk";
 
 export const OlaMapsInit = new OlaMaps({
-    apiKey: import.meta.env.VITE_OLA_MAP_APIKEY,
+    apiKey: import.meta.env.VITE_OLA_MAP_APIKEY ,
 });
 
 export const initMap = (containerId: string, center: [number, number] = [77.61648476788898, 12.931423492103944], zoom: number = 15) => {

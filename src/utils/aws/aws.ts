@@ -6,8 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 const s3Client = new S3Client( {
   region: "ap-south-1",
   credentials: {
-    accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY,
-    secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY,
+    accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY ,
+    secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY ,
   },
 });
 
@@ -17,7 +17,7 @@ export const uploadFileToS3 = async (file: File, fileName: string): Promise<stri
   const arrayBuffer = await file.arrayBuffer();
   
   const params = {
-    Bucket: import.meta.env.VITE_AWS_BUCKET_NAME,
+    Bucket: import.meta.env.VITE_AWS_BUCKET_NAME ,
     Key: fileName,
     Body: new Uint8Array(arrayBuffer),
     ContentType: file.type,
@@ -36,7 +36,7 @@ export const uploadFileToS3 = async (file: File, fileName: string): Promise<stri
 
 export const deleteFileFromS3 = async (fileName: string) => {
   const params = {
-    Bucket: import.meta.env.VITE_AWS_BUCKET_NAME,
+    Bucket: import.meta.env.VITE_AWS_BUCKET_NAME ,
     Key: fileName,
   };
 
@@ -53,7 +53,7 @@ export const deleteFileFromS3 = async (fileName: string) => {
 
 export const getPreSignedUrl = async (fileName: string) => {
   const params = {
-    Bucket: import.meta.env.VITE_AWS_BUCKET_NAME,
+    Bucket: import.meta.env.VITE_AWS_BUCKET_NAME ,
     Key: fileName,
   };
 
