@@ -2,17 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus, FaRegEdit } from "react-icons/fa";
+import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
 import { BiSearchAlt } from "react-icons/bi";
-import { MdDeleteForever, MdOutlineWarning } from "react-icons/md";
+import {  MdOutlineWarning } from "react-icons/md";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ImageDisplay } from "../components/AWS/UploadFile";
 import { motion } from "framer-motion";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import PostCardDelete from "@/components/PostCard/modal/PostCardDelete";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -48,9 +47,8 @@ const Home: React.FC = () => {
   const [emergencyAlerts, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [, setUserDetails] = useState<any>(null);
-  const [updated, setUpdated] = useState(false);
+  const [updated, ] = useState(false);
   const navigate = useNavigate();
 
 
@@ -534,25 +532,25 @@ const Home: React.FC = () => {
                       </span>
                     )}
                     {
-                      auth.currentUser?.uid === post.userId && (
-                        <div className="flex justify-center items-center gap-2">
-                          <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
-                            <FaRegEdit />
-                          </div>
-                          <div className="text-red-600 dark:text-red-400 hover:cursor-pointer" onClick={() => setIsDeleteModalOpen(true)}>
-                            <MdDeleteForever size={20} />
-                            {/* Delete */}
-                          </div>
-                        </div>
-                      )
+                      // auth.currentUser?.uid === post.userId && (
+                      //   <div className="flex justify-center items-center gap-2">
+                      //     <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
+                      //       <FaRegEdit />
+                      //     </div>
+                      //     <div className="text-red-600 dark:text-red-400 hover:cursor-pointer" onClick={() => setIsDeleteModalOpen(true)}>
+                      //       <MdDeleteForever size={20} />
+                      //       {/* Delete */}
+                      //     </div>
+                      //   </div>
+                      // )
                     }
-                    <PostCardDelete
+                    {/* <PostCardDelete
                       isOpen={isDeleteModalOpen}
                       onClose={() => setIsDeleteModalOpen(false)}
                       itemId={post.id}
                       itemType="post"
                       onDelete={() => setUpdated((prev) => !prev)}
-                    />
+                    /> */}
                   </div>
 
                   <h4 className="font-medium text-gray-900 dark:text-white mt-2">{post.title}</h4>

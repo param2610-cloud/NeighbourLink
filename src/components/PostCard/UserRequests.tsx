@@ -142,7 +142,7 @@ function UserRequests() {
                             You haven't created any requests yet.
                         </p>
                         <button
-                            onClick={() => window.location.href = "/create-post"}
+                            onClick={() => navigate('/resource/need')}
                             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                         >
                             Create Request
