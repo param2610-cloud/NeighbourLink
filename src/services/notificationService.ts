@@ -49,7 +49,7 @@ export const sendEmergencyNotification = async (
   postId: string,
   title: string,
   body: string,
-  coordinates: { lat: number, lng: number },
+  coordinates: { lat: string, lng: string },
   radiusKm: number
 ) => {
   try {
@@ -71,10 +71,10 @@ export const sendEmergencyNotification = async (
         
         // Calculate distance between emergency and user
         const distance = calculateDistance(
-          coordinates.lat,
-          coordinates.lng,
-          userCoordinates.lat,
-          userCoordinates.lng
+          parseFloat(coordinates.lat),
+          parseFloat(coordinates.lng),
+          parseFloat(userCoordinates.lat),
+          parseFloat(userCoordinates.lng)
         );
         
         // If user is within radius, send notification

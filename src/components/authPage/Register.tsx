@@ -20,8 +20,8 @@ function Register() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [radius, setRadius] = useState(2);
-  const [lat, setLat] = useState<number>();
-  const [lon, setLon] = useState<number>();
+  const [lat, setLat] = useState<string>();
+  const [lon, setLon] = useState<string>();
   const [notifyEmergency, setNotifyEmergency] = useState(true);
   const [notifyMatches, setNotifyMatches] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
@@ -34,8 +34,8 @@ function Register() {
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition((position) => {
-        setLat(position.coords.latitude),
-          setLon(position.coords.longitude)
+        setLat(position.coords.latitude.toString());
+          setLon(position.coords.longitude.toString());
       })
     }
   }, []);

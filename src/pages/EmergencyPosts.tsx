@@ -4,6 +4,7 @@ import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { getPreSignedUrl } from '@/utils/aws/aws';
 
 interface Post {
     id: string;
@@ -15,6 +16,10 @@ interface Post {
     userId: string;
     urgencyLevel: number;
     visibilityRadius: number;
+    coordinates:{
+        lat:number,
+        lng:number
+    }
 }
 interface User {
     firstName: string;
@@ -32,43 +37,99 @@ const EmergencyPosts = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     
-        useEffect(() => {
-            const fetchEmergencyPosts = async () => {
-                try {
-                    const postsRef = collection(db, 'posts');
-                    const q = query(postsRef,
-                        where('urgencyLevel', '==', 3),
-                        where('postType', "==", "need")
-                    );
-                    const querySnapshot = await getDocs(q);
+    const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [radius, setRadius] = useState(5); 
     
-                    const postsData: PostWithUser[] = [];
+    // Get user's current location
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setUserLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                }
+            );
+        }
+    }, []);
+    
+    // Calculate distance between two coordinates
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371; // Radius of the earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; // Distance in km
+    };
+
+    useEffect(() => {
+        if (!userLocation) return;
+        
+        const fetchEmergencyPosts = async () => {
+            try {
+                setLoading(true);
+                const postsRef = collection(db, 'posts');
+                const q = query(postsRef,
+                    where('urgencyLevel', '==', 3),
+                    where('postType', "==", "need")
+                );
+                const querySnapshot = await getDocs(q);
+
+                const postsData: PostWithUser[] = [];
+                
+                // Fetch posts and user data
+                for (const doc of querySnapshot.docs) {
+                    const postData = { id: doc.id, ...doc.data() } as Post;
                     
-                    // Fetch posts and user data
-                    for (const doc of querySnapshot.docs) {
-                        const postData = { id: doc.id, ...doc.data() } as Post;
+                    // Filter by distance if coordinates exist
+                    if (postData.coordinates && userLocation) {
+                        const distance = calculateDistance(
+                            userLocation.lat,
+                            userLocation.lng,
+                            postData.coordinates.lat,
+                            postData.coordinates.lng
+                        );
                         
-                        // Fetch user data
-                        const userDoc = await getDoc(firestoreDoc(db, 'Users', postData.userId));
-                        const userData = userDoc.exists() ? userDoc.data() as User : undefined;
-                        
-                        postsData.push({
-                            ...postData,
-                            userData
-                        });
+                        // Skip if outside radius
+                        if (distance > radius) continue;
                     }
                     
-                    console.log(postsData);
-                    setPosts(postsData);
-                    setLoading(false);
-                } catch (error) {
-                    console.error('Error fetching emergency posts:', error);
-                    setLoading(false);
+                    // Process photo URLs
+                    if(postData.photoUrls && Array.isArray(postData.photoUrls)){
+                        for(let i = 0; i < postData.photoUrls.length; i++) {
+                            const processedUrl = await getPreSignedUrl(postData.photoUrls[i]);
+                            postData.photoUrls[i] = processedUrl;
+                        }
+                    }
+                    
+                    // Fetch user data
+                    const userDoc = await getDoc(firestoreDoc(db, 'Users', postData.userId));
+                    const userData = userDoc.exists() ? userDoc.data() as User : undefined;
+                    
+                    postsData.push({
+                        ...postData,
+                        userData
+                    });
                 }
-            };
-    
-            fetchEmergencyPosts();
-        }, []);
+                
+                setPosts(postsData);
+            } catch (error) {
+                console.error('Error fetching emergency posts:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEmergencyPosts();
+    }, [userLocation, radius]);
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -83,9 +144,28 @@ const EmergencyPosts = () => {
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8 animate-fade-in">
                     Emergency Posts 🚨
                 </h1>
-                <div className="flex gap-2 justify-start mb-3 items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
-                    onClick={() => navigate('/')}
-                ><FaArrowLeft /> Back</div>
+                <div className="flex justify-between items-center mb-6">
+                    <div 
+                        className="flex gap-2 justify-start items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
+                        onClick={() => navigate('/')}
+                    >
+                        <FaArrowLeft /> Back
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">Radius:</span>
+                        <select
+                            value={radius}
+                            onChange={(e) => setRadius(Number(e.target.value))}
+                            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm text-black dark:text-white"
+                        >
+                            <option value={1}>1 km</option>
+                            <option value={3}>3 km</option>
+                            <option value={5}>5 km</option>
+                            <option value={10}>10 km</option>
+                        </select>
+                    </div>
+                </div>
 
                 {posts.length === 0 ? (
                     <div className="text-center py-12 animate-fade-in">
@@ -100,6 +180,7 @@ const EmergencyPosts = () => {
                                 key={post.id}
                                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 animate-card-in"
                                 style={{ animationDelay: `${index * 0.1}s` }}
+                                onClick={()=>navigate(`/post/${post.id}`)}
                             >
                                 {post.photoUrls?.length > 0? (
                                     <img
