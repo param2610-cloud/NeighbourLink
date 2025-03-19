@@ -148,7 +148,7 @@ const PostDetailsPage = () => {
 
         const fetchUserInfo = async (userId: string) => {
             try {
-                const userRef = doc(db, 'users', userId);
+                const userRef = doc(db, 'Users', userId);
                 const userSnap = await getDoc(userRef);
 
                 if (userSnap.exists()) {
@@ -188,7 +188,7 @@ const PostDetailsPage = () => {
                 return;
             }
             // Get current user details
-            const currentUserRef = doc(db, 'users', firebaseUser.uid);
+            const currentUserRef = doc(db, 'Users', firebaseUser.uid);
             const currentUserSnap = await getDoc(currentUserRef);
             if (currentUserSnap.exists()) {
                 const currentUser = currentUserSnap.data();
@@ -206,7 +206,7 @@ const PostDetailsPage = () => {
                 post.userId,
                 post.id,
                 post.title,
-                post.photoUrls?.[0]
+                post.photoUrls && post.photoUrls.length > 0 ? post.photoUrls[0] : undefined
             );
 
             // Navigate to the conversation

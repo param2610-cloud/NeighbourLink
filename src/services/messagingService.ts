@@ -90,9 +90,10 @@ export const createConversation = async (
 ): Promise<string> => {
   const conversation: Omit<Conversation, 'id'> = {
     participants,
-    postId,
-    postTitle,
-    postImageUrl,
+    // Use optional properties correctly by only adding them if they exist
+    ...(postId ? { postId } : {}),
+    ...(postTitle ? { postTitle } : {}),
+    ...(postImageUrl ? { postImageUrl } : {}),
     unreadCount: participants.reduce((acc, userId) => {
       acc[userId] = 0;
       return acc;
@@ -208,7 +209,7 @@ export const markConversationAsRead = async (conversationId: string, userId: str
 
 // Get user profile details
 export const getUserProfile = async (userId: string) => {
-  const userRef = doc(db, 'users', userId);
+  const userRef = doc(db, 'Users', userId);
   const userSnap = await getDoc(userRef);
   
   if (!userSnap.exists()) {
@@ -243,6 +244,11 @@ export const getOrCreateConversationWithUser = async (
     }
   }
   
-  // If not found, create new conversation
-  return createConversation([currentUserId, otherUserId], postId, postTitle, postImageUrl);
+  // If not found, create new conversation - pass the values directly
+  return createConversation(
+    [currentUserId, otherUserId], 
+    postId,
+    postTitle,
+    postImageUrl
+  );
 };

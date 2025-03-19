@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { MdDeleteForever } from "react-icons/md";
-import { FaRegEdit } from "react-icons/fa";
 import PostCardDelete from "./modal/PostCardDelete";
 
 interface SharedResource {
@@ -127,10 +126,6 @@ const SharedResourceList = ({ resource, setUpdated }: SharedResourceListProps) =
           {
             auth.currentUser?.uid ===resource.userId && (
               <div className="flex justify-center items-center gap-2">
-
-                <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
-                  <FaRegEdit />
-                </div>
                 <div className="text-red-600 dark:text-red-400 hover:cursor-pointer"
                 onClick={() => setIsDeleteModalOpen(true)}
                 >

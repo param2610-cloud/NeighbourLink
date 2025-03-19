@@ -45,7 +45,7 @@ const MessagesList = () => {
       userIds.map(async (userId) => {
         try {
           const { getDoc, doc } = await import('firebase/firestore');
-          const userDoc = await getDoc(doc(db, 'users', userId));
+          const userDoc = await getDoc(doc(db, 'Users', userId));
 
           if (userDoc.exists()) {
             profiles[userId] = {

@@ -33,85 +33,85 @@ const ChatDetail = () => {
   const navigate = useNavigate();
   const currentUserId = auth.currentUser?.uid;
 
-  
-  const [exchangeMessages, setExchangeMessages] = useState<{[messageId: string]: string}>({});
+
+  const [exchangeMessages, setExchangeMessages] = useState<{ [messageId: string]: string }>({});
 
   useEffect(() => {
     if (!conversationId || !currentUserId) return;
 
-    
+
     const fetchConversation = async () => {
       try {
         const conversationRef = doc(db, 'conversations', conversationId);
         const conversationSnap = await getDoc(conversationRef);
-        
+
         if (!conversationSnap.exists()) {
           setError("Conversation not found");
           setLoading(false);
           return;
         }
-        
+
         const conversationData = { id: conversationSnap.id, ...conversationSnap.data() } as Conversation;
         setConversation(conversationData);
-        
-        
+
+
         const otherUserId = conversationData.participants.find(id => id !== currentUserId);
-        
+
         if (otherUserId) {
-          const userRef = doc(db, 'users', otherUserId);
+          const userRef = doc(db, 'Users', otherUserId);
           const userSnap = await getDoc(userRef);
-          
+
           if (userSnap.exists()) {
             setOtherUser({ id: otherUserId, ...userSnap.data() });
           }
         }
-        
-        
+
+
         await markConversationAsRead(conversationId, currentUserId);
       } catch (error) {
         console.error("Error fetching conversation:", error);
         setError("Could not load conversation details");
       }
     };
-    
+
     fetchConversation();
-    
-    
+
+
     const unsubscribe = getMessages(conversationId, (messageList) => {
       setMessages(messageList);
       setLoading(false);
-      
-      
+
+
       if (messageList.length > 0) {
         markConversationAsRead(conversationId, currentUserId);
       }
     });
-    
+
     return () => unsubscribe();
   }, [conversationId, currentUserId]);
-  
-  
+
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  
+
   useEffect(() => {
-    const exchanges: {[messageId: string]: string} = {};
-    
+    const exchanges: { [messageId: string]: string } = {};
+
     messages.forEach(message => {
       const exchangeId = extractExchangeId(message.text);
       if (exchangeId && message.id) {
         exchanges[message.id] = exchangeId;
       }
     });
-    
+
     setExchangeMessages(exchanges);
   }, [messages]);
-  
+
   const formatMessageTimestamp = (timestamp: any) => {
     if (!timestamp) return '';
-    
+
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
       return formatDistanceToNow(date, { addSuffix: true });
@@ -119,26 +119,26 @@ const ChatDetail = () => {
       return '';
     }
   };
-  
+
   const getDisplayName = (user: any) => {
     return user?.displayName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
   };
-  
-  
+
+
   const groupMessagesByDate = () => {
     const groups: { [key: string]: Message[] } = {};
-    
+
     messages.forEach(message => {
       const date = message.createdAt?.toDate?.() || new Date();
       const dateStr = date.toLocaleDateString();
-      
+
       if (!groups[dateStr]) {
         groups[dateStr] = [];
       }
-      
+
       groups[dateStr].push(message);
     });
-    
+
     return Object.entries(groups);
   };
 
@@ -175,7 +175,7 @@ const ChatDetail = () => {
         >
           <IoMdArrowBack size={24} />
         </button>
-        
+
         <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
           {otherUser?.photoURL ? (
             <img
@@ -189,13 +189,13 @@ const ChatDetail = () => {
             </div>
           )}
         </div>
-        
+
         <div className="ml-3 flex-1">
           <h2 className="font-medium text-gray-900 dark:text-white">
             {getDisplayName(otherUser)}
           </h2>
         </div>
-        
+
         {/* Exchange coordination button */}
         {conversation?.postId && (
           <button
@@ -207,7 +207,7 @@ const ChatDetail = () => {
           </button>
         )}
       </div>
-      
+
       {/* Item reference card - if related to a post */}
       {conversation.postId && (
         <ItemReferenceCard
@@ -216,7 +216,7 @@ const ChatDetail = () => {
           imageUrl={conversation.postImageUrl}
         />
       )}
-      
+
       {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto">
         {messages.length === 0 ? (
@@ -238,14 +238,14 @@ const ChatDetail = () => {
                     {new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                   </span>
                 </div>
-                
+
                 {dateMessages.map((message, index) => {
                   const isMine = message.senderId === currentUserId;
-                  const showAvatar = 
-                    index === 0 || 
+                  const showAvatar =
+                    index === 0 ||
                     dateMessages[index - 1]?.senderId !== message.senderId;
-                  
-                  
+
+
                   if (message.id && exchangeMessages[message.id]) {
                     return (
                       <div key={message.id} className="mb-6">
@@ -266,21 +266,21 @@ const ChatDetail = () => {
                             {isMine ? 'You arranged' : `${getDisplayName(otherUser)} arranged`} an exchange:
                           </span>
                         </div>
-                        
+
                         {/* Exchange details */}
-                        <ExchangeDetails 
-                          exchangeId={exchangeMessages[message.id]} 
+                        <ExchangeDetails
+                          exchangeId={exchangeMessages[message.id]}
                           conversationId={conversationId || ''}
                           currentUserId={currentUserId || ''}
                         />
                       </div>
                     );
                   }
-                  
-                  
+
+
                   return (
-                    <div 
-                      key={message.id} 
+                    <div
+                      key={message.id}
                       className={`flex mb-4 ${isMine ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isMine && showAvatar && (
@@ -298,23 +298,21 @@ const ChatDetail = () => {
                           )}
                         </div>
                       )}
-                      
+
                       <div className={`max-w-[75%] ${!isMine && !showAvatar ? 'ml-10' : ''}`}>
-                        <div className={`rounded-2xl px-4 py-2 ${
-                          isMine 
-                            ? 'bg-indigo-600 text-white' 
+                        <div className={`rounded-2xl px-4 py-2 ${isMine
+                            ? 'bg-indigo-600 text-white'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
-                        }`}>
+                          }`}>
                           {message.text}
                         </div>
-                        
+
                         {/* Media attachments */}
                         {message.mediaUrls && message.mediaUrls.length > 0 && (
-                          <div className={`mt-1 grid ${
-                            message.mediaUrls.length > 1 ? 'grid-cols-2 gap-1' : ''
-                          }`}>
+                          <div className={`mt-1 grid ${message.mediaUrls.length > 1 ? 'grid-cols-2 gap-1' : ''
+                            }`}>
                             {message.mediaUrls.map((url, i) => (
-                              <div 
+                              <div
                                 key={i}
                                 className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
                               >
@@ -323,10 +321,9 @@ const ChatDetail = () => {
                             ))}
                           </div>
                         )}
-                        
-                        <div className={`text-xs mt-1 ${
-                          isMine ? 'text-right text-gray-500' : 'text-gray-500'
-                        }`}>
+
+                        <div className={`text-xs mt-1 ${isMine ? 'text-right text-gray-500' : 'text-gray-500'
+                          }`}>
                           {formatMessageTimestamp(message.createdAt)}
                           {isMine && message.read && (
                             <span className="ml-1 text-blue-500">✓</span>
@@ -342,17 +339,17 @@ const ChatDetail = () => {
           </div>
         )}
       </div>
-      
+
       {/* Message input */}
       <div className="border-t dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
-        <MessageInput 
+        {otherUser?.id && (<MessageInput
           conversationId={conversationId || ''}
           currentUserId={currentUserId || ''}
           otherUserId={otherUser?.id || ''}
           postId={conversation.postId}
-        />
+        />)}
       </div>
-      
+
       {/* Exchange coordination modal */}
       {showExchangeModal && (
         <ExchangeCoordination

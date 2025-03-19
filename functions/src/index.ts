@@ -50,7 +50,7 @@ export const onEmergencyPost = v1.firestore
     if (postData.urgencyLevel === 3) {
       // Get all users with emergency notifications enabled within the visibility radius
       const usersSnapshot = await admin.firestore()
-        .collection('users')
+        .collection('Users')
         .where('notifyEmergency', '==', true)
         .get();
       
@@ -145,7 +145,7 @@ export const onNewChatMessage = v1.firestore
       }
       
       // Get sender information for notification title
-      const senderRef = admin.firestore().collection('users').doc(messageData.senderId);
+      const senderRef = admin.firestore().collection('Users').doc(messageData.senderId);
       const senderSnapshot = await senderRef.get();
       const senderData = senderSnapshot.exists ? senderSnapshot.data() : null;
       
@@ -162,7 +162,7 @@ export const onNewChatMessage = v1.firestore
       // Send notification to each recipient
       for (const recipientId of recipientIds) {
         // Get recipient's FCM token
-        const recipientRef = admin.firestore().collection('users').doc(recipientId);
+        const recipientRef = admin.firestore().collection('Users').doc(recipientId);
         const recipientSnapshot = await recipientRef.get();
         
         if (!recipientSnapshot.exists) {

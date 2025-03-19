@@ -9,11 +9,9 @@ import { ToastContainer } from "react-toastify";
 import { auth } from "@/firebase";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
-const LoadingSpinner = () => (
-    <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-        <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
-    </div>
-);
+// const LoadingSpinner = () => (
+    
+// );
 
 function PlayGround() {
     const [loading, setLoading] = useState(true);
@@ -28,12 +26,16 @@ function PlayGround() {
     }, []);
 
     if (loading) {
-        return <LoadingSpinner />;
+        return <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
+        <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
+    </div>;
     }
 
     return (
         <Router>
-            <Suspense fallback={<LoadingSpinner />}>
+            <Suspense fallback={<div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
+        <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
+    </div>}>
                 {user ? (
                     <AuthLayout>
                         <AuthRouter />

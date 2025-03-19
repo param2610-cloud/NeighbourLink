@@ -17,8 +17,14 @@ export const sendNotificationToUser = async (
   data: any
 ) => {
   try {
+    // Validate userId to prevent invalid document references
+    if (!userId) {
+      console.error("Invalid userId provided to sendNotificationToUser");
+      return;
+    }
+    
     // Get the user document to retrieve FCM token
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, "Users", userId);
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists() && userDoc.data().fcmToken) {
@@ -36,6 +42,8 @@ export const sendNotificationToUser = async (
           ...data
         }
       });
+    }else{
+      console.error("User does not have an FCM token");
     }
   } catch (error) {
     console.error("Error sending notification:", error);
@@ -43,9 +51,9 @@ export const sendNotificationToUser = async (
 };
 
 /**
- * Sends emergency notification to users within a specific radius
+ * Sends emergency notifications to users within a specified radius
  */
-export const sendEmergencyNotification = async (
+export const sendEmergencyNotifications = async (
   postId: string,
   title: string,
   body: string,
@@ -55,7 +63,7 @@ export const sendEmergencyNotification = async (
   try {
     // Get all users with emergency notifications enabled
     const usersQuery = query(
-      collection(db, "users"), 
+      collection(db, "Users"), 
       where("notifyEmergency", "==", true)
     );
     
@@ -108,6 +116,12 @@ export const sendResponseNotification = async (
   responderName: string
 ) => {
   try {
+    // Validate postOwnerId before proceeding
+    if (!postOwnerId) {
+      console.error("Invalid postOwnerId provided to sendResponseNotification");
+      return;
+    }
+    
     // Get the post details
     const postRef = doc(db, "posts", postId);
     const postDoc = await getDoc(postRef);
@@ -138,6 +152,12 @@ export const sendChatMessageNotification = async (
   messagePreview: string
 ) => {
   try {
+    // Validate recipientId before passing to sendNotificationToUser
+    if (!recipientId) {
+      console.error("Invalid recipientId provided to sendChatMessageNotification");
+      return;
+    }
+    
     await sendNotificationToUser(
       recipientId,
       `New message from ${senderName}`,
