@@ -2,16 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus } from "react-icons/fa";
+import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus, FaRegEdit } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
 import { BiSearchAlt } from "react-icons/bi";
-import { MdOutlineWarning } from "react-icons/md";
+import { MdDeleteForever, MdOutlineWarning } from "react-icons/md";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ImageDisplay } from "../components/AWS/UploadFile";
-import { motion } from "framer-motion"; 
-import Sidebar from "../components/authPage/structures/Sidebar"; 
+import { motion } from "framer-motion";
+import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
+import PostCardDelete from "@/components/PostCard/modal/PostCardDelete";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -33,24 +34,26 @@ interface Post {
   visibilityRadius: number;
   isAnonymous: boolean;
   createdAt: Timestamp;
-  userName?: string; 
-  userPhoto?: string; 
-  distance?: number; 
+  userName?: string;
+  userPhoto?: string;
+  distance?: number;
 }
 
 const Home: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [radius, setRadius] = useState(3); 
+  const [radius, setRadius] = useState(3);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [hasEmergencyAlerts, setHasEmergencyAlerts] = useState(false);
   const [emergencyAlerts, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [, setUserDetails] = useState<any>(null);
+  const [updated, setUpdated] = useState(false);
   const navigate = useNavigate();
 
-  
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -67,90 +70,90 @@ const Home: React.FC = () => {
     }
   }, []);
 
-  
-useEffect(() => {
-    if (!userLocation) return;
-    
-    const fetchPosts = async () => {
-        setLoading(true);
-        try {
-            
-            const postsRef = collection(db, "posts");
-            const q = query(postsRef, orderBy("createdAt", "desc"));
-            const querySnapshot = await getDocs(q);
-            
-            // const postsData: Post[] = [];
-            const emergencyData: Post[] = [];
-            
-            // Create an array of promises to fetch all user data in parallel
-            const postsWithUserPromises = querySnapshot.docs.map(async (document) => {
-                const data = document.data() as Omit<Post, "id">;
-                const post = { id: document.id, ...data } as Post;
-                
-                // Fetch user details if userId exists
-                if (post.userId) {
-                    try {
-                        const userDoc = await getDoc(doc(db, "Users", post.userId));
-                        if (userDoc.exists()) {
-                            const userData = userDoc.data();
-                            
-                            post.userName = userData.firstName?`${userData.firstName} ${userData.lastName}`:userData.firstName || userData.lastName || userData.displayName || "User";
-                            post.userPhoto = userData.photo || null;
-                        }
-                        
-                    } catch (userError) {
-                        console.error("Error fetching user data:", userError);
-                    }
-                }
-                
-                // Calculate distance if coordinates exist
-                if (post.coordinates && userLocation) {
-                    post.distance = calculateDistance(
-                        userLocation.lat, 
-                        userLocation.lng,
-                        post.coordinates.lat,
-                        post.coordinates.lng
-                    );
-                    
-                    // Filter by radius
-                    if (post.distance <= radius) {
-                        if (post.urgencyLevel === 3) {
-                            emergencyData.push(post);
-                        }
-                        return post;
-                    }
-                } else {
-                    // Include posts without coordinates
-                    return post;
-                }
-                return null;
-            });
-            
-            // Wait for all the user data fetching to complete
-            const resolvedPosts = await Promise.all(postsWithUserPromises);
-            
-            // Filter out null values (posts outside radius)
-            const filteredPosts = resolvedPosts.filter(post => post !== null) as Post[];
-            
-            setPosts(filteredPosts);
-            setEmergencyAlerts(emergencyData);
-            setHasEmergencyAlerts(emergencyData.length > 0);
-        } catch (error) {
-            console.error("Error fetching posts:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-    
-    fetchPosts();
-}, [userLocation, radius]);
 
-  
-  const filteredPosts = posts.filter(post => 
+  useEffect(() => {
+    if (!userLocation) return;
+
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+
+        const postsRef = collection(db, "posts");
+        const q = query(postsRef, orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        // const postsData: Post[] = [];
+        const emergencyData: Post[] = [];
+
+        // Create an array of promises to fetch all user data in parallel
+        const postsWithUserPromises = querySnapshot.docs.map(async (document) => {
+          const data = document.data() as Omit<Post, "id">;
+          const post = { id: document.id, ...data } as Post;
+
+          // Fetch user details if userId exists
+          if (post.userId) {
+            try {
+              const userDoc = await getDoc(doc(db, "Users", post.userId));
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+
+                post.userName = userData.firstName ? `${userData.firstName} ${userData.lastName}` : userData.firstName || userData.lastName || userData.displayName || "User";
+                post.userPhoto = userData.photo || null;
+              }
+
+            } catch (userError) {
+              console.error("Error fetching user data:", userError);
+            }
+          }
+
+          // Calculate distance if coordinates exist
+          if (post.coordinates && userLocation) {
+            post.distance = calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              post.coordinates.lat,
+              post.coordinates.lng
+            );
+
+            // Filter by radius
+            if (post.distance <= radius) {
+              if (post.urgencyLevel === 3) {
+                emergencyData.push(post);
+              }
+              return post;
+            }
+          } else {
+            // Include posts without coordinates
+            return post;
+          }
+          return null;
+        });
+
+        // Wait for all the user data fetching to complete
+        const resolvedPosts = await Promise.all(postsWithUserPromises);
+
+        // Filter out null values (posts outside radius)
+        const filteredPosts = resolvedPosts.filter(post => post !== null) as Post[];
+
+        setPosts(filteredPosts);
+        setEmergencyAlerts(emergencyData);
+        setHasEmergencyAlerts(emergencyData.length > 0);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [userLocation, radius, updated]);
+
+
+  const filteredPosts = posts.filter(post =>
     selectedFilter === "all" ? true : post.postType === selectedFilter
   );
 
-  
+
   useEffect(() => {
     const fetchUserData = async () => {
       auth.onAuthStateChanged(async (user) => {
@@ -169,7 +172,7 @@ useEffect(() => {
     fetchUserData();
   }, []);
 
-  
+
   async function handleLogout() {
     try {
       await auth.signOut();
@@ -181,14 +184,14 @@ useEffect(() => {
     }
   }
 
-  
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  
+
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; 
+    const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
     const dLon = deg2rad(lon2 - lon1);
     const a =
@@ -196,7 +199,7 @@ useEffect(() => {
       Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
       Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; 
+    const distance = R * c;
     return distance;
   };
 
@@ -204,12 +207,12 @@ useEffect(() => {
     return deg * (Math.PI / 180);
   };
 
-  
+
   const formatTimeSince = (timestamp: Timestamp) => {
     const now = new Date();
     const postDate = timestamp.toDate();
     const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) {
       return `${diffInSeconds} sec ago`;
     } else if (diffInSeconds < 3600) {
@@ -221,7 +224,7 @@ useEffect(() => {
     }
   };
 
-  
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "Medical":
@@ -239,7 +242,7 @@ useEffect(() => {
     }
   };
 
-  
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -249,23 +252,23 @@ useEffect(() => {
       }
     }
   };
-  
+
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    show: { 
-      y: 0, 
+    show: {
+      y: 0,
       opacity: 1,
-      transition: { 
-        type: "spring", 
-        stiffness: 300 
+      transition: {
+        type: "spring",
+        stiffness: 300
       }
     }
   };
-  
+
   const alertVariants = {
     hidden: { x: -300, opacity: 0 },
-    show: { 
-      x: 0, 
+    show: {
+      x: 0,
       opacity: 1,
       transition: {
         type: "spring",
@@ -279,9 +282,8 @@ useEffect(() => {
     <div className="flex flex-col min-h-screen mb-16 bg-gray-50 dark:bg-gray-900">
       {/* Responsive Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 w-64 transform ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 transition-transform duration-300 z-40`}
+        className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } md:translate-x-0 transition-transform duration-300 z-40`}
       >
         <Sidebar
           // userDetails={userDetails}
@@ -292,8 +294,8 @@ useEffect(() => {
 
       {/* Overlay to close sidebar when clicking outside (only on mobile) */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-transparent z-30 md:hidden" 
+        <div
+          className="fixed inset-0 bg-transparent z-30 md:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -303,25 +305,25 @@ useEffect(() => {
         {/* Top Navigation */}
         <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
           <div className="flex items-center justify-between p-4">
-            <div 
-              className="flex items-center space-x-2 cursor-pointer" 
+            <div
+              className="flex items-center space-x-2 cursor-pointer"
               onClick={toggleSidebar}
             >
               <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
             </div>
-            
+
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-gray-800 dark:text-white">NeighbourLink</h1>
             </div>
-            
-            <div 
+
+            <div
               className="flex items-center space-x-2 cursor-pointer"
               onClick={() => navigate("/notifications")}
             >
               <IoMdNotifications className="text-2xl text-gray-700 dark:text-gray-200" />
             </div>
           </div>
-          
+
           {/* Neighborhood, Radius Selector, and Filter */}
           <div className="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900">
             <div>
@@ -330,10 +332,10 @@ useEffect(() => {
                 {userLocation ? "Current Location" : "Location unavailable"}
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">Radius:</span>
-              <select 
+              <select
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
                 className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm text-black dark:text-white"
@@ -345,12 +347,12 @@ useEffect(() => {
               </select>
             </div>
           </div>
-          
+
         </div>
-        
+
         {/* Emergency Alerts Banner */}
         {hasEmergencyAlerts && (
-          <motion.div 
+          <motion.div
             initial="hidden"
             animate="show"
             variants={alertVariants}
@@ -366,17 +368,17 @@ useEffect(() => {
                 </motion.div>
                 <h3 className="font-bold text-red-600 dark:text-red-400">Emergency Alerts</h3>
               </div>
-              <button 
-                onClick={() => setHasEmergencyAlerts(false)} 
+              <button
+                onClick={() => setHasEmergencyAlerts(false)}
                 className="text-red-600 dark:text-red-400"
               >
                 Dismiss
               </button>
             </div>
-            
+
             <motion.div variants={containerVariants} initial="hidden" animate="show">
               {emergencyAlerts.map(alert => (
-                <motion.div 
+                <motion.div
                   key={alert.id}
                   variants={itemVariants}
                   whileHover={{ scale: 1.02 }}
@@ -397,24 +399,24 @@ useEffect(() => {
             </motion.div>
           </motion.div>
         )}
-        
+
         {/* Quick Actions Grid */}
         <div className="px-4 py-3">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Quick Actions</h3>
-          <motion.div 
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="show"
             className="grid grid-cols-2 gap-3"
           >
-            <motion.button 
+            <motion.button
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/resource/need")} 
+              onClick={() => navigate("/resource/need")}
               className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
             >
-              <motion.div 
+              <motion.div
                 initial={{ y: 0 }}
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
@@ -424,15 +426,15 @@ useEffect(() => {
               </motion.div>
               <span className="font-medium">Post Request</span>
             </motion.button>
-            
-            <motion.button 
+
+            <motion.button
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/resource/offer")} 
+              onClick={() => navigate("/resource/offer")}
               className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
             >
-              <motion.div 
+              <motion.div
                 initial={{ y: 0 }}
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
@@ -442,15 +444,15 @@ useEffect(() => {
               </motion.div>
               <span className="font-medium">Post Offer</span>
             </motion.button>
-            
-            <motion.button 
+
+            <motion.button
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/search")} 
+              onClick={() => navigate("/search")}
               className="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
             >
-              <motion.div 
+              <motion.div
                 initial={{ y: 0 }}
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
@@ -460,15 +462,15 @@ useEffect(() => {
               </motion.div>
               <span className="font-medium">Search</span>
             </motion.button>
-            
-            <motion.button 
+
+            <motion.button
               variants={itemVariants}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/emergency/posts")} 
+              onClick={() => navigate("/emergency/posts")}
               className="bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
             >
-              <motion.div 
+              <motion.div
                 initial={{ y: 0 }}
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
@@ -480,7 +482,7 @@ useEffect(() => {
             </motion.button>
           </motion.div>
         </div>
-        
+
         {/* Feed Section */}
         <div className="flex-1 px-4 py-3">
           <div className="flex items-center justify-between mb-3">
@@ -498,7 +500,7 @@ useEffect(() => {
               </select>
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
@@ -506,7 +508,7 @@ useEffect(() => {
           ) : filteredPosts.length > 0 ? (
             <div className="space-y-4">
               {filteredPosts.map(post => (
-                <div 
+                <div
                   key={post.id}
                   onClick={() => navigate(`/post/${post.id}`)}
                   className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 cursor-pointer"
@@ -514,31 +516,49 @@ useEffect(() => {
                   <div className="flex justify-between">
                     <div className="flex items-center space-x-2">
                       <div className="text-xl">{getCategoryIcon(post.category)}</div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        post.postType === "need" 
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                          : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${post.postType === "need"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                        : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        }`}>
                         {post.postType === "need" ? "Need" : "Offer"}
                       </span>
                     </div>
-                    
+
                     {post.urgencyLevel > 1 && (
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        post.urgencyLevel === 2
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${post.urgencyLevel === 2
+                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                        }`}>
                         {post.urgencyLevel === 2 ? "Urgent" : "Emergency"}
                       </span>
                     )}
+                    {
+                      auth.currentUser?.uid === post.userId && (
+                        <div className="flex justify-center items-center gap-2">
+                          <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
+                            <FaRegEdit />
+                          </div>
+                          <div className="text-red-600 dark:text-red-400 hover:cursor-pointer" onClick={() => setIsDeleteModalOpen(true)}>
+                            <MdDeleteForever size={20} />
+                            {/* Delete */}
+                          </div>
+                        </div>
+                      )
+                    }
+                    <PostCardDelete
+                      isOpen={isDeleteModalOpen}
+                      onClose={() => setIsDeleteModalOpen(false)}
+                      itemId={post.id}
+                      itemType="post"
+                      onDelete={() => setUpdated((prev) => !prev)}
+                    />
                   </div>
-                  
+
                   <h4 className="font-medium text-gray-900 dark:text-white mt-2">{post.title}</h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
                     {post.description}
                   </p>
-                  
+
                   {post?.photoUrls?.length > 0 && (
                     <div className="mt-3 flex space-x-2 overflow-x-auto">
                       {post.photoUrls.slice(0, 1).map((url, idx) => (
@@ -553,7 +573,7 @@ useEffect(() => {
                       )}
                     </div>
                   )}
-                  
+
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center">
                       {!post.isAnonymous && (
@@ -567,7 +587,7 @@ useEffect(() => {
                         {post.isAnonymous ? "Anonymous" : post.userName || "User"}
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       {post.distance && (
                         <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -588,16 +608,16 @@ useEffect(() => {
             </div>
           )}
         </div>
-        
+
         {/* Floating Action Button */}
-        <button 
-          onClick={() => navigate("/resource/need")} 
+        <button
+          onClick={() => navigate("/resource/need")}
           className="fixed bottom-20 right-5 bg-indigo-600 text-white p-4 rounded-full shadow-lg"
         >
           <FaPlus />
         </button>
-        
-        <Bottombar/>
+
+        <Bottombar />
       </div>
     </div>
   );

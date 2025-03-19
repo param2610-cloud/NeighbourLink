@@ -1,10 +1,11 @@
 import ThemeToggle from "@/ThemeToggle";
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
-import { Home, User, Users, FileText, Share, Inbox, Archive } from "lucide-react";
+import { Home, User, FileText, Share, Inbox, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import {AiOutlineHeart} from "react-icons/ai";
 
 interface SidebarProps {
   
@@ -53,7 +54,7 @@ const Sidebar = ({  handleLogout, isSidebarOpen }: SidebarProps) => {
   const navItems = [
     { path: "/home", label: "Home", icon: <Home size={18} /> },
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
-    { path: "#", label: "Friends", icon: <Users size={18} /> },
+    { path: "/saved/posts", label: "Saved Posts", icon: <AiOutlineHeart size={18} /> },
     { path: "/resource/need", label: "Request Resource", icon: <FileText size={18} /> },
     { path: "/resource/offer", label: "Share Resources", icon: <Share size={18} /> },
     { path: "/profile/auth/requests", label: "My Requests", icon: <Inbox size={18} /> },

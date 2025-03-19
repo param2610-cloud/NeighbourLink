@@ -105,7 +105,8 @@ function Register() {
           isVerified: false,
           createdAt: new Date(),
           rating: 0,
-          completedExchanges: 0
+          completedExchanges: 0,
+          savedPosts:[]
         });
 
         toast.success("Registration successful!", {

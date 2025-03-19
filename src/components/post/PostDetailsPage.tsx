@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
-import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiOutlineWarning } from 'react-icons/ai';
+import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHeart } from 'react-icons/ai';
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from 'react-icons/fa';
@@ -15,33 +15,34 @@ import ContactResponder from '../PostCard/modal/ContactResponder';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
 import { sendResponseNotification } from '@/services/notificationService';
+import { toast } from 'react-toastify';
 
 interface Post {
-  id?: string;
-  title: string;
-  category: string;
-  description: string;
-  urgencyLevel: number;
-  photoUrls: string[];
-  location: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  } | null;
-  userId: string;
-  postType: "need" | "offer";
-  duration: string;
-  visibilityRadius: number;
-  isAnonymous: boolean;
-  createdAt: Timestamp;
+    id?: string;
+    title: string;
+    category: string;
+    description: string;
+    urgencyLevel: number;
+    photoUrls: string[];
+    location: string;
+    coordinates: {
+        lat: number;
+        lng: number;
+    } | null;
+    userId: string;
+    postType: "need" | "offer";
+    duration: string;
+    visibilityRadius: number;
+    isAnonymous: boolean;
+    createdAt: Timestamp;
 }
 
 interface UserInfo {
-  displayName: string;
-  photoURL: string;
-  email: string;
-  verified?: boolean;
-  rating?: number;
+    displayName: string;
+    photoURL: string;
+    email: string;
+    verified?: boolean;
+    rating?: number;
 }
 
 interface UserData {
@@ -65,20 +66,22 @@ const PostDetailsPage = () => {
     const [selectedResponder, setSelectedResponder] = useState<UserData | null>(null);
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
     const [mapError, setMapError] = useState<boolean>(false);
-    
+    const [isSaved, setIsSaved] = useState(false);
+    const [saveLoading, setSaveLoading] = useState(false);
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setFirebaseUser(user);
-            
+
             console.log("Auth state changed:", user);
         });
-        
+
         // Cleanup subscription on unmount
         return () => unsubscribe();
     }, []);
     console.log(firebaseUser);
-    
-    
+
+
     const getCategoryIcon = (category: string) => {
         switch (category.toLowerCase()) {
             case 'medical': return <FaMedkit className="text-red-500" />;
@@ -89,8 +92,8 @@ const PostDetailsPage = () => {
             default: return <FaBook className="text-blue-500" />;
         }
     };
-    
-    
+
+
     const formatDate = (timestamp: Timestamp) => {
         if (!timestamp) return 'Unknown date';
         return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
@@ -99,17 +102,17 @@ const PostDetailsPage = () => {
             year: 'numeric'
         });
     };
-    
-    
+
+
     const getUrgencyInfo = (level: number) => {
         switch (level) {
             case 3: return { text: 'High Urgency', class: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-200' };
             case 2: return { text: 'Medium Urgency', class: 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-200' };
-            case 1: 
+            case 1:
             default: return { text: 'Low Urgency', class: 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200' };
         }
     };
-    
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -121,16 +124,16 @@ const PostDetailsPage = () => {
                     const postData = { id: postSnap.id, ...postSnap.data() } as Post;
                     setPostDetails(postData);
                     console.log(postData);
-                    
-                    
+
+
                     if (!postData.isAnonymous) {
                         await fetchUserInfo(postData.userId);
                     }
-                    
+
                     // Check if there are any responders
                     const responsesQuery = query(collection(db, "responses"), where("postId", "==", id));
                     const responseSnapshots = await getDocs(responsesQuery);
-                    
+
                     setHasResponders(!responseSnapshots.empty);
                 } else {
                     setError("Post not found");
@@ -142,12 +145,12 @@ const PostDetailsPage = () => {
                 setLoading(false);
             }
         };
-        
+
         const fetchUserInfo = async (userId: string) => {
             try {
                 const userRef = doc(db, 'users', userId);
                 const userSnap = await getDoc(userRef);
-                
+
                 if (userSnap.exists()) {
                     setProviderInfo(userSnap.data() as UserInfo);
                 }
@@ -155,29 +158,29 @@ const PostDetailsPage = () => {
                 console.error("Error fetching user:", error);
             }
         };
-        
+
         if (id) {
             fetchData();
         }
     }, [id, firebaseUser]); // Added firebaseUser as dependency
-    
-    
+
+
     const navigateImage = (direction: 'next' | 'prev') => {
         if (!post) return;
-        
+
         if (direction === 'next') {
             setCurrentImageIndex((prev) => (prev + 1) % post.photoUrls.length);
         } else {
             setCurrentImageIndex((prev) => (prev - 1 + post.photoUrls.length) % post.photoUrls.length);
         }
     };
-    
-    
+
+
     const handleContact = async () => {
         console.log(post);
-        
+
         if (!post?.userId || !firebaseUser?.uid) return;
-        
+
         try {
             // If this is the post owner, navigate to see responders
             if (firebaseUser.uid === post.userId) {
@@ -189,7 +192,7 @@ const PostDetailsPage = () => {
             const currentUserSnap = await getDoc(currentUserRef);
             if (currentUserSnap.exists()) {
                 const currentUser = currentUserSnap.data();
-                
+
                 // Send notification to post owner
                 await sendResponseNotification(
                     post.id!,
@@ -205,7 +208,7 @@ const PostDetailsPage = () => {
                 post.title,
                 post.photoUrls?.[0]
             );
-            
+
             // Navigate to the conversation
             navigate(`/messages/${conversationId}`);
         } catch (error) {
@@ -213,21 +216,21 @@ const PostDetailsPage = () => {
             alert("Could not start conversation. Please try again.");
         }
     };
-    
-    
+
+
     const handleSelectResponder = (responder: UserData) => {
         setSelectedResponder(responder);
         setShowContactModal(true);
     };
-    
+
     const getContactButtonText = () => {
         if (!post) return "Contact";
-        
+
         // Remove debugging console.log
         if (firebaseUser?.uid === post?.userId) {
             return "View Messages";
         }
-        
+
         if (post.postType === 'offer') {
             return "Request this Resource";
         } else {
@@ -248,7 +251,7 @@ const PostDetailsPage = () => {
             <div className="h-screen flex flex-col items-center justify-center p-4 text-center">
                 <h2 className="text-2xl font-bold text-red-500 mb-2">Error</h2>
                 <p className="text-gray-600 dark:text-gray-400">{error || "Post not available"}</p>
-                <button 
+                <button
                     onClick={() => navigate(-1)}
                     className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 >
@@ -257,50 +260,81 @@ const PostDetailsPage = () => {
             </div>
         );
     }
-    
+
     const urgencyInfo = getUrgencyInfo(post.urgencyLevel);
+
+    const handleSavePost = async () => {
+        if (!firebaseUser || !id) {
+            alert('Please log in to save posts.');
+            return;
+        }
+
+        try {
+            setSaveLoading(true);
+            const userRef = doc(db, 'Users', firebaseUser.uid);
+
+            if (isSaved) {
+                await updateDoc(userRef, {
+                    savedPosts: arrayRemove(id)
+                });
+                setIsSaved(false);
+                toast.success("Post unsaved successfully", {position:'top-right'})
+            } else {
+                await updateDoc(userRef, {
+                    savedPosts: arrayUnion(id)
+                });
+                setIsSaved(true);
+                toast.success("Post saved successfully", {position:'top-right'})
+            }
+        } catch (error) {
+            console.error('Error updating saved posts:', error);
+            toast.error("Failed to update saved posts", {position:'top-right'})
+        } finally {
+            setSaveLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Back button */}
-            <button 
-                onClick={() => navigate(-1)} 
+            <button
+                onClick={() => navigate(-1)}
                 className="absolute top-4 left-4 z-10 p-2 bg-white/70 dark:bg-gray-800/70 rounded-full"
             >
                 <IoMdArrowBack className="text-xl" />
             </button>
-            
+
             {/* Image Gallery */}
             <div className="relative w-full h-64 md:h-96 bg-gray-200 dark:bg-gray-700">
                 {post.photoUrls && post.photoUrls.length > 0 ? (
                     <>
                         <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                            <ImageDisplay objectKey={post.photoUrls[currentImageIndex]}  />
+                            <ImageDisplay objectKey={post.photoUrls[currentImageIndex]} />
                         </div>
-                        
+
                         {/* Image navigation dots */}
                         {post.photoUrls.length > 1 && (
                             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
                                 {post.photoUrls.map((_, i) => (
-                                    <button 
-                                        key={i} 
+                                    <button
+                                        key={i}
                                         className={`w-2 h-2 rounded-full ${i === currentImageIndex ? 'bg-white' : 'bg-gray-400'}`}
                                         onClick={() => setCurrentImageIndex(i)}
                                     />
                                 ))}
                             </div>
                         )}
-                        
+
                         {/* Image navigation arrows */}
                         {post.photoUrls.length > 1 && (
                             <>
-                                <button 
+                                <button
                                     className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-white/40 dark:bg-gray-800/40 rounded-full"
                                     onClick={() => navigateImage('prev')}
                                 >
                                     &lt;
                                 </button>
-                                <button 
+                                <button
                                     className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white/40 dark:bg-gray-800/40 rounded-full"
                                     onClick={() => navigateImage('next')}
                                 >
@@ -315,7 +349,7 @@ const PostDetailsPage = () => {
                     </div>
                 )}
             </div>
-            
+
             {/* Post details card */}
             <div className="bg-white dark:bg-gray-800 rounded-t-3xl -mt-8 relative z-10 p-5 shadow-sm min-h-[calc(100vh-16rem)]">
                 {/* Title and category */}
@@ -327,7 +361,7 @@ const PostDetailsPage = () => {
                             <span className="ml-1 text-sm text-gray-600 dark:text-gray-300">{post.category}</span>
                         </div>
                     </div>
-                    
+
                     {/* Post type and date */}
                     <div className="flex flex-wrap gap-2 mt-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium 
@@ -335,46 +369,46 @@ const PostDetailsPage = () => {
                         >
                             {post.postType === 'offer' ? 'Offering' : 'Needed'}
                         </span>
-                        
+
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${urgencyInfo.class}`}>
                             {urgencyInfo.text}
                         </span>
-                        
+
                         <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
                             Posted: {formatDate(post.createdAt)}
                         </span>
                     </div>
                 </div>
-                
+
                 {/* Description */}
                 <div className="mb-6 text-gray-700 dark:text-gray-300">
                     <h2 className="text-lg font-semibold mb-2">Description</h2>
                     <p>{post.description}</p>
                 </div>
-                
+
                 {/* Availability */}
                 <div className="mb-6">
                     <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Availability</h2>
                     <p className="text-gray-700 dark:text-gray-300">Available for: {post.duration}</p>
                 </div>
-                
+
                 {/* Location */}
                 <div className="mb-6 overflow-hidden">
                     <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Location</h2>
-                    
+
                     {post.coordinates && (
                         <>
                             {!mapError ? (
                                 <div className="relative">
-                                    <LocationViewer 
-                                        lat={post.coordinates.lat.toString()} 
-                                        lon={post.coordinates.lng.toString()} 
+                                    <LocationViewer
+                                        lat={post.coordinates.lat.toString()}
+                                        lon={post.coordinates.lng.toString()}
                                         onError={() => setMapError(true)}
                                     />
                                 </div>
                             ) : (
-                                <FallbackMap 
-                                    lat={post.coordinates.lat} 
+                                <FallbackMap
+                                    lat={post.coordinates.lat}
                                     lng={post.coordinates.lng}
                                     location={post.location}
                                 />
@@ -382,7 +416,7 @@ const PostDetailsPage = () => {
                         </>
                     )}
                 </div>
-                
+
                 {/* Provider details */}
                 {!post.isAnonymous && providerInfo && (
                     <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -408,43 +442,56 @@ const PostDetailsPage = () => {
                         </div>
                     </div>
                 )}
-                
+
                 {/* Responders section - only visible to post owner */}
                 {firebaseUser?.uid === post.userId && (
                     <div className="mb-6">
-                        <PostResponders 
-                            postId={post.id!} 
-                            onSelectResponder={handleSelectResponder} 
+                        <PostResponders
+                            postId={post.id!}
+                            onSelectResponder={handleSelectResponder}
                             postTitle={post.title}
                         />
                     </div>
                 )}
-                
+
                 {/* Action buttons */}
                 <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
                     <div className="flex justify-between mb-3">
-                        <button className="flex items-center text-gray-500 dark:text-gray-400">
-                            <AiOutlineHeart className="mr-1" /> Save
+                        <button
+                            onClick={handleSavePost}
+                            disabled={!firebaseUser || saveLoading}
+                            className={`flex items-center ${!firebaseUser ? 'opacity-50 cursor-not-allowed' :
+                                    isSaved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
+                                } transition-colors`}
+                            title={!firebaseUser ? "Login to save posts" : isSaved ? "Unsave post" : "Save post"}
+                        >
+                            {saveLoading ? (
+                                <AiOutlineLoading3Quarters className="animate-spin mr-1" />
+                            ) : isSaved ? (
+                                <AiFillHeart className="mr-1" />
+                            ) : (
+                                <AiOutlineHeart className="mr-1" />
+                            )}
+                            {isSaved ? 'Saved' : 'Save'}
                         </button>
                         <button className="flex items-center text-gray-500 dark:text-gray-400">
                             <AiOutlineShareAlt className="mr-1" /> Share
                         </button>
-                        <button className="flex items-center text-gray-500 dark:text-gray-400">
+                        {/* <button className="flex items-center text-gray-500 dark:text-gray-400">
                             <AiOutlineWarning className="mr-1" /> Report
-                        </button>
+                        </button> */}
                     </div>
-                    
-                    <button 
+
+                    <button
                         onClick={handleContact}
-                        className={`w-full py-3 ${
-                            firebaseUser ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-400 cursor-not-allowed'
-                        } text-white rounded-lg flex items-center justify-center font-medium`}
+                        className={`w-full py-3 ${firebaseUser ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-400 cursor-not-allowed'
+                            } text-white rounded-lg flex items-center justify-center font-medium`}
                         disabled={!firebaseUser}
                     >
                         <BiMessageDetail className="mr-2" /> {getContactButtonText()}
                     </button>
                 </div>
-                
+
                 {/* Contact Modal */}
                 {selectedResponder && showContactModal && (
                     <ContactResponder
@@ -458,7 +505,7 @@ const PostDetailsPage = () => {
                         currentUserId={firebaseUser?.uid || ''}
                     />
                 )}
-                
+
                 {/* Spacer for fixed bottom bar */}
                 <div className="h-32"></div>
             </div>
