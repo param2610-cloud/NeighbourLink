@@ -33,8 +33,8 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   
-  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
-  const [userDefaultCoordinates, setUserDefaultCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [coordinates, setCoordinates] = useState<{ lat: string; lng: string } | null>(null);
+  const [userDefaultCoordinates, setUserDefaultCoordinates] = useState<{ lat: string; lng: string } | null>(null);
   const [locationType, setLocationType] = useState<"default" | "custom">("default");
   const [locationError, setLocationError] = useState<string>("");
 
@@ -46,11 +46,11 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         if (userDoc.exists() && userDoc.data().location) {
           const userData = userDoc.data();
           const userLoc = {
-            lat: userData.location.latitude,
-            lng: userData.location.longitude
+            lat: userData.location.latitude.toString(),
+            lng: userData.location.longitude.toString()
           };
           setUserDefaultCoordinates(userLoc);
-          setCoordinates(userLoc); // Set default coordinates initially
+          setCoordinates(userLoc); 
           setLocation(userData.address || "");
         } else {
           toast.warning("User location not found. Please set your location.", {
@@ -72,8 +72,8 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
+          const latitude = position.coords.latitude.toString();
+          const longitude = position.coords.longitude.toString();
           setCoordinates({ lat: latitude, lng: longitude });
           toast.success("Location fetched successfully!", {
             position: "bottom-center",

@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
-import { OlaMapsInit } from "./MapInit";
 
 interface LocationViewerProps {
   lat: string;
@@ -8,107 +7,12 @@ interface LocationViewerProps {
   onError?: () => void;
 }
 
-const LocationViewer = ({ lat, lon, onError }: LocationViewerProps) => {
+const LocationViewer = ({ lat, lon }: LocationViewerProps) => {
   const [address, setAddress] = useState("");
-  const [isMapLoading, setIsMapLoading] = useState(true);
-  const [hasMapError, setHasMapError] = useState(false);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  const handleMapError = (error?: any) => {
-    console.error("Map loading error:", error);
-    setHasMapError(true);
-    setIsMapLoading(false);
-    if (onError) onError();
-  };
-  
-  useEffect(() => {
-    if (lat && lon && mapRef.current && !mapInstanceRef.current) {
-      // Set a timeout to detect if map fails to load correctly
-      timeoutRef.current = setTimeout(() => {
-        if (!mapInstanceRef.current || isMapLoading) {
-          handleMapError("Map failed to load within timeout period");
-        }
-      }, 10000); // 10-second timeout
-      
-      try {
-        // Initialize map
-        mapInstanceRef.current = OlaMapsInit.init({
-          style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
-          container: 'map',
-          center: [parseFloat(lon), parseFloat(lat)],
-          zoom: 15,
-        });
-
-        // Add error handler to map instance
-        mapInstanceRef.current.on('error', handleMapError);
-
-        // Add a marker after map is initialized
-        mapInstanceRef.current.on('load', () => {
-          setIsMapLoading(false);
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-          }
-          
-          if (!markerRef.current && mapInstanceRef.current) {
-            try {
-              markerRef.current = OlaMapsInit
-                .addMarker({ 
-                  offset: [0, -15], 
-                  anchor: 'bottom', 
-                  color: '#FF5733',
-                  isDragging: true
-                })
-                .setLngLat([parseFloat(lon), parseFloat(lat)])
-                .addTo(mapInstanceRef.current);
-            } catch (error) {
-              console.error("Error adding marker:", error);
-            }
-          }
-        });
-      } catch (error) {
-        handleMapError(error);
-      }
-    }
-    
-    // Cleanup function
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (mapInstanceRef.current) {
-        try {
-          mapInstanceRef.current.remove();
-        } catch (error) {
-          console.error("Error removing map:", error);
-        }
-      }
-    };
-  }, [lat, lon]);
-  
-  // Update map center and marker position when coordinates change
-  useEffect(() => {
-    if (mapInstanceRef.current && lat && lon) {
-      try {
-        const coords = [parseFloat(lon), parseFloat(lat)];
-        mapInstanceRef.current.setCenter(coords);
-        
-        // Update marker position if it exists
-        if (markerRef.current) {
-          markerRef.current.setLngLat(coords);
-        }
-      } catch (error) {
-        console.error("Error updating map position:", error);
-      }
-    }
-  }, [lat, lon]);
-
-  // Fetch address using Nominatim API instead of relying on Olamaps
+  // Fetch address using Nominatim
   useEffect(() => {
     if (lat && lon) {
-      // Reverse geocoding using Nominatim API
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
         .then(res => res.json())
         .then(data => setAddress(data.display_name))
@@ -116,8 +20,18 @@ const LocationViewer = ({ lat, lon, onError }: LocationViewerProps) => {
     }
   }, [lat, lon]);
 
+  // Generate map URL for an iframe
+  const mapUrl = () => {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lon);
+    if (isNaN(latitude) || isNaN(longitude)) return null;
+    
+    // Using OpenStreetMap for the map
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${longitude - 0.005}%2C${latitude - 0.005}%2C${longitude + 0.005}%2C${latitude + 0.005}&marker=${latitude}%2C${longitude}`;
+  };
+
   return (
-    <div className="rounded-lg overflow-hidden border" 
+    <div className="rounded-lg overflow-hidden border relative" 
          style={{ borderColor: 'hsl(var(--border))' }}>
       <div className="p-4 bg-primary/5">
         <div className="flex items-center gap-2 mb-3">
@@ -140,26 +54,26 @@ const LocationViewer = ({ lat, lon, onError }: LocationViewerProps) => {
         </div>
       </div>
       
-      {/* Map container */}
-      <div 
-        id="map" 
-        ref={mapRef} 
-        className="w-full h-64"
-        style={{ minHeight: '250px' }}
-      />
-      
-      {/* Loading or error overlay */}
-      {isMapLoading && (
-        <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-800/70 flex items-center justify-center">
-          <p>Loading map...</p>
-        </div>
-      )}
-      
-      {hasMapError && (
-        <div className="absolute inset-0 bg-gray-100/70 dark:bg-gray-800/70 flex items-center justify-center">
-          <p className="text-red-500">Failed to load map</p>
-        </div>
-      )}
+      {/* Map container - Using iframe for simplicity */}
+      <div className="relative h-64" style={{ minHeight: '250px' }}>
+        {mapUrl() ? (
+          <iframe 
+            width="100%" 
+            height="100%" 
+            frameBorder="0" 
+            scrolling="no" 
+            marginHeight={0} 
+            marginWidth={0} 
+            src={mapUrl() || undefined}
+            title="Location Map"
+            style={{ border: "none" }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100/70 dark:bg-gray-800/70 z-10">
+            <p className="text-red-500 font-medium">Invalid coordinates</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
