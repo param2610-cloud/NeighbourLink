@@ -109,7 +109,7 @@ const EmergencyPosts = () => {
                                     />
                                 ):
                                 <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden flex items-center justify-center">
-                                    No Image
+                                    No Image Available
                                 </div>
                             
                             }
