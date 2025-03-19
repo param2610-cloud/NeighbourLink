@@ -101,13 +101,18 @@ const EmergencyPosts = () => {
                                 className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 animate-card-in"
                                 style={{ animationDelay: `${index * 0.1}s` }}
                             >
-                                {post.photoUrls?.length > 0 && (
+                                {post.photoUrls?.length > 0? (
                                     <img
                                         src={post.photoUrls[0]}
                                         alt={post.title}
                                         className="w-full h-48 object-cover transition-opacity duration-300 hover:opacity-90"
                                     />
-                                )}
+                                ):
+                                <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden flex items-center justify-center">
+                                    No Image
+                                </div>
+                            
+                            }
                                 <div className="p-6">
                                     <div className="flex flex-col items-start justify-center mb-4">
                                         <span className="">
