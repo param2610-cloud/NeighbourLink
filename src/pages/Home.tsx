@@ -276,7 +276,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col min-h-screen mb-16 bg-gray-50 dark:bg-gray-900">
       {/* Responsive Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 w-64 transform ${

@@ -276,7 +276,7 @@ const SearchPage: React.FC = () => {
   }, [selectedCategories, availability, sortBy]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-neutral-800 pt-4">
+    <div className="min-h-screen mb-16 bg-gray-100 dark:bg-neutral-800 pt-4">
       <div className="container mx-auto px-4">
         {/* Search Header */}
         <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4 mb-4">

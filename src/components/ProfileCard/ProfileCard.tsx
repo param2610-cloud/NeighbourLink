@@ -6,6 +6,7 @@ import {  AiOutlineUser, AiOutlineMail, AiOutlinePhone, AiOutlineHome } from "re
 import { deleteFileFromS3, getPreSignedUrl, uploadFileToS3 } from "@/utils/aws/aws";
 import { useNavigate } from "react-router-dom";
 import Bottombar from "../authPage/structures/Bottombar";
+import { useMobileContext } from "@/contexts/MobileContext";
 
 function ProfileCard() {
   // State management
@@ -21,6 +22,7 @@ function ProfileCard() {
   const [isLoading, setIsLoading] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const navigate = useNavigate();
+  const {isMobile}= useMobileContext();
 
   // Handle photo change from file input
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,7 +185,7 @@ function ProfileCard() {
   // Rest of your component remains the same
   // Helper components for cleaner code
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className={`min-h-screen ${isMobile?'mb-16':''} w-full bg-gradient-to-br from-indigo-50 to-white dark:from-gray-900 dark:to-gray-800`}>
       {/* Header Navigation */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <button
