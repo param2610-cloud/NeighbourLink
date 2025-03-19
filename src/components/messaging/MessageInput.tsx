@@ -41,16 +41,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
 
       // Send notification to recipient if it's not the current user
       if (otherUserId !== currentUserId) {
-        const currentUser = auth.currentUser;
-        const displayName = currentUser?.displayName || "User";
-        const messageText = message.trim();
-
-        await sendChatMessageNotification(
-          conversationId,
-          otherUserId,
-          displayName,
-          messageText.length > 50 ? messageText.substring(0, 47) + "..." : messageText
-        );
+        if(otherUserId !== '' && conversationId) {
+          const currentUser = auth.currentUser;
+          const displayName = currentUser?.displayName || "User";
+          const messageText = message.trim();
+          console.log("Other User Id", otherUserId);
+          await sendChatMessageNotification(
+            conversationId,
+            otherUserId,
+            displayName,
+            messageText.length > 50 ? messageText.substring(0, 47) + "..." : messageText
+          );
+        }
       }
       
       setMessage('');

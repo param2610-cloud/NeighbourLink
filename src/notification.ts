@@ -49,7 +49,13 @@ export const requestNotificationPermission = async () => {
 // Store the FCM token in the user's document
 export const storeUserFCMToken = async (userId: string, token: string) => {
   try {
-    const userRef = doc(db, "users", userId);
+    // Validate userId to prevent invalid document references
+    if (!userId) {
+      console.error("Invalid userId provided to storeUserFCMToken");
+      return;
+    }
+    
+    const userRef = doc(db, "Users", userId);
     const userDoc = await getDoc(userRef);
     
     if (userDoc.exists()) {

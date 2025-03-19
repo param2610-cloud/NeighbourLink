@@ -38,7 +38,7 @@ const PostResponders: React.FC<PostRespondersProps> = ({ postId, onSelectRespond
                     const userId = responseData.userId;
                     
                     // Get user details from the users collection
-                    const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", userId)));
+                    const userDoc = await getDocs(query(collection(db, "Users"), where("id", "==", userId)));
                     
                     if (!userDoc.empty) {
                         const userData = userDoc.docs[0].data() as UserData;

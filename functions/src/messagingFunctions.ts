@@ -42,7 +42,7 @@ export const onNewMessage = functions.firestore
       }
       
       // Get sender information for notification title
-      const senderRef = admin.firestore().collection('users').doc(messageData.senderId);
+      const senderRef = admin.firestore().collection('Users').doc(messageData.senderId);
       const senderSnapshot = await senderRef.get();
       const senderData = senderSnapshot.exists ? senderSnapshot.data() : null;
       
@@ -59,7 +59,7 @@ export const onNewMessage = functions.firestore
       // Send notification to each recipient
       for (const recipientId of recipientIds) {
         // Get recipient's FCM token
-        const recipientRef = admin.firestore().collection('users').doc(recipientId);
+        const recipientRef = admin.firestore().collection('Users').doc(recipientId);
         const recipientSnapshot = await recipientRef.get();
         
         if (!recipientSnapshot.exists) {
