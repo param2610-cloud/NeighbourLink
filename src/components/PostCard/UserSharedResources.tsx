@@ -137,7 +137,7 @@ function UserSharedResources() {
                             You haven't shared any resources yet.
                         </p>
                         <button
-                            onClick={() => window.location.href = "/create-resource"}
+                            onClick={() => navigate("/resource/offer")}
                             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                         >
                             Share a Resource
