@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, doc, getDoc } from "firebase/firestore";
-import { db, auth } from "../firebase";
+import { db } from "../firebase";
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
 import { IoMdNotifications } from "react-icons/io";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { MdOutlineWarning } from "react-icons/md";
 import { motion } from "framer-motion";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import Sidebar from "@/components/authPage/structures/Sidebar";
 
 // type FilterType = "all" | "need" | "offer";
 
@@ -161,16 +160,7 @@ const Notification: React.FC = () => {
     show: { x: 0, opacity: 1, transition: { type: "spring", damping: 25, stiffness: 100 } },
   };
 
-  async function handleLogout() {
-    try {
-      await auth.signOut();
-      window.location.href = "/login";
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error logging out:", error.message);
-      }
-    }
-  }
+  
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -179,7 +169,7 @@ const Notification: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
-      <div
+      {/* <div
         className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           } md:translate-x-0 transition-transform duration-300 z-40`}
       >
@@ -188,7 +178,7 @@ const Notification: React.FC = () => {
           handleLogout={handleLogout}
           isSidebarOpen={isSidebarOpen}
         />
-      </div>
+      </div> */}
 
       {isSidebarOpen && (
         <div
