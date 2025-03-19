@@ -585,14 +585,14 @@ const Home: React.FC = () => {
                         </div>
                       )}
                       <span className="text-xs text-gray-600 dark:text-gray-400">
-                        {post.isAnonymous ? "Anonymous" : post.userName || "User"}
+                        {post?.isAnonymous ? "Anonymous" : post?.userName || "User"}
                       </span>
                     </div>
 
                     <div className="flex items-center space-x-3">
-                      {post.distance && (
+                      {post?.distance && (
                         <span className="text-xs text-gray-600 dark:text-gray-400">
-                          {post.distance.toFixed(1)} km
+                          {parseFloat(post.distance.toFixed(1)) !== 0 ? `${post.distance.toFixed(1)} km` : ''}
                         </span>
                       )}
                       <span className="text-xs text-gray-600 dark:text-gray-400">

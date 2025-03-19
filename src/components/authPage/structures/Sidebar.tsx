@@ -41,7 +41,7 @@ const Sidebar = ({  handleLogout, isSidebarOpen }: SidebarProps) => {
     setActivePage(window.location.pathname);
     
     const fetchProfilePhoto = async () => {
-      if (userDetails.photo) {
+      if (userDetails?.photo) {
         let photoUrl = await getPreSignedUrl(userDetails.photo);
         if (photoUrl) {
           setProfilePhoto(photoUrl);

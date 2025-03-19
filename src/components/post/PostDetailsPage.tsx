@@ -206,7 +206,7 @@ const PostDetailsPage = () => {
                 post.userId,
                 post.id,
                 post.title,
-                post.photoUrls?.[0]
+                post.photoUrls && post.photoUrls.length > 0 ? post.photoUrls[0] : undefined
             );
 
             // Navigate to the conversation
