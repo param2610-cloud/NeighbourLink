@@ -278,19 +278,29 @@ const PostDetailsPage = () => {
                     savedPosts: arrayRemove(id)
                 });
                 setIsSaved(false);
-                toast.success("Post unsaved successfully", {position:'top-right'})
+                toast.success("Post unsaved successfully", { position: 'top-right' })
             } else {
                 await updateDoc(userRef, {
                     savedPosts: arrayUnion(id)
                 });
                 setIsSaved(true);
-                toast.success("Post saved successfully", {position:'top-right'})
+                toast.success("Post saved successfully", { position: 'top-center' })
             }
         } catch (error) {
             console.error('Error updating saved posts:', error);
-            toast.error("Failed to update saved posts", {position:'top-right'})
+            toast.error("Failed to update saved posts", { position: 'top-center' })
         } finally {
             setSaveLoading(false);
+        }
+    };
+    const handleSharePost = async () => {
+        try {
+            const postUrl = window.location.href;
+            await navigator.clipboard.writeText(postUrl);
+            toast.success('Post link copied to clipboard!', { position: 'top-center' });
+        } catch (error) {
+            console.error('Error copying to clipboard:', error);
+            toast.error('Failed to copy link', { position: 'top-center' });
         }
     };
 
@@ -455,13 +465,14 @@ const PostDetailsPage = () => {
                 )}
 
                 {/* Action buttons */}
+                {/* Action buttons */}
                 <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
                     <div className="flex justify-between mb-3">
                         <button
                             onClick={handleSavePost}
                             disabled={!firebaseUser || saveLoading}
                             className={`flex items-center ${!firebaseUser ? 'opacity-50 cursor-not-allowed' :
-                                    isSaved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
+                                isSaved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
                                 } transition-colors`}
                             title={!firebaseUser ? "Login to save posts" : isSaved ? "Unsave post" : "Save post"}
                         >
@@ -474,12 +485,12 @@ const PostDetailsPage = () => {
                             )}
                             {isSaved ? 'Saved' : 'Save'}
                         </button>
-                        <button className="flex items-center text-gray-500 dark:text-gray-400">
+                        <button
+                            onClick={handleSharePost}
+                            className="flex items-center text-gray-500 dark:text-gray-400"
+                        >
                             <AiOutlineShareAlt className="mr-1" /> Share
                         </button>
-                        {/* <button className="flex items-center text-gray-500 dark:text-gray-400">
-                            <AiOutlineWarning className="mr-1" /> Report
-                        </button> */}
                     </div>
 
                     <button
