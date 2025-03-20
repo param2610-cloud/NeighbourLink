@@ -162,6 +162,7 @@ const Home: React.FC = () => {
           if (docSnap.exists()) {
             setUserDetails(docSnap.data());
           } else {
+            navigate("/login");
             console.log("No such document!");
           }
         }
