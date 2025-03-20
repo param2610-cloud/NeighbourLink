@@ -50,6 +50,7 @@ const AuthRouter: React.FC = () => {
         <Route path='/emergency/posts' element={<EmergencyPosts/>}/>
         <Route path='/saved/posts' element={<SavedPosts/>}/>
         <Route path='/register' element={<Navigate to="/"/>}/>
+        <Route path='/login' element={<Navigate to="/"/>}/>
         <Route path='/notifications' element={<Notification />}/>
       </Routes>
     </Suspense>
