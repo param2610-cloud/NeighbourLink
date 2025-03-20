@@ -15,6 +15,7 @@ function Login() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // await setupFCMToken(user.user.uid)
       console.log("User logged in Successfully");
       navigate('/')
       toast.success("User logged in Successfully", {
