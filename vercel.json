@@ -1,0 +1,9 @@
+{
+    "redirects": [
+      {
+        "source": "/:path*",
+        "destination": "https://main.d3raf20hzd0dfa.amplifyapp.com/:path*",
+        "permanent": true
+      }
+    ]
+  }
