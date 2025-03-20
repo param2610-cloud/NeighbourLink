@@ -3,8 +3,8 @@ import { sendMessage } from '../../services/messagingService';
 import { IoMdSend, IoMdImage, IoMdAttach } from 'react-icons/io';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { createUniqueFileName, uploadFileToS3 } from '@/utils/aws/aws';
-import { sendChatMessageNotification } from '../../services/notificationService';
-import { auth } from '../../firebase';
+// import { sendChatMessageNotification } from '../../services/notificationService';
+// import { auth } from '../../firebase';
 
 interface MessageInputProps {
   conversationId: string;
@@ -42,16 +42,16 @@ const MessageInput: React.FC<MessageInputProps> = ({
       // Send notification to recipient if it's not the current user
       if (otherUserId !== currentUserId) {
         if(otherUserId !== '' && conversationId) {
-          const currentUser = auth.currentUser;
-          const displayName = currentUser?.displayName || "User";
-          const messageText = message.trim();
+          // const currentUser = auth.currentUser;
+          // const displayName = currentUser?.displayName || "User";
+          // const messageText = message.trim();
           console.log("Other User Id", otherUserId);
-          await sendChatMessageNotification(
-            conversationId,
-            otherUserId,
-            displayName,
-            messageText.length > 50 ? messageText.substring(0, 47) + "..." : messageText
-          );
+          // await sendChatMessageNotification(
+          //   conversationId,
+          //   otherUserId,
+          //   displayName,
+          //   messageText.length > 50 ? messageText.substring(0, 47) + "..." : messageText
+          // );
         }
       }
       

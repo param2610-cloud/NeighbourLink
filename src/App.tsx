@@ -5,12 +5,12 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
-import {
-  requestNotificationPermission,
-  onMessageListener,
-  displayNotification,
-  NotificationType,
-} from "./notification";
+// import {
+//   requestNotificationPermission,
+//   onMessageListener,
+//   displayNotification,
+//   NotificationType,
+// } from "./notification";
 import "./App.css";
 import LandingPage from "./components/landingpage/LandingPage";
 import Register from "./components/authPage/Register";
@@ -23,59 +23,21 @@ import ProfileCard from "./components/ProfileCard/ProfileCard";
 import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
 import UploadFiletoAWS from "./components/AWS/UploadFile";
 import Home from "./pages/Home";
-import { initNotificationHandlers } from "./services/notificationHandler";
+// import { initNotificationHandlers } from "./services/notificationHandler";
 
 function App() {
-  const [notificationsSupported, setNotificationsSupported] = useState(true);
+  // const [notificationsSupported, setNotificationsSupported] = useState(true);
   const [user, setUser] = useState<any>();
-  const [, setNotification] = useState({ title: "", body: "" });
+  // const [, setNotification] = useState({ title: "", body: "" });
 
   useEffect(() => {
-    initNotificationHandlers();
+    // initNotificationHandlers();
     auth.onAuthStateChanged((user) => {
       setUser(user);
     });
   });
 
-  useEffect(() => {
-    async function setupNotifications() {
-      try {
-        const token = await requestNotificationPermission();
-        if (token) {
-          console.log("FCM Token:", token);
-        } else {
-          setNotificationsSupported(false);
-        }
 
-        // Listen for foreground messages
-        onMessageListener()
-          .then((payload: any) => {
-            console.log("Message received:", payload);
-
-            // Extract notification data
-            const title = payload.notification?.title || "";
-            const body = payload.notification?.body || "";
-            const type = payload.data?.type || NotificationType.POST_MATCH;
-            const data = payload.data || {};
-
-            // Set notification state
-            setNotification({ title, body });
-
-            // Display notification
-            displayNotification(title, body, type as NotificationType, data);
-          })
-          .catch((err) => {
-            console.error("Error with message listener:", err);
-            setNotificationsSupported(false);
-          });
-      } catch (error) {
-        console.error("Failed to set up notifications:", error);
-        setNotificationsSupported(false);
-      }
-    }
-
-    setupNotifications();
-  }, []);
 
   return (
     <>
@@ -102,11 +64,11 @@ function App() {
             />
             
           </Routes>
-          {!notificationsSupported && (
+          {/* {!notificationsSupported && (
             <p className="text-orange-500">
               Note: Push notifications are not supported in this browser.
             </p>
-          )}
+          )} */}
         </div>
       </Router>
       <ToastContainer />
