@@ -23,6 +23,7 @@ import ProfileCard from "./components/ProfileCard/ProfileCard";
 import ResourceSharingForm from "./components/Forms/ResourceSharingForm";
 import UploadFiletoAWS from "./components/AWS/UploadFile";
 import Home from "./pages/Home";
+import { initNotificationHandlers } from "./services/notificationHandler";
 
 function App() {
   const [notificationsSupported, setNotificationsSupported] = useState(true);
@@ -30,6 +31,7 @@ function App() {
   const [, setNotification] = useState({ title: "", body: "" });
 
   useEffect(() => {
+    initNotificationHandlers();
     auth.onAuthStateChanged((user) => {
       setUser(user);
     });

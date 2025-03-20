@@ -109,6 +109,7 @@ function Register() {
           savedPosts:[]
         });
 
+        // await setupFCMToken(user.uid);
         toast.success("Registration successful!", {
           position: "top-center",
         });

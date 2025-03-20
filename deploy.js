@@ -14,6 +14,26 @@ const serviceWorkerDest = path.join(__dirname, 'dist', 'firebase-messaging-sw.js
 
 async function deploy() {
   try {
+    // Read the service worker file
+    let serviceWorkerContent = fs.readFileSync(serviceWorkerSrc, 'utf8');
+    
+    // Replace placeholder values with actual environment variables
+    serviceWorkerContent = serviceWorkerContent
+      .replace('<VITE_FB_API_KEY>', process.env.VITE_FB_API_KEY)
+      .replace('<VITE_FB_AUTH_DOMAIN>', process.env.VITE_FB_AUTH_DOMAIN)
+      .replace('<VITE_FB_PROJECT_ID>', process.env.VITE_FB_PROJECT_ID)
+      .replace('<VITE_FB_STORAGE_BUCKET>', process.env.VITE_FB_STORAGE_BUCKET)
+      .replace('<VITE_FB_MESSAGING_SENDER_ID>', process.env.VITE_FB_MESSAGING_SENDER_ID)
+      .replace('<VITE_FB_APP_ID>', process.env.VITE_FB_APP_ID);
+
+    // Ensure dist directory exists
+    if (!fs.existsSync('dist')) {
+      fs.mkdirSync('dist');
+    }
+
+    // Write the modified service worker to the dist folder
+    fs.writeFileSync(serviceWorkerDest, serviceWorkerContent);
+
     // Build the project
     console.log('Building the application...');
     const { stdout: buildOutput } = await exec('npm run build');
@@ -36,6 +56,7 @@ async function deploy() {
     console.log(deployOutput);
   } catch (error) {
     console.error('Error during deployment process:', error);
+    process.exit(1);
   }
 }
 
