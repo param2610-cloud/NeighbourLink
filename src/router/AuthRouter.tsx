@@ -7,6 +7,7 @@ import ChatDetail from '@/components/messaging/ChatDetail';
 import LandingPage from '@/components/landingpage/LandingPage';
 import EmergencyPosts from '@/pages/EmergencyPosts';
 import SavedPosts from '@/components/post/SavedPosts';
+import Notification from '@/pages/Notification';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
@@ -49,6 +50,7 @@ const AuthRouter: React.FC = () => {
         <Route path='/emergency/posts' element={<EmergencyPosts/>}/>
         <Route path='/saved/posts' element={<SavedPosts/>}/>
         <Route path='/register' element={<Navigate to="/"/>}/>
+        <Route path='/notifications' element={<Notification />}/>
       </Routes>
     </Suspense>
   );
