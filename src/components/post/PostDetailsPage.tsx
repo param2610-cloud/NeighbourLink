@@ -14,7 +14,7 @@ import PostResponders from './PostResponders';
 import ContactResponder from '../PostCard/modal/ContactResponder';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
-import { sendResponseNotification } from '@/services/notificationService';
+// import { sendResponseNotification } from '@/services/notificationService';
 import { toast } from 'react-toastify';
 
 interface Post {
@@ -191,14 +191,14 @@ const PostDetailsPage = () => {
             const currentUserRef = doc(db, 'Users', firebaseUser.uid);
             const currentUserSnap = await getDoc(currentUserRef);
             if (currentUserSnap.exists()) {
-                const currentUser = currentUserSnap.data();
+                // const currentUser = currentUserSnap.data();
 
                 // Send notification to post owner
-                await sendResponseNotification(
-                    post.id!,
-                    post.userId,
-                    `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
-                );
+                // await sendResponseNotification(
+                //     post.id!,
+                //     post.userId,
+                //     `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
+                // );
             }
             // Create or get existing conversation about this post
             const conversationId = await getOrCreateConversationWithUser(
