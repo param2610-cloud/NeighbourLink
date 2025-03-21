@@ -4,6 +4,7 @@ import { doc, getDoc } from "firebase/firestore";
 import PostDetails from "./modal/PostDetails";
 import { MdDeleteForever } from "react-icons/md";
 import PostCardDelete from "./modal/PostCardDelete";
+import { useNavigate } from "react-router-dom";
 
 
 
@@ -45,6 +46,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
   const [userName, setUserName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const navigate=useNavigate();
 
   const shortOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -172,7 +174,7 @@ const PostList = ({ post, setUpdated }: PostListProps) => {
         )}
         
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => navigate(`/post/${post.id}`)}
           className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm focus:outline-none mb-3 md:mb-4 text-sm md:text-base"
         >
           View Details
