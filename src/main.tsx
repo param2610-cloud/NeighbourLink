@@ -6,7 +6,6 @@ import PlayGround from './router/PlayGround'
 import { StateProvider } from './contexts/StateContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { MobileProvider } from './contexts/MobileContext'
-import { Analytics } from "@vercel/analytics/react"
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -14,7 +13,6 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
         <MobileProvider>
           <PlayGround />
-          <Analytics/>
         </MobileProvider>
       </ThemeProvider>
     </StateProvider>

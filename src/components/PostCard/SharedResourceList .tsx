@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { MdDeleteForever } from "react-icons/md";
@@ -98,12 +97,6 @@ const SharedResourceList = ({ resource, setUpdated }: SharedResourceListProps) =
     }
   };
 
-  // Function to handle sending a request
-  const handleSendRequest = () => {
-    toast.success("Request sent successfully!", {
-      position: "top-center",
-    });
-  };
 
   return (
     <div className="w-full p-3 ">
