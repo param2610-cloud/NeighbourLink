@@ -8,6 +8,7 @@ import { uploadFileToS3 } from "@/utils/aws/aws";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMobileContext } from "@/contexts/MobileContext";
+import { MdAccountCircle } from "react-icons/md";
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -29,7 +30,7 @@ function Register() {
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
   const navigate = useNavigate();
-  const { isMobile } = useMobileContext();
+  const { isMobile, isMini } = useMobileContext();
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -142,8 +143,12 @@ function Register() {
     duration: 0.3
   };
 
+  useEffect(()=>{
+    console.log("isMini: ", isMini)
+  })
+
   return (
-    <div className="w-screen h-screen relative overflow-hidden">
+    <div className="w-screen h-screen relative overflow-x-scroll">
       <img
         src="/assets/social_circle.avif"
         className="h-full w-full object-cover"
@@ -156,7 +161,7 @@ function Register() {
       >
         <FaArrowAltCircleLeft size={22} /> Back to Home
       </button>
-      <div className="absolute top-0 left-0 flex items-center justify-center min-h-screen w-full px-4 py-8">
+      <div className={`absolute top-0 left-0 flex items-center justify-center min-h-screen w-full ${isMini ?'':'px-4 py-8'} `}>
         <motion.div
           className="bg-white/10 backdrop-blur-md rounded-lg shadow-xl overflow-hidden max-w-4xl w-full flex"
           initial={{ opacity: 0, y: 20 }}
@@ -166,7 +171,9 @@ function Register() {
           {/* Left Panel */}
           <div className="bg-blue-900/70 text-white p-8 w-1/3 flex flex-col">
             <div className="mb-8">
-              <h2 className={`${isMobile? 'text-lg':'text-2xl'} font-bold mb-4`}>Create Account</h2>
+              <h2 className={`${isMobile?( isMini? 'text-sm text-yellow-400':'text-lg'):'text-2xl'} font-bold mb-4`}>
+                {isMini ? <MdAccountCircle size={25}/>: "Create Account"}
+              </h2>
               <div className="h-1 w-16 bg-yellow-400 rounded-full"></div>
             </div>
 
