@@ -7,6 +7,8 @@ import ChatDetail from '@/components/messaging/ChatDetail';
 import LandingPage from '@/components/landingPage/LandingPage';
 import EmergencyPosts from '@/pages/EmergencyPosts';
 import SavedPosts from '@/components/post/SavedPosts';
+import SkillList from '@/components/communities/skillSharing/SkillList';
+import SkillSharingForm from '@/components/communities/skillSharing/SkillSharingForm';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
@@ -39,6 +41,19 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
+
+        // we will cahnge it later
+        <Route path="/skill" element={<SkillList />} />
+        <Route 
+          path="/skills-pop" 
+          element={
+            <SkillSharingForm 
+              isOpen={true} 
+              onClose={() => console.log('Form closed')}
+            />
+          } 
+        />
+
         <Route path="/resource/offer" element={<ResourceForm userId={user?.uid}/>} />
         <Route path="/resource/need" element={<ResourceForm userId={user?.uid}/>} />
         <Route path="/post/:id" element={<PostDetailsPage/>} />

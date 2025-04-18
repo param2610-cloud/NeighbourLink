@@ -1,7 +1,7 @@
 
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
-import { Home, User, FileText, Share, Inbox, Archive } from "lucide-react";
+import { Home, User, FileText, Share, Inbox, Archive, HeartHandshake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -60,6 +60,7 @@ const Sidebar = ({  handleLogout, isSidebarOpen }: SidebarProps) => {
     { path: "/resource/offer", label: "Share Resources", icon: <Share size={18} /> },
     { path: "/profile/auth/requests", label: "My Requests", icon: <Inbox size={18} /> },
     { path: "/profile/auth/shared-resources", label: "My Resources", icon: <Archive size={18} /> },
+    { path: "/profile/share-skill", label: "Skill Sharing", icon: <HeartHandshake size={18} /> },
   ];
 
   return (
