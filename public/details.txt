@@ -1,0 +1,16 @@
+=== Deploying to 'neighbourlink-b1b32'...
+
+i  deploying hosting
+i  hosting[neighbourlink-b1b32]: beginning deploy...
+i  hosting[neighbourlink-b1b32]: found 1 files in dist
++  hosting[neighbourlink-b1b32]: file upload complete
+i  hosting[neighbourlink-b1b32]: finalizing version...
++  hosting[neighbourlink-b1b32]: version finalized
+i  hosting[neighbourlink-b1b32]: releasing new version...
++  hosting[neighbourlink-b1b32]: release complete
+
++  Deploy complete!
+
+Project Console: https://console.firebase.google.com/project/neighbourlink-b1b32/overview
+Hosting URL: https://neighbourlink-b1b32.web.app
+PS C:\Users\param\Core\Code\project\NeighbourLink> 

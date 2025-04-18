@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Houses and connection -->
+  <g>
+    <!-- House 1 - Left -->
+    <path d="M110 180 L140 150 L170 180 L170 230 L110 230 Z" fill="#4EA8DE" />
+    <rect x="130" y="200" width="20" height="30" fill="white" /> <!-- Door -->
+    <rect x="120" y="180" width="15" height="15" fill="white" /> <!-- Window -->
+    <rect x="145" y="180" width="15" height="15" fill="white" /> <!-- Window -->
+  </g>
+  
+  <!-- House 2 - Right -->
+  <g>
+    <path d="M230 180 L260 150 L290 180 L290 230 L230 230 Z" fill="#5E60CE" />
+    <rect x="250" y="200" width="20" height="30" fill="white" /> <!-- Door -->
+    <rect x="240" y="180" width="15" height="15" fill="white" /> <!-- Window -->
+    <rect x="265" y="180" width="15" height="15" fill="white" /> <!-- Window -->
+  </g>
+  
+  <!-- Connection Bridge between houses -->
+  <path d="M170 190 C200 160, 200 160, 230 190" stroke="#48BFE3" stroke-width="8" fill="none" stroke-linecap="round" />
+  
+  <!-- Location Pin -->
+  <path d="M200 100 C183 100, 170 113, 170 130 C170 153, 200 180, 200 180 C200 180, 230 153, 230 130 C230 113, 217 100, 200 100 Z" fill="#FF5E7D" />
+  <circle cx="200" cy="123" r="12" fill="white" />
+  
+  <!-- Text -->
+  <text x="200" y="260" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#333333">NeighbourLink</text>
+</svg>
