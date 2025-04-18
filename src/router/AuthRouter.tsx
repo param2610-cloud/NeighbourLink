@@ -7,6 +7,7 @@ import ChatDetail from '@/components/messaging/ChatDetail';
 import LandingPage from '@/components/landingPage/LandingPage';
 import EmergencyPosts from '@/pages/EmergencyPosts';
 import SavedPosts from '@/components/post/SavedPosts';
+import NewPostForm from '@/components/Forms/NewPostForm';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
@@ -39,8 +40,8 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
-        <Route path="/resource/offer" element={<ResourceForm userId={user?.uid}/>} />
-        <Route path="/resource/need" element={<ResourceForm userId={user?.uid}/>} />
+        <Route path="/post" element={<NewPostForm />} />
+        {/* <Route path="/resource/need" element={<ResourceForm userId={user?.uid}/>} /> */}
         <Route path="/post/:id" element={<PostDetailsPage/>} />
         <Route path='/profile/auth/requests' element={<UserRequests/>} />
         <Route path='/profile/auth/shared-resources' element={<UserSharedResources/>} />
