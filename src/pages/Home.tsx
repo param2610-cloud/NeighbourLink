@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
@@ -13,6 +13,10 @@ import { motion } from "framer-motion";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
+import { Search, Hand, Megaphone, Users, Flame, MapPin } from "lucide-react";
+import QuickActionsButton from "./QuickAction";
+
 
 type FilterType = "all" | "need" | "offer";
 
@@ -278,6 +282,16 @@ const Home: React.FC = () => {
     }
   };
 
+  const actions = [
+    { label: 'Search', icon: Search, onClick: () => alert('Search') },
+    { label: 'Request Resource', icon: Hand, onClick: () => alert('Request Resource') },
+    { label: 'Offer Resource', icon: Hand, onClick: () => alert('Offer Resource') },
+    { label: 'Self Promotion', icon: Megaphone, onClick: () => alert('Self Promotion') },
+    { label: 'Emergency Posts', icon: Flame, onClick: () => alert('Emergency Posts') },
+    { label: 'Local Volunteers', icon: Users, onClick: () => alert('Local Volunteers') },
+    { label: 'Local', icon: MapPin, onClick: () => alert('Local') },
+  ];
+
   return (
     <>
       {
@@ -405,117 +419,141 @@ const Home: React.FC = () => {
               )}
 
               {/* Quick Actions Grid */}
-              <div className="px-4 py-3">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Quick Actions</h3>
-                <motion.div
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="show"
-                  className="grid grid-cols-2 gap-3"
-                >
-                  <motion.button
-                    variants={itemVariants}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate("/resource/need")}
-                    className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                  >
-                    <motion.div
-                      initial={{ y: 0 }}
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                      className="text-2xl mb-2"
-                    >
-                      ⬇️
-                    </motion.div>
-                    <span className="font-medium">Post Request</span>
-                  </motion.button>
+              <div className="flex justify-center items-center">
 
-                  <motion.button
-                    variants={itemVariants}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate("/resource/offer")}
-                    className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
+                {/* <div className="px-4 py-3 xl:px-0 xl:w-[600px]">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Quick Actions</h3>
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="grid grid-cols-2 gap-3"
                   >
-                    <motion.div
-                      initial={{ y: 0 }}
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                      className="text-2xl mb-2"
+                    <motion.button
+                      variants={itemVariants}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate("/resource/need")}
+                      className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
                     >
-                      ⬆️
-                    </motion.div>
-                    <span className="font-medium">Post Offer</span>
-                  </motion.button>
+                      <motion.div
+                        initial={{ y: 0 }}
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+                        className="text-2xl mb-2"
+                      >
+                        ⬇️
+                      </motion.div>
+                      <span className="font-medium">Post Request</span>
+                    </motion.button>
 
-                  <motion.button
-                    variants={itemVariants}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate("/search")}
-                    className="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                  >
-                    <motion.div
-                      initial={{ y: 0 }}
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                      className="text-2xl mb-2"
+                    <motion.button
+                      variants={itemVariants}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate("/resource/offer")}
+                      className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
                     >
-                      <BiSearchAlt />
-                    </motion.div>
-                    <span className="font-medium">Search</span>
-                  </motion.button>
+                      <motion.div
+                        initial={{ y: 0 }}
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+                        className="text-2xl mb-2"
+                      >
+                        ⬆️
+                      </motion.div>
+                      <span className="font-medium">Post Offer</span>
+                    </motion.button>
 
-                  <motion.button
-                    variants={itemVariants}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate("/emergency/posts")}
-                    className="bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                  >
-                    <motion.div
-                      initial={{ y: 0 }}
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                      className="text-2xl mb-2"
+                    <motion.button
+                      variants={itemVariants}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate("/search")}
+                      className="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
                     >
-                      <MdOutlineWarning />
-                    </motion.div>
-                    <span className="font-medium">Emergency</span>
-                  </motion.button>
-                </motion.div>
+                      <motion.div
+                        initial={{ y: 0 }}
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+                        className="text-2xl mb-2"
+                      >
+                        <BiSearchAlt />
+                      </motion.div>
+                      <span className="font-medium">Search</span>
+                    </motion.button>
+
+                    <motion.button
+                      variants={itemVariants}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate("/emergency/posts")}
+                      className="bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
+                    >
+                      <motion.div
+                        initial={{ y: 0 }}
+                        animate={{ y: [0, -5, 0] }}
+                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+                        className="text-2xl mb-2"
+                      >
+                        <MdOutlineWarning />
+                      </motion.div>
+                      <span className="font-medium">Emergency</span>
+                    </motion.button>
+                  </motion.div>
+                </div> */}
+                {/* <div className="overflow-x-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="flex space-x-4 px-4">
+                    {actions.map((action, index) => (
+                      <button
+                        key={index}
+                        onClick={action.onClick}
+                        className="flex-shrink-0 bg-gradient-to-tr from-blue-200 to-teal-200 hover:bg-gray-100 text-gray-700 font-semibold py-6 px-8 rounded-xl shadow-md border-2 border-gray-700 transition-all duration-300 ease-in-out active:scale-95 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                      >
+                        <div className="flex flex-col items-center justify-center space-y-2">
+                          <action.icon className="h-8 w-8 mb-1 text-gray-700" />
+                          <span className="text-gray-800 font-medium">{action.label}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div> */}
+                <QuickActionsButton />
+
               </div>
 
               {/* Feed Section */}
-              <div className="flex-1 px-4 py-3">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Feed</h3>
-                  <div className="flex items-center space-x-2">
-                    <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
-                    <select
-                      value={selectedFilter}
-                      onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-                      className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="need">Needs</option>
-                      <option value="offer">Offers</option>
-                    </select>
-                  </div>
+              <div className="fixed w-full flex-1 px-4 py-4 bg-white dark:bg-gray-800 h-18">
+
+              <div className="fixed bg-white dark:bg-gray-800 flex items-center justify-between mb-7">
+                {/* <h3 className="text-lg font-semibold text-gray-800 dark:text-white"></h3> */}
+                <div className="flex items-center space-x-2">
+                  <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
+                  <select
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
+                    className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="need">Needs</option>
+                    <option value="offer">Offers</option>
+                  </select>
                 </div>
+              </div>
+              </div>
+              <div className="flex-1 px-4 py-4 ">
 
                 {loading ? (
                   <div className="flex justify-center py-10">
                     <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
                   </div>
                 ) : filteredPosts.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-4 mt-18 flex flex-col items-center">
                     {filteredPosts.map(post => (
                       <div
                         key={post.id}
                         onClick={() => navigate(`/post/${post.id}`)}
-                        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 cursor-pointer"
+                        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 w-full sm:w-[500px] cursor-pointer"
                       >
                         <div className="flex justify-between">
                           <div className="flex items-center space-x-2">
@@ -614,12 +652,13 @@ const Home: React.FC = () => {
               </div>
 
               {/* Floating Action Button */}
-              <button
+              {/* <button
                 onClick={() => navigate("/resource/need")}
                 className="fixed bottom-20 right-5 bg-indigo-600 text-white p-4 rounded-full shadow-lg"
               >
                 <FaPlus />
-              </button>
+              </button> */}
+              <FloatingActionMenu />
 
               <Bottombar />
             </div>
@@ -634,3 +673,83 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+
+export const FloatingActionMenu: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // Define our menu options
+  const menuOptions = [
+    { icon: <BookOpen size={24} />, label: "Resource", id: "resource" },
+    { icon: <Gift size={24} />, label: "Promotion", id: "promotion" },
+    { icon: <Calendar size={24} />, label: "Event", id: "event" },
+    { icon: <Bell size={24} />, label: "Local Updates", id: "update" }
+  ];
+
+  // Handler for button click to navigate with query param
+  const handleNavigation = (type: string) => {
+    navigate(`/post?type=${type}`);
+    setIsOpen(false); // optionally close menu on navigation
+  };
+
+  // // Calculate the bottom-right position for animation origin
+  // const originPosition = "bottom-20 right-5";
+
+  return (
+    <div className="relative">
+      {/* Backdrop overlay when modal is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 bg-opacity-50 z-40 transition-opacity duration-300"
+          onClick={toggleMenu}
+        />
+      )}
+
+      {/* Buttons - always rendering but only visible when open */}
+      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+        <div className="grid grid-cols-2 gap-8">
+          {menuOptions.map((option, index) => (
+            <button
+              key={option.id}
+              className={`flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md border border-gray-300 pointer-events-auto transition-all duration-300 hover:shadow-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 ${isOpen ? 'opacity-100' : 'opacity-0'
+                }`}
+              style={{
+                transform: isOpen
+                  ? 'translate(0, 0) scale(1)'
+                  : 'translate(calc(100vw - 5rem - 50%), calc(100vh - 20rem - 50%)) scale(0.1)',
+                transition: `transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${index * 0.1
+                  }s, opacity 0.3s ease ${index * 0.1}s`,
+                minWidth: '120px',
+                minHeight: '140px',
+              }}
+              onClick={() => handleNavigation(option.id)}
+              aria-label={`Go to ${option.label} form`}
+            >
+              <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-blue-600 to-teal-500 flex items-center justify-center mb-3 shadow-md">
+                <div className="text-white">
+                  {option.icon}
+                </div>
+              </div>
+              <span className="text-base font-semibold text-gray-800">{option.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+
+      {/* Plus button */}
+      <button
+        className="fixed bottom-20 right-5 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300"
+        onClick={toggleMenu}
+        aria-label="Open menu"
+      >
+        <Plus size={28} className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : 'rotate-0'}`} />
+      </button>
+    </div>
+  );
+};
