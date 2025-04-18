@@ -40,7 +40,7 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
-        <Route path="/post" element={<NewPostForm/>} />
+        <Route path="/post" element={<NewPostForm />} />
         {/* <Route path="/resource/need" element={<ResourceForm userId={user?.uid}/>} /> */}
         <Route path="/post/:id" element={<PostDetailsPage/>} />
         <Route path='/profile/auth/requests' element={<UserRequests/>} />
