@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Zap, Search, Package, Gift, Bell, AlertCircle, Users, BookOpen } from 'lucide-react';
+import { Zap, Search, Bell , Users, BookOpen, Calendar } from 'lucide-react';
 import { useMobileContext } from '@/contexts/MobileContext';
+import { useNavigate } from 'react-router-dom';
 
 interface QuickActionProps {
     icon: React.ReactNode;
@@ -64,6 +65,7 @@ export default function QuickActionsButton() {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { isMobile } = useMobileContext();
+    const navigate = useNavigate()
 
     const toggleMenu = () => {
         if (!isModalOpen) {
@@ -89,12 +91,12 @@ export default function QuickActionsButton() {
     }, [isModalOpen]);
 
     const quickActions = [
-        { icon: <Search size={20} />, label: 'Search', action: () => console.log('Search clicked') },
-        { icon: <BookOpen size={20} />, label: 'Resorce', action: () => console.log('Resource clicked') },
+        { icon: <Search size={20} />, label: 'Search', action: () => navigate("/search") },
+        { icon: <BookOpen size={20} />, label: 'Resorce', action: () => navigate("/post?type=resource") },
         // { icon: <Gift size={24} />, label: 'Offer', action: () => console.log('Offer clicked') },
-        { icon: <Bell size={20} />, label: 'Promote', action: () => console.log('Promote clicked') },
-        { icon: <AlertCircle size={20} />, label: 'Emergency', action: () => console.log('Emergency clicked') },
-        { icon: <Users size={20} />, label: 'Volunteers', action: () => console.log('Volunteers clicked') },
+        { icon: <Bell size={20} />, label: 'Promote', action: () => navigate("/post?type=promotion") },
+        { icon: <Calendar size={20} />, label: 'Event', action: () => navigate("/post?type=event") },
+        { icon: <Users size={20} />, label: 'Update', action: () => navigate("/post?type=update") },
     ];
 
     const handleActionClick = (action: () => void) => {
