@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, JSX } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
@@ -13,6 +13,8 @@ import { motion } from "framer-motion";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
+
 
 type FilterType = "all" | "need" | "offer";
 
@@ -614,12 +616,13 @@ const Home: React.FC = () => {
               </div>
 
               {/* Floating Action Button */}
-              <button
+              {/* <button
                 onClick={() => navigate("/resource/need")}
                 className="fixed bottom-20 right-5 bg-indigo-600 text-white p-4 rounded-full shadow-lg"
               >
                 <FaPlus />
-              </button>
+              </button> */}
+              <FloatingActionMenu />
 
               <Bottombar />
             </div>
@@ -634,3 +637,83 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+
+export const FloatingActionMenu: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate= useNavigate();
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // Define our menu options
+  const menuOptions = [
+    { icon: <BookOpen size={24} />, label: "Resource", id: "resource" },
+    { icon: <Gift size={24} />, label: "Promotion", id: "promotion" },
+    { icon: <Calendar size={24} />, label: "Event", id: "event" },
+    { icon: <Bell size={24} />, label: "Local Updates", id: "update" }
+  ];
+
+   // Handler for button click to navigate with query param
+   const handleNavigation = (type: string) => {
+    navigate(`/post?type=${type}`);
+    setIsOpen(false); // optionally close menu on navigation
+  };
+
+  // // Calculate the bottom-right position for animation origin
+  // const originPosition = "bottom-20 right-5";
+
+  return (
+    <div className="relative">
+      {/* Backdrop overlay when modal is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 bg-opacity-50 z-40 transition-opacity duration-300"
+          onClick={toggleMenu}
+        />
+      )}
+
+      {/* Buttons - always rendering but only visible when open */}
+      <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+        <div className="grid grid-cols-2 gap-8">
+          {menuOptions.map((option, index) => (
+            <button
+              key={option.id}
+              className={`flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-md border border-gray-300 pointer-events-auto transition-all duration-300 hover:shadow-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 ${isOpen ? 'opacity-100' : 'opacity-0'
+                }`}
+              style={{
+                transform: isOpen
+                  ? 'translate(0, 0) scale(1)'
+                  : 'translate(calc(100vw - 5rem - 50%), calc(100vh - 20rem - 50%)) scale(0.1)',
+                transition: `transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) ${index * 0.1
+                  }s, opacity 0.3s ease ${index * 0.1}s`,
+                minWidth: '120px',
+                minHeight: '140px',
+              }}
+              onClick={() => handleNavigation(option.id)}
+              aria-label={`Go to ${option.label} form`}
+            >
+              <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-blue-600 to-teal-500 flex items-center justify-center mb-3 shadow-md">
+                <div className="text-white">
+                  {option.icon}
+                </div>
+              </div>
+              <span className="text-base font-semibold text-gray-800">{option.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+
+      {/* Plus button */}
+      <button
+        className="fixed bottom-20 right-5 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300"
+        onClick={toggleMenu}
+        aria-label="Open menu"
+      >
+        <Plus size={28} className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : 'rotate-0'}`} />
+      </button>
+    </div>
+  );
+};

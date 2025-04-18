@@ -1,4 +1,4 @@
-import ThemeToggle from "@/ThemeToggle";
+
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
 import { Home, User, FileText, Share, Inbox, Archive } from "lucide-react";
@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import {AiOutlineHeart} from "react-icons/ai";
+import ThemeToggle from "@/components/common/ThemeToggle";
 
 interface SidebarProps {
   
