@@ -26,7 +26,7 @@ interface FilterState {
 const VolunteerList = () => {
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<FilterState>({
+  const [filter, ] = useState<FilterState>({
     search: "",
     showLocalOnly: false,
   });
@@ -164,13 +164,7 @@ const VolunteerList = () => {
     return true;
   });
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((prev: FilterState) => ({ ...prev, search: e.target.value }));
-  };
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFilter((prev: FilterState) => ({ ...prev, showLocalOnly: checked }));
-  };
 
   const handleContactVolunteer = async (volunteer: any) => {
     if (!user?.uid || !volunteer.id) return;

@@ -15,7 +15,7 @@ const SimpleMessaging = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [, setUserDetails] = useState<any>(null);
   const navigate = useNavigate();
   
   useEffect(() => {

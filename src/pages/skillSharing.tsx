@@ -7,11 +7,10 @@ import { BsLightningChargeFill } from "react-icons/bs";
 import { FaHandshake } from "react-icons/fa";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import SkillList from "../components/communities/skillSharing/SkillList";
 
 const SkillHome: React.FC = () => {
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [, setUserDetails] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();

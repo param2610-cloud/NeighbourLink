@@ -112,7 +112,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ conversationI
   };
 
   // Render media based on type
-  const renderMedia = (url: string, type: string, index: number) => {
+  const renderMedia = (url: string, type: string) => {
     if (type === 'image') {
       return (
         <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -274,7 +274,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ conversationI
                                 {renderMedia(
                                   url, 
                                   message.mediaTypes && message.mediaTypes[i] ? message.mediaTypes[i] : 'image', 
-                                  i
+                                  
                                 )}
                               </div>
                             ))}

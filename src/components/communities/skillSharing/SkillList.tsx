@@ -123,7 +123,6 @@ const SkillList = () => {
         return;
       }
       
-      const skillProviderData = userSnapshot.docs[0].data();
       const skillProviderId = userSnapshot.docs[0].id;
       
       // Create or get existing conversation between current user and skill provider

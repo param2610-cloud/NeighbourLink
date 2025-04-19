@@ -6,17 +6,14 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { BsLightningChargeFill } from "react-icons/bs";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import VolunteerList from "../components/communities/volunteer/VolunteerList";
 import { HandHeart } from "lucide-react";
-import LoadingModal from "./modal/LoadingModal";
 
 const VolunteerShow: React.FC = () => {
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [, setUserDetails] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {

@@ -13,7 +13,7 @@ interface SimpleChatInputProps {
 const SimpleChatInput: React.FC<SimpleChatInputProps> = ({ 
   conversationId,
   currentUserId,
-  otherUserId
+  // otherUserId
 }) => {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
