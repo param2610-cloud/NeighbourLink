@@ -3,17 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { GiHamburgerMenu } from "react-icons/gi";
+import { BsLightningChargeFill } from "react-icons/bs";
+import { FaHandshake } from "react-icons/fa";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import SkillSharingForm from "../components/communities/skillSharing/SkillSharingForm";
 import SkillList from "../components/communities/skillSharing/SkillList";
 
-const SkillSharing: React.FC = () => {
+const SkillHome: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,10 +53,6 @@ const SkillSharing: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const toggleForm = () => {
-    setIsFormOpen(!isFormOpen);
-  };
-
   return (
     <>
       {userDetails ? (
@@ -83,7 +79,7 @@ const SkillSharing: React.FC = () => {
 
           {/* Main Content Area */}
           <div className="md:ml-64">
-            {/* Top Navigation - Only NeighbourLink header */}
+            {/* Enhanced Top Navigation with animated gradient */}
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
               <div className="flex items-center justify-between p-4">
                 <div
@@ -91,64 +87,83 @@ const SkillSharing: React.FC = () => {
                   onClick={toggleSidebar}
                 >
                   <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
-                </div>
+                </div>  
 
-                <div className="flex items-center">
-                  <h1 className="text-xl font-bold text-blue-800 dark:text-blue-700">
+                <div className="flex items-center space-x-1">
+                  <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
                     Neighbour
                   </h1>
-                    <h1 className="text-xl font-bold text-violet-800 dark:text-violet-700">
+                  <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
                     Link
-                    </h1>
-                    <span className="text-xl font-bold text-gray-700 dark:text-gray-400 mx-1">|</span>
-                    <h1 className="text-xl font-bold text-green-800 dark:text-green-500">
-                    Skill Sharing
-                    </h1>
+                  </h1>
+                  <span className="mx-2 text-blue-500 dark:text-gray-400">
+                    |
+                  </span>
+                  <div className="flex items-center">
+                    <FaHandshake className="mr-1 dark:text-yellow-300 text-orange-600" />
+                    <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
+                      Skill Sharing
+                    </h2>
+                  </div>
                 </div>
 
-                <div className="w-8 h-8"> 
+                <div className="opacity-0 w-8 h-8">
                   {/* Empty div for layout balance */}
                 </div>
               </div>
             </div>
 
-            {/* Skill Sharing Content */}
-            <div className="flex-1 px-4 py-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                  Skill Sharing
-                </h2>
-                <button
-                  onClick={toggleForm}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-                >
-                  Share Your Skills
-                </button>
+            {/* Skill Sharing Content - Added pb-24 for bottom padding to prevent content from being cut off by Bottombar */}
+            <div className="flex-1 px-4 py-6 pb-24">
+              {/* Hero Section */}
+              <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-8 mb-8 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-yellow-300/20 rounded-full -ml-10 -mb-10 blur-xl"></div>
+
+                <div className="z-10">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <BsLightningChargeFill className="text-yellow-300 text-2xl" />
+                    <h2 className="text-3xl font-bold">Skill Sharing Hub</h2>
+                  </div>
+
+                  <p className="text-lg max-w-2xl mb-6 text-blue-50">
+                    Connect with talented neighbors, share your expertise, and
+                    learn new skills. Our community thrives when knowledge flows
+                    freely between members.
+                  </p>
+
+                  <div className="flex flex-wrap gap-4 items-center">
+                    <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
+                      <span className="text-sm font-medium">
+                        400+ Skills Shared
+                      </span>
+                    </div>
+                    <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
+                      <span className="text-sm font-medium">
+                        120+ Active Members
+                      </span>
+                    </div>
+                    <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
+                      <span className="text-sm font-medium">
+                        50+ Categories
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                  About Skill Sharing
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Connect with neighbors who have skills to share or learn from. Whether you're a professional 
-                  seeking to help others or someone looking to learn new skills, this is the place to connect.
-                </p>
-              </div>
+              {/* Skills List with improved heading */}
+              <div className="mt-8 mb-16">
+                <div className="flex items-center mb-6">
+                  <div className="h-8 w-1 bg-blue-600 rounded-full mr-3"></div>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    Community Skills Directory
+                  </h3>
+                </div>
 
-              {/* Skill Sharing Form */}
-              {isFormOpen && <SkillSharingForm isOpen={isFormOpen} />}
-
-              {/* Skills List */}
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                  Available Skilled Personnel in Your Community
-                </h3>
-                
-                {/* Render SkillList component instead of loading message */}
+                {/* Render SkillList component */}
                 <SkillList />
               </div>
-
             </div>
 
             {/* Bottom Navigation */}
@@ -156,12 +171,20 @@ const SkillSharing: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-          <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
+        <div className="fixed inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center">
+            <AiOutlineLoading3Quarters className="animate-spin text-5xl text-blue-600 mb-4" />
+            <h3 className="text-xl font-medium text-gray-800">
+              Loading Skill Sharing Hub
+            </h3>
+            <p className="text-gray-500 mt-2">
+              Please wait while we set things up...
+            </p>
+          </div>
         </div>
       )}
     </>
   );
 };
 
-export default SkillSharing;
+export default SkillHome;

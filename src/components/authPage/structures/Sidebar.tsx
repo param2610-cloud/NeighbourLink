@@ -87,37 +87,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
       icon: <Archive size={18} />,
     },
     {
-      path: "/skill",
-      label: "Skill Sharing",
-      icon: <HeartHandshake size={18} />,
-    },
-    {
-      path: "/saved/posts",
-      label: "Saved Posts",
-      icon: <AiOutlineHeart size={18} />,
-    },
-    {
-      path: "/resource/need",
-      label: "Request Resource",
-      icon: <FileText size={18} />,
-    },
-    {
-      path: "/resource/offer",
-      label: "Share Resources",
-      icon: <Share size={18} />,
-    },
-    {
-      path: "/profile/auth/requests",
-      label: "My Requests",
-      icon: <Inbox size={18} />,
-    },
-    {
-      path: "/profile/auth/shared-resources",
-      label: "My Resources",
-      icon: <Archive size={18} />,
-    },
-    {
-      path: "/skill-share",
+      path: "/skillHome",
       label: "Skill Sharing",
       icon: <HeartHandshake size={18} />,
     },

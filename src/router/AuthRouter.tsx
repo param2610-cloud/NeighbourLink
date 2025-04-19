@@ -64,6 +64,9 @@ const AuthRouter: React.FC = () => {
           path="/profile/auth/shared-resources"
           element={<UserSharedResources />}
         />
+
+        <Route path="/skillHome" element={<SkillHome />} />
+
         <Route path="/messages" element={<MessagesList />} />
         <Route path="/messages/:conversationId" element={<ChatDetail />} />
         <Route path="/emergency/posts" element={<EmergencyPosts />} />
