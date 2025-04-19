@@ -9,12 +9,14 @@ import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import VolunteerList from "../components/communities/volunteer/VolunteerList";
 import { HandHeart } from "lucide-react";
+import LoadingModal from "./modal/LoadingModal";
 
 const VolunteerShow: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
   const [, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -55,7 +57,6 @@ const VolunteerShow: React.FC = () => {
 
   return (
     <>
-      {userDetails ? (
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
           {/* Responsive Sidebar */}
           <div
@@ -87,7 +88,7 @@ const VolunteerShow: React.FC = () => {
                   onClick={toggleSidebar}
                 >
                   <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
-                </div>  
+                </div>
 
                 <div className="flex items-center space-x-1">
                   <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
@@ -100,7 +101,7 @@ const VolunteerShow: React.FC = () => {
                     |
                   </span>
                   <div className="flex items-center">
-                    <HandHeart  className="mr-1 dark:text-yellow-300 text-orange-600" />
+                    <HandHeart className="mr-1 dark:text-yellow-300 text-orange-600" />
                     <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
                       Volunteers
                     </h2>
@@ -127,8 +128,9 @@ const VolunteerShow: React.FC = () => {
                   </div>
 
                   <p className="text-lg max-w-2xl mb-6 text-green-50">
-                    Connect with dedicated volunteers in your community. Whether you need help or want to offer your time, 
-                    our volunteer network makes it easy to make a difference together.
+                    Connect with dedicated volunteers in your community. Whether
+                    you need help or want to offer your time, our volunteer
+                    network makes it easy to make a difference together.
                   </p>
 
                   <div className="flex flex-wrap gap-4 items-center">
@@ -169,19 +171,6 @@ const VolunteerShow: React.FC = () => {
             <Bottombar />
           </div>
         </div>
-      ) : (
-        <div className="fixed inset-0 bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center">
-            <AiOutlineLoading3Quarters className="animate-spin text-5xl text-green-600 mb-4" />
-            <h3 className="text-xl font-medium text-gray-800">
-              Loading Volunteer Hub
-            </h3>
-            <p className="text-gray-500 mt-2">
-              Please wait while we set things up...
-            </p>
-          </div>
-        </div>
-      )}
     </>
   );
 };

@@ -55,7 +55,6 @@ const SkillHome: React.FC = () => {
 
   return (
     <>
-      {userDetails ? (
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
           {/* Responsive Sidebar - with Skill Sharing active */}
           <div
@@ -170,19 +169,6 @@ const SkillHome: React.FC = () => {
             <Bottombar />
           </div>
         </div>
-      ) : (
-        <div className="fixed inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center">
-            <AiOutlineLoading3Quarters className="animate-spin text-5xl text-blue-600 mb-4" />
-            <h3 className="text-xl font-medium text-gray-800">
-              Loading Skill Sharing Hub
-            </h3>
-            <p className="text-gray-500 mt-2">
-              Please wait while we set things up...
-            </p>
-          </div>
-        </div>
-      )}
     </>
   );
 };
