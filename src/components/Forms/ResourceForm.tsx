@@ -192,12 +192,20 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       };
 
       const docRef = await addDoc(collection(db, "posts"), resourceData);
-      const postId = docRef.id;  // Get the ID of the newly created post
+      // const postId = docRef.id;  // Get the ID of the newly created post
       
       // Only send emergency notifications for "need" posts with emergency urgency
       if (postType === "need" && urgency === 3 && coordinates) {
         // Send emergency notifications to nearby users
-        
+
+        // await sendEmergencyNotifications(
+        //   postId, 
+        //   title,
+        //   description,
+        //   coordinates,
+        //   visibilityRadius
+        // );
+
       }
       console.log("Resource posted with ID: ", docRef.id);
 
