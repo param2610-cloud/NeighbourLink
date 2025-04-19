@@ -9,6 +9,7 @@ import EmergencyPosts from '@/pages/EmergencyPosts';
 import SavedPosts from '@/components/post/SavedPosts';
 import SkillList from '@/components/communities/skillSharing/SkillList';
 import SkillSharingForm from '@/components/communities/skillSharing/SkillSharingForm';
+import SkillHome from '@/pages/skillSharing';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
@@ -53,6 +54,8 @@ const AuthRouter: React.FC = () => {
             />
           } 
         />
+
+        <Route path="/skill-page" element={<SkillHome />} />
 
         <Route path="/resource/offer" element={<ResourceForm userId={user?.uid}/>} />
         <Route path="/resource/need" element={<ResourceForm userId={user?.uid}/>} />
