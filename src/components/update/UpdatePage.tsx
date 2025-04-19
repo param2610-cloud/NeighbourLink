@@ -4,7 +4,6 @@ import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebas
 import { db, auth } from '@/firebase';
 import { UpdateWithUserData } from '@/interface/main';
 import { FaArrowLeft, FaReply } from 'react-icons/fa';
-import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import UpdateCard from './UpdateCard';
 import ReplyForm from './ReplyForm';
 import { toast } from 'react-toastify';

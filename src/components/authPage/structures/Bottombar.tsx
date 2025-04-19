@@ -2,7 +2,6 @@ import React from 'react';
 import { AiOutlineHome } from 'react-icons/ai';
 import { BiMessageDetail, BiSearchAlt, BiUser } from 'react-icons/bi';
 import { HiOutlineNewspaper } from 'react-icons/hi';
-import { CgProfile } from 'react-icons/cg';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 interface BottombarProps {

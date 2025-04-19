@@ -55,7 +55,7 @@ const ResourceDetailsPage = () => {
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
-    const [mapData, setMapData] = useState<any>(null);
+    const [, setMapData] = useState<any>(null);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {

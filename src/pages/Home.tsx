@@ -13,7 +13,7 @@ import { useMobileContext } from "@/contexts/MobileContext";
 import QuickActionsButton from "./components/QuickAction";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type FilterType = "all" | "need" | "offer";
+// type FilterType = "all" | "need" | "offer";
 
 interface Post {
   id: string;

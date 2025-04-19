@@ -5,7 +5,6 @@ import { X, Calendar, Clock, Users } from 'lucide-react';
 import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useStateContext } from '@/contexts/StateContext';
-import MapContainer from '@/components/MapContainer';
 
 interface Event {
   id: string;

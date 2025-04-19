@@ -216,7 +216,7 @@ export const Feed: React.FC = () => {
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     const handleDeleteItem = async (id: string, type: FeedItem['type']) => {
         try {

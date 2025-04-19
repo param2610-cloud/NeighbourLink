@@ -5,14 +5,11 @@ import { GrResources } from "react-icons/gr";
 import {
   Home,
   User,
-  Inbox,
-  Archive,
   HeartHandshake,
   HandHeart,
   Calendar,
   MessageSquare,
-  Newspaper,
-  Share, // Import an appropriate icon for updates
+  Newspaper, // Import an appropriate icon for updates
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
@@ -64,7 +64,7 @@ const PromotionDetailsPage = () => {
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    // const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
         console.log('Auth state change effect running');

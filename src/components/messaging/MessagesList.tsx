@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase'; // Import db directly
 import { Conversation, getUserConversations } from '../../services/messagingService';
 import { formatDistanceToNow } from 'date-fns';
-import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { FaArrowLeft } from 'react-icons/fa';
 import Bottombar from '../authPage/structures/Bottombar';

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import { UpdateWithUserData } from '@/interface/main';
-import { AiOutlineLoading3Quarters, AiOutlinePlus } from 'react-icons/ai';
+import {  AiOutlinePlus } from 'react-icons/ai';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import UpdateCard from './UpdateCard';

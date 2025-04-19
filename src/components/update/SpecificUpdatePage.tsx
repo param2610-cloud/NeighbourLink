@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import { UpdateWithUserData } from '@/interface/main';
-import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { FaArrowLeft, FaReply } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { toast } from 'react-toastify';
