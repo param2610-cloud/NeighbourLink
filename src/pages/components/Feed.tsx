@@ -6,6 +6,7 @@ import { MoreVertical, MapPin, Calendar } from 'lucide-react';
 
 import { useStateContext } from '@/contexts/StateContext'; // Update this import to use StateContext
 import { useNavigate } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface BaseItem {
     id?: string;
@@ -254,7 +255,12 @@ export const Feed: React.FC = () => {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen dark:bg-gray-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
+                <div className="flex flex-col mt-16 space-y-4 w-[550px]">
+                    <Skeleton className="w-full h-[300px] bg-gray-200 dark:bg-gray-800" />
+                    <Skeleton className="w-full h-[300px] bg-gray-200 dark:bg-gray-800" />
+                    <Skeleton className="w-full h-[300px] bg-gray-200 dark:bg-gray-800" />
+                </div>
+
             </div>
         );
     }

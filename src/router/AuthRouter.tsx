@@ -21,6 +21,7 @@ import EventDetailsPage from "@/components/event/EventDetailsPage";
 import UpdatePage from "@/components/update/SpecificUpdatePage";
 import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
 import UpdatesPage from "@/components/update/UpdatesFeedPage";
+import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
@@ -36,11 +37,11 @@ const SearchPage = lazy(() => import("@/components/search/SearchPage"));
 const PostDetailsPage = lazy(() => import("@/components/post/PostDetailsPage"));
 const ResourceDetailsPage = lazy(() => import("@/components/resource/ResourceDetailsPage"));
 
-const LoadingFallback = () => (
-  <div className="flex justify-center items-center h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-  </div>
-);
+// const LoadingFallback = () => (
+//   <div className="flex justify-center items-center h-screen">
+//     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+//   </div>
+// );
 
 const AuthRouter: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -54,7 +55,7 @@ const AuthRouter: React.FC = () => {
   useNotification();
 
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={<NeighbourLinkLoader />}>
       <Routes>
         <Route index element={<Home />} />
         <Route path="/profileCard" element={<ProfileCard />} />

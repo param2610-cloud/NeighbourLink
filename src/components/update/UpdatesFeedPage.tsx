@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import UpdateCard from './UpdateCard';
 import { onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
+import { Skeleton } from '../ui/skeleton';
 
 const UpdatesPage: React.FC = () => {
     const [updates, setUpdates] = useState<UpdateWithUserData[]>([]);
@@ -110,8 +111,29 @@ const UpdatesPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                <AiOutlineLoading3Quarters className="animate-spin text-4xl text-indigo-600" />
+            <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-3xl mx-auto">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="w-20">
+                            <Skeleton className="h-4 w-full" />
+                        </div>
+                        <div className="w-24">
+                            <Skeleton className="h-6 w-full" />
+                        </div>
+                        <div className="w-20">
+                            <Skeleton className="h-8 w-full rounded-full" />
+                        </div>
+                    </div>
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="mb-4 bg-white dark:bg-slate-800 rounded-lg p-6">
+                            <div className="space-y-3">
+                                <Skeleton className="h-4 w-[250px]" />
+                                <Skeleton className="h-4 w-[200px]" />
+                                <Skeleton className="h-20 w-full" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

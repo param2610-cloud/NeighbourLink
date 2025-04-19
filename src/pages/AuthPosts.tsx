@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { ResourceCard, PromotionCard, EventCard, UpdateCard, Resource, Promotion, Event, Update } from './components/Feed';
 import { FeedItem } from './components/Feed';
 import { FloatingActionMenu } from './Home';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 // Reuse the convertDoc function from your Feed component
 const convertDoc = <T extends FeedItem>(doc: any, type: FeedItem['type']): T => {
@@ -100,6 +103,7 @@ const AuthPosts: React.FC = () => {
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const openModal = (type?: 'resource' | 'promotion' | 'event' | 'update') => {
         // Handle modal opening logic here
@@ -163,8 +167,26 @@ const AuthPosts: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen dark:bg-gray-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
+            <div className="container w-full mt-16 mx-auto px-4 py-8">
+                <div className="mb-8 text-center space-y-3">
+                    <div className="h-8 w-48 mx-auto">
+                        <Skeleton  className="h-full w-full" />
+                    </div>
+                    <div className="h-4 w-32 mx-auto">
+                        <Skeleton className="h-full w-full" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {[...Array(8)].map((_, index) => (
+                        <div key={index} className="space-y-3">
+                            <Skeleton className="h-[200px] w-full rounded-xl" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[80%]" />
+                                <Skeleton className="h-4 w-[60%]" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
@@ -179,7 +201,16 @@ const AuthPosts: React.FC = () => {
     }
 
     return (
-        <div className="container w-full mt-16 mx-auto px-4 py-8 bg-transparent">
+        <div className="container w-full py-2 mx-auto px-4 bg-transparent">
+            <button 
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 mb-8 px-4 py-2 text-blue-500"
+                aria-label="Go back"
+            >
+                <FaArrowLeft className="text-blue-500" />
+                <span className="font-medium">Back</span>
+            </button>
+            
             <div className="mb-8 text-center">
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
                     My Posts

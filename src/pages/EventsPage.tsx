@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useStateContext } from '@/contexts/StateContext';
@@ -8,6 +8,7 @@ import { calculateDistance } from '@/utils/utils';
 import { getPreSignedUrl } from '@/utils/aws/aws';
 import Bottombar from '@/components/authPage/structures/Bottombar';
 import EventDetailsPanel from '@/components/events/EventDetailsPanel';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Event {
   id: string;
@@ -272,9 +273,47 @@ const EventsPage = () => {
             </div>
 
             {loading ? (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-                <p className="mt-4 text-gray-400">Loading events...</p>
+              <div className="space-y-6">
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold mb-4 text-white">
+                    <span className="border-b-2 border-green-500 pb-1">My Events</span>
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {[1, 2].map((i) => (
+                      <div key={i} className=" rounded-lg p-4">
+                        <Skeleton className="h-48 w-full mb-4" />
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-full mb-4" />
+                        <div className="flex gap-2 mb-4">
+                          <Skeleton className="h-6 w-24" />
+                          <Skeleton className="h-6 w-24" />
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-4 text-white">
+                    <span className="border-b-2 border-green-500 pb-1">Events Near You</span>
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {[1, 2].map((i) => (
+                      <div key={i} className=" rounded-lg p-4">
+                        <Skeleton className="h-48 w-full mb-4" />
+                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-full mb-4" />
+                        <div className="flex gap-2 mb-4">
+                          <Skeleton className="h-6 w-24" />
+                          <Skeleton className="h-6 w-24" />
+                        </div>
+                        <Skeleton className="h-4 w-full mb-2" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : (
               <>
