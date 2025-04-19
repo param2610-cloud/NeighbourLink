@@ -21,6 +21,7 @@ import EventDetailsPage from "@/components/event/EventDetailsPage";
 import UpdatePage from "@/components/update/SpecificUpdatePage";
 import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
 import UpdatesPage from "@/components/update/UpdatesFeedPage";
+import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
@@ -59,14 +60,15 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
-        // we will cahnge it later
+        {/* we will change it later */}
         <Route path="/skill-share" element={<SkillList />} />
         <Route
           path="/skills-sharing-register"
           element={<SkillSharingForm isOpen={true} />}
         />
-        // Example of how to add the route in your router file
+        {/* Example of how to add the route in your router file */}
         <Route path="/event/:id" element={<EventDetailsPage />} />
+        <Route path="/promotion/:id" element={<PromotionDetailsPage />} />
         <Route
           path="/resource/offer"
           element={<ResourceForm userId={user?.uid} />}

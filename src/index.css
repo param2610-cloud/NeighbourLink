@@ -333,8 +333,9 @@ body {
   cursor: pointer;
   zoom: 1;
   width: 100%;
-  background-color: #451fde !important;
+  background-color: #8678ff !important;
   color: #262626;
+  border-radius: 7px;
 }
 
 .goog-te-gadget-simple a {

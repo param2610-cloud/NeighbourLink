@@ -46,7 +46,6 @@ const Home: React.FC = () => {
   const [, setHasEmergencyAlerts] = useState(false);
   const [, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
   const [userDetails, setUserDetails] = useState<any>(null);
   const [updated,] = useState(false);
   const navigate = useNavigate();
@@ -64,9 +63,7 @@ const Home: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const navigateToNewUpdate = () => {
-    navigate('/update/new');
-  };
+
 
   const handleSuccess = () => {
     console.log('Post created successfully!');
