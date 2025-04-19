@@ -198,7 +198,7 @@ const UpdatePage: React.FC = () => {
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Update Thread</h1>
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                        <UpdateCard update={update} isMainUpdate={true} />
+                        <UpdateCard update={update} isReply={false} />
                         
                         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                             <button

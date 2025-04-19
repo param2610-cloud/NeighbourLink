@@ -84,10 +84,71 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({ objectKey, className
 
   if (loading) return <div>Loading image...</div>;
   if (error) return <div className="error">{error}</div>;
-  console.log('imageUrl:', imageUrl); // Log the image URL for debugging
   
   
   return <img src={imageUrl} alt="S3 Image" className={`s3-image ${className}`} />;
+};
+
+export interface VideoDisplayProps {
+  objectKey: string;
+  className?: string;
+  autoPlay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+  playsInline?: boolean;
+  controls?: boolean;
+}
+
+export const VideoDisplay: React.FC<VideoDisplayProps> = ({ 
+  objectKey, 
+  className = '',
+  autoPlay = true,
+  loop = true,
+  muted = true,
+  playsInline = true,
+  controls = true
+}) => {
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadVideo = async () => {
+      try {
+        console.log('Loading video with object key:', objectKey);
+        if (!objectKey) {
+          setError('No video object key provided');
+          setLoading(false);
+          return;
+        }
+        const signedUrl = await getSignedImageUrl(objectKey);
+        console.log('Video signed URL generated:', signedUrl);
+        setVideoUrl(signedUrl);
+      } catch (err) {
+        console.error('Failed to load video:', err);
+        setError('Failed to load video');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVideo();
+  }, [objectKey]);
+
+  if (loading) return <div className="flex justify-center items-center h-full">Loading video...</div>;
+  if (error) return <div className="error text-center">{error}</div>;
+  
+  return (
+    <video
+      src={videoUrl}
+      className={`video-player ${className}`}
+      autoPlay={autoPlay}
+      loop={loop}
+      muted={muted}
+      playsInline={playsInline}
+      controls={controls}
+    />
+  );
 };
 
 export default UploadFiletoAWS;

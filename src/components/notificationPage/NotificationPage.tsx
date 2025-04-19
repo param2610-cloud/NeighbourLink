@@ -10,8 +10,12 @@ import {
   NotificationItem,
 } from "@/utils/notification/NotificationHook";
 import { InfoIcon } from "lucide-react";
+<<<<<<< HEAD
 import { Skeleton } from "../ui/skeleton";
 // import SkillList from "../components/communities/skillSharing/SkillList";
+=======
+
+>>>>>>> ba6de5ea1ec7658f2f6ff674c55910307d9d519f
 
 const NotificationPage: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

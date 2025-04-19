@@ -1,8 +1,8 @@
 import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { auth, db } from '@/firebase';
-import { collection, deleteDoc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, deleteDoc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState, useRef } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, MapPin, Calendar } from 'lucide-react';
 
 import { useStateContext } from '@/contexts/StateContext'; // Update this import to use StateContext
 import { useNavigate } from 'react-router-dom';
@@ -134,6 +134,84 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
     }
 };
 
+// Add interface for user info
+interface UserInfo {
+    firstName: string;
+    lastName: string;
+    photo?: string;
+    address?: string;
+}
+
+// Add user info component
+const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                setLoading(true);
+                const userDoc = await getDoc(doc(db, "Users", userId));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data() as UserInfo;
+                    setUserInfo(userData);
+                }
+            } catch (error) {
+                console.error("Error fetching user info:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userId) {
+            fetchUserInfo();
+        }
+    }, [userId]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center space-x-2">
+                <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
+            </div>
+        );
+    }
+
+    if (!userInfo) {
+        return (
+            <div className="flex items-center space-x-2">
+                <div className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400">?</div>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Unknown User</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+                {userInfo.photo ? (
+                    <ImageDisplay objectKey={userInfo.photo} />
+                ) : (
+                    <div className="h-full w-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-500 dark:text-blue-300">
+                        {userInfo.firstName?.[0]?.toUpperCase() || '?'}
+                    </div>
+                )}
+            </div>
+            <div>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-200">
+                    {userInfo.firstName} {userInfo.lastName}
+                </p>
+                {userInfo.address && (
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center">
+                        <MapPin size={10} className="mr-1" />
+                        {userInfo.address?.substring(0, 20)}{userInfo.address?.length > 20 ? '...' : ''}
+                    </p>
+                )}
+            </div>
+        </div>
+    );
+};
+
 export const Feed: React.FC = () => {
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -174,8 +252,6 @@ export const Feed: React.FC = () => {
         loadFeedItems();
     }, []);
 
-   
-
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen dark:bg-gray-900">
@@ -210,7 +286,6 @@ export const Feed: React.FC = () => {
                                 return (
                                     <div
                                         key={item.id}
-                                       
                                     >
                                         <ResourceCard resource={item as Resource} onDelete={handleDeleteItem} />
                                     </div>
@@ -223,8 +298,7 @@ export const Feed: React.FC = () => {
                                 return (
                                     <div 
                                         key={item.id}
-                                       
-                                        className="cursor-pointer"
+                                        className=""
                                     >
                                         <UpdateCard update={item as Update} onDelete={handleDeleteItem} />
                                     </div>
@@ -316,35 +390,20 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                 </div>
             )}
             <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                    <div className='flex w-full justify-between'>
+                <div className="flex justify-between items-center mb-3">
+                    <UserInfoDisplay userId={resource.userId} />
 
-                        <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
-                            Resource: {resource.category}
-
-                        </span>
-                        {
-                            resource.urgency == "high" && (
-                                <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
-                                    Emergency
-
-                                </span>
-                            )
-                        }
-
-                    </div>
-
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 ">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={()=> navigate(`/resource/${resource.id}`)}
                                 >
                                     View Details
@@ -353,7 +412,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -364,8 +423,23 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                             </div>
                         )}
                     </div>
-
                 </div>
+                
+                <div className="flex justify-between items-center mb-2">
+                    <div className='flex w-full justify-between'>
+                        <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                            Resource: {resource.category}
+                        </span>
+                        {
+                            resource.urgency == "high" && (
+                                <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                                    Emergency
+                                </span>
+                            )
+                        }
+                    </div>
+                </div>
+                
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{resource.title || 'Resource'}</h3>
                 <p className="text-xs font-light text-gray-600 dark:text-gray-300 mt-1">{resource.description}</p>
                 <div className="flex items-center mt-3 text-[10px] text-gray-500 dark:text-gray-400">
@@ -375,6 +449,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                     <span>Duration: {resource.duration}</span>
                 </div>
                 <div className="flex gap-2 items-center text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                    <Calendar size={12} className="mr-1" />
                     <span>Posted: {new Date(resource.createdAt).toLocaleDateString()}</span>
                 </div>
             </div>
@@ -393,12 +468,15 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
     const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = promotion.images?.length || 0;
     const isOwner = user?.uid === promotion.userId;
+    const navigate = useNavigate();
 
     const handleClickOutside = (event: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
             setShowMenu(false);
         }
     };
+    console.log('Promotion:', promotion,);
+    
 
     useEffect(() => {
         document.addEventListener('mousedown', handleClickOutside);
@@ -454,22 +532,21 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                 </div>
             )}
             <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
-                        Promotion
-                    </span>
+                <div className="flex justify-between items-center mb-3">
+                    <UserInfoDisplay userId={promotion.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                                    onClick={() => navigate(`/promotion/${promotion.id}`)}
                                 >
                                     View Details
                                 </button>
@@ -477,7 +554,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -488,8 +565,14 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                             </div>
                         )}
                     </div>
-
                 </div>
+                
+                <div className="flex justify-between items-center mb-2">
+                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                        Promotion
+                    </span>
+                </div>
+                
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">
                     {promotion?.title || 'Promotion'}
                 </h3>
@@ -507,6 +590,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                         Phone: {promotion.contactInfo?.contact}
                     </p>
                     <div className="flex items-center mt-2 text-gray-500 dark:text-gray-400">
+                        <Calendar size={12} className="mr-1" />
                         <span>Posted: {new Date(promotion.createdAt).toLocaleDateString()}</span>
                     </div>
                 </div>
@@ -596,7 +680,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
     return (
         <div 
             className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4"
-            
         >
             {event.images && event.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -637,22 +720,20 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                 </div>
             )}
             <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
-                        Event: {event.eventType}
-                    </span>
+                <div className="flex justify-between items-center mb-3">
+                    <UserInfoDisplay userId={event.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={() => navigate(`/event/${event.id}`)}
                                 >
                                     View Details
@@ -661,7 +742,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -673,8 +754,14 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                             </div>
                         )}
                     </div>
-
                 </div>
+                
+                <div className="flex justify-between items-center mb-2">
+                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
+                        Event: {event.eventType}
+                    </span>
+                </div>
+                
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{event.title || 'Event'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{event.description}</p>
                 <div className="mt-3 text-[10px]">
@@ -696,7 +783,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                         </svg>
                         <span>Organizer: {event.organizerDetails?.name}</span>
                     </div>
-                    <div className="text-gray-500 dark:text-gray-400 mt-2">Posted: {new Date(event.createdAt).toLocaleDateString()}</div>
+                    <div className="text-gray-500 dark:text-gray-400 mt-2 flex items-center">
+                        <Calendar size={12} className="mr-1" />
+                        <span>Posted: {new Date(event.createdAt).toLocaleDateString()}</span>
+                    </div>
                     
                     {/* RSVP Button */}
                     <div className="mt-3">
@@ -796,22 +886,20 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                 </div>
             )}
             <div className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full">
-                        Update
-                    </span>
+                <div className="flex justify-between items-center mb-3">
+                    <UserInfoDisplay userId={update.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
-                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20 cursor-pointer">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={() => navigate(`/update/${update.id}`)}
                                 >
                                     View Details
@@ -820,7 +908,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -832,13 +920,22 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                             </div>
                         )}
                     </div>
-
                 </div>
+                
+                <div className="flex justify-between items-center mb-2">
+                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full">
+                        Update
+                    </span>
+                </div>
+                
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update?.title || 'Update'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{update.description}</p>
                 <div className="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
                     {update.date && <span>Update Date: {new Date(update.date).toLocaleDateString()}</span>}
-                    <div className="mt-1">Posted: {new Date(update.createdAt).toLocaleDateString()}</div>
+                    <div className="mt-1 flex items-center">
+                        <Calendar size={12} className="mr-1" />
+                        <span>Posted: {new Date(update.createdAt).toLocaleDateString()}</span>
+                    </div>
                     
                     {/* Show reply count if available */}
                     {update.childUpdates && update.childUpdates.length > 0 && (

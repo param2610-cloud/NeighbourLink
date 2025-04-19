@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Zap, Search, Bell, Users, BookOpen, Calendar, MessageSquare } from 'lucide-react';
+import { Search, Bell, Users, BookOpen, Calendar, MessageSquare, Shapes } from 'lucide-react';
 import { useMobileContext } from '@/contexts/MobileContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,14 +36,14 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
         <button
             className="
     absolute flex flex-col items-center justify-center 
-    bg-gradient-to-tr from-gray-500 to-gray-600 
+    nl-floating-menu-gradient
     p-5 rounded-full shadow-lg 
-     duration-300 
+    duration-300 
     w-18 h-18 opacity-0 
-    hover:bg-gradient-to-tr hover:from-gray-700 hover:to-gray-900 
+    hover:nl-floating-menu-hover
     hover:shadow-2xl 
     hover:scale-110
-    focus:outline-none focus:ring-4 focus:ring-gray-700
+    focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800
   "
             style={{
                 ...getPosition(),
@@ -52,10 +52,10 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
             onClick={onClick}
             aria-label={label}
         >
-            <div className="text-white">
+            <div className="text-white dark:text-white">
                 {icon}
             </div>
-            <span className="text-[10px] mt-1 text-gray-300">{label}</span>
+            <span className="text-[10px] mt-1 text-white dark:text-white">{label}</span>
         </button>
 
     );
@@ -118,12 +118,13 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) =>
     return (
         <div className={`fixed top-17.5 ${isMobile ? "right-5" : "right-20"} z-50`}>
             {/* Main button */}
+            
             <button
-                className={`p-3 text-neutral-900 dark:text-neutral-300 dark:bg-gray-900 rounded-full border dark:border-0 shadow-lg transition-all duration-300 ${isOpen ? 'transform rotate-45' : ''}`}
+                className={`border p-4 rounded-full shadow-lg transition-transform duration-300 hover:nl-floating-menu-hover hover:shadow-2xl ${isOpen ? 'transform rotate-180' : ''}`}
                 onClick={toggleMenu}
                 aria-label="Quick Actions"
             >
-                <Zap size={22} />
+                <Shapes  size={22} className="dark:text-white text-indigo-600" />
             </button>
 
             {/* Modal overlay */}

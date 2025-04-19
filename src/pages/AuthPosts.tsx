@@ -4,7 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { ResourceCard, PromotionCard, EventCard, UpdateCard, Resource, Promotion, Event, Update } from './components/Feed';
 import { FeedItem } from './components/Feed';
 import { FloatingActionMenu } from './Home';
+<<<<<<< HEAD
 import { Skeleton } from '@/components/ui/skeleton';
+=======
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
+>>>>>>> ba6de5ea1ec7658f2f6ff674c55910307d9d519f
 
 // Reuse the convertDoc function from your Feed component
 const convertDoc = <T extends FeedItem>(doc: any, type: FeedItem['type']): T => {
@@ -101,6 +106,7 @@ const AuthPosts: React.FC = () => {
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const openModal = (type?: 'resource' | 'promotion' | 'event' | 'update') => {
         // Handle modal opening logic here
@@ -198,7 +204,16 @@ const AuthPosts: React.FC = () => {
     }
 
     return (
-        <div className="container w-full mt-16 mx-auto px-4 py-8 bg-transparent">
+        <div className="container w-full py-2 mx-auto px-4 bg-transparent">
+            <button 
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 mb-8 px-4 py-2 text-blue-500"
+                aria-label="Go back"
+            >
+                <FaArrowLeft className="text-blue-500" />
+                <span className="font-medium">Back</span>
+            </button>
+            
             <div className="mb-8 text-center">
                 <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
                     My Posts
