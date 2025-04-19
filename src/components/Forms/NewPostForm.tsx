@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { uploadFileToS3 } from '@/utils/aws/aws';
+import {  notifyNearbyUsersAboutResource } from '@/utils/notification/NotificationHook';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -749,6 +750,31 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       
       const docRef = await addDoc(collectionRef, postData);
       console.log(`Document successfully added with ID: ${docRef.id}`);
+
+      // Check if this is a high urgency resource post
+      if (formState.postType === 'resource' && 
+          resourceForm.type === 'need' && 
+          resourceForm.urgency === 'high') {
+        console.log("High urgency resource detected. Sending notifications to nearby users.");
+        
+        // Get the location data
+        const postLocation = {
+          latitude: postData.location.latitude,
+          longitude: postData.location.longitude
+        };
+        
+        // Notify nearby users (within 5km) about the high urgency resource
+        await notifyNearbyUsersAboutResource(
+          docRef.id,
+          resourceForm.title,
+          resourceForm.description,
+          postLocation,
+          5, // 5km radius
+          currentUser.uid // Current user ID to avoid self-notification
+        );
+        
+        console.log("Notifications sent for high urgency resource");
+      }
 
       // If this is a reply (has a parentId), update the parent document to include this as a child
       if (formState.postType === 'update' && updateForm.parentId) {
