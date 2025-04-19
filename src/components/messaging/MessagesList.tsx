@@ -70,13 +70,28 @@ const MessagesList = () => {
   const getConversationTitle = (conversation: Conversation) => {
     const otherUser = getOtherParticipant(conversation);
 
+    // If there's a post title, use it
     if (conversation.postTitle) {
       return `Re: ${conversation.postTitle}`;
     }
 
-    return otherUser ?
-      (otherUser.displayName || otherUser.firstName || 'Unknown User') :
-      'Conversation';
+    // For direct conversations, show the other person's name
+    if (otherUser) {
+      // Check different possible name fields
+      if (otherUser.displayName && otherUser.displayName.trim()) {
+        return otherUser.displayName;
+      }
+      
+      if (otherUser.firstName || otherUser.lastName) {
+        return `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim();
+      }
+      
+      if (otherUser.email) {
+        return otherUser.email.split('@')[0]; // Use email prefix
+      }
+    }
+    
+    return 'Conversation'; // Default fallback
   };
 
   const formatTimestamp = (timestamp: any) => {

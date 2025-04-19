@@ -8,6 +8,7 @@ import { FaArrowRight, FaUserCircle, FaLightbulb } from "react-icons/fa";
 import { MdOutlineWavingHand } from "react-icons/md";
 import { Switch } from "@/components/ui/switch";
 import { calculateDistance } from "@/utils/utils";
+import { getOrCreateConversationWithUser } from "@/services/messagingService";
 
 const SkillList = () => {
   const [skills, setSkills] = useState<any[]>([]);
@@ -63,6 +64,8 @@ const SkillList = () => {
             isGlobal: distance > preferredRadius,
           };
         });
+        console.log(await Promise.all(skillsData2));
+
         setSkills(await Promise.all(skillsData2));
       } catch (error) {
         console.error("Error fetching skills:", error);
@@ -94,7 +97,6 @@ const SkillList = () => {
     };
 
     return one() && two() && three();
-    // return one();
   });
 
   const handleSkillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +105,44 @@ const SkillList = () => {
 
   const handleSwitchChange = (checked: boolean) => {
     setFilter((prev) => ({ ...prev, isGlobal: checked }));
+  };
+
+  const contactHandler = async (skill: any) => {
+    if (!user?.uid || !skill.email) return;
+    
+    try {
+      // Find the user ID of the skill provider
+      const userQuery = query(
+        collection(db, "Users"),
+        where("email", "==", skill.email)
+      );
+      const userSnapshot = await getDocs(userQuery);
+      
+      if (userSnapshot.empty) {
+        console.error("User not found for email:", skill.email);
+        return;
+      }
+      
+      const skillProviderData = userSnapshot.docs[0].data();
+      const skillProviderId = userSnapshot.docs[0].id;
+      
+      // Create or get existing conversation between current user and skill provider
+      const conversationId = await getOrCreateConversationWithUser(
+        user.uid,
+        skillProviderId
+      );
+      
+      // Make sure we have a valid conversation ID and navigate
+      if (conversationId) {
+        console.log("Navigating to conversation with skill provider:", skillProviderId);
+        navigate(`/messages/${conversationId}`);
+      } else {
+        throw new Error("Failed to create conversation");
+      }
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      alert("Failed to start conversation. Please try again.");
+    }
   };
 
   if (loading)
@@ -157,7 +197,6 @@ const SkillList = () => {
             value={filter.skill}
             onChange={handleSkillChange}
             className="mt-1 px-2 py-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            // required
           />
         </div>
         <div className="flex items-center gap-2">
@@ -187,9 +226,7 @@ const SkillList = () => {
               key={skill.id}
               className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
             >
-              {/* Header with gradient and avatar */}
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-800 dark:to-indigo-900 p-5 text-white relative">
-                {/* Decorative elements */}
                 <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
                 <div className="absolute bottom-0 left-0 w-12 h-12 bg-white/10 rounded-full -ml-6 -mb-6"></div>
 
@@ -209,7 +246,6 @@ const SkillList = () => {
                 </div>
               </div>
 
-              {/* Description */}
               <div className="p-5 dark:bg-gray-800">
                 <div className="mb-4">
                   <h3 className="text-xs uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400 mb-2">
@@ -220,7 +256,6 @@ const SkillList = () => {
                   </p>
                 </div>
 
-                {/* Skills */}
                 <div className="mb-6">
                   <h3 className="text-xs uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400 mb-2">
                     Skills
@@ -249,9 +284,8 @@ const SkillList = () => {
                   </div>
                 </div>
 
-                {/* Contact Now Button */}
                 <button
-                  onClick={() => navigate(`/skills/${skill.id}`)}
+                  onClick={() => contactHandler(skill)}
                   className="w-full py-2.5 border border-indigo-600 bg-gradient-to-r hover:text-white text-blue-700 dark:bg-gradient-to-r dark:from-blue-700 dark:to-indigo-800 dark:text-white rounded-lg font-medium shadow-md hover:from-blue-700 hover:to-indigo-700 dark:hover:from-blue-800 dark:hover:to-indigo-900 transition-all flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 >
                   <span>Contact Now</span>
