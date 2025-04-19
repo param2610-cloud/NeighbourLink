@@ -8,8 +8,9 @@ import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
-import QuickActionsButton from "./components/QuickAction";
 import Feed from "./components/Feed";
+import NewPostForm from "@/components/Forms/NewPostForm";
+import QuickActionsButton from "./components/QuickAction";
 
 
 type FilterType = "all" | "need" | "offer";
@@ -49,6 +50,23 @@ const Home: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
   const [updated,] = useState(false);
   const navigate = useNavigate();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [postType, setPostType] = useState<'resource' | 'event' | 'promotion' | 'update' | null>(null);
+
+  const openModal = (type?: 'resource' | 'event' | 'promotion' | 'update') => {
+    setPostType(type || null);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleSuccess = () => {
+    console.log('Post created successfully!');
+    // You can implement additional success handling here
+  };
 
 
   useEffect(() => {
@@ -374,7 +392,7 @@ const Home: React.FC = () => {
                     ))}
                   </div>
                 </div> */}
-                <QuickActionsButton />
+                <QuickActionsButton openModal={openModal} />
 
               </div>
 
@@ -409,7 +427,15 @@ const Home: React.FC = () => {
               </div>
 
               {/* Floating Action Button */}
-              <FloatingActionMenu />
+              <FloatingActionMenu openModal={openModal} />
+
+              <NewPostForm
+                isOpen={isModalOpen}
+                onClose={closeModal}
+                initialPostType={postType}
+                onSuccess={handleSuccess}
+              />
+
 
               <Bottombar />
             </div>
@@ -426,9 +452,9 @@ const Home: React.FC = () => {
 export default Home;
 
 
-export const FloatingActionMenu: React.FC = () => {
+export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void }> = ({ openModal }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -443,10 +469,10 @@ export const FloatingActionMenu: React.FC = () => {
   ];
 
   // Handler for button click to navigate with query param
-  const handleNavigation = (type: string) => {
-    navigate(`/post?type=${type}`);
-    setIsOpen(false); // optionally close menu on navigation
-  };
+  // const handleNavigation = (type: 'resource' | 'event' | 'promotion' | 'update') => {
+  //   openModal(type);
+  //   setIsOpen(false); // optionally close menu on navigation
+  // };
 
   // // Calculate the bottom-right position for animation origin
   // const originPosition = "bottom-20 right-5";
@@ -478,7 +504,7 @@ export const FloatingActionMenu: React.FC = () => {
                 minWidth: '120px',
                 minHeight: '140px',
               }}
-              onClick={() => handleNavigation(option.id)}
+              onClick={() => openModal(option.id as 'resource' | 'event' | 'promotion' | 'update')}
               aria-label={`Go to ${option.label} form`}
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-blue-600 to-teal-500 flex items-center justify-center mb-3 shadow-md">
@@ -491,7 +517,6 @@ export const FloatingActionMenu: React.FC = () => {
           ))}
         </div>
       </div>
-
 
 
 

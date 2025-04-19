@@ -61,7 +61,11 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
     );
 };
 
-export default function QuickActionsButton() {
+interface QuickActionsButtonProps {
+    openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void;
+  }
+  
+  const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { isMobile } = useMobileContext();
@@ -92,11 +96,11 @@ export default function QuickActionsButton() {
 
     const quickActions = [
         { icon: <Search size={20} />, label: 'Search', action: () => navigate("/search") },
-        { icon: <BookOpen size={20} />, label: 'Resorce', action: () => navigate("/post?type=resource") },
+        { icon: <BookOpen size={20} />, label: 'Resorce', action: () =>  openModal('resource')},
         // { icon: <Gift size={24} />, label: 'Offer', action: () => console.log('Offer clicked') },
-        { icon: <Bell size={20} />, label: 'Promote', action: () => navigate("/post?type=promotion") },
-        { icon: <Calendar size={20} />, label: 'Event', action: () => navigate("/post?type=event") },
-        { icon: <Users size={20} />, label: 'Update', action: () => navigate("/post?type=update") },
+        { icon: <Bell size={20} />, label: 'Promote', action: () => openModal('promotion') },
+        { icon: <Calendar size={20} />, label: 'Event', action: () => openModal('event') },
+        { icon: <Users size={20} />, label: 'Update', action: () => openModal('update') },
     ];
 
     const handleActionClick = (action: () => void) => {
@@ -146,3 +150,4 @@ export default function QuickActionsButton() {
         </div>
     );
 }
+export default QuickActionsButton;
