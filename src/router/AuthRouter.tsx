@@ -8,10 +8,10 @@ import LandingPage from '@/components/landingPage/LandingPage';
 import EmergencyPosts from '@/pages/EmergencyPosts';
 import SavedPosts from '@/components/post/SavedPosts';
 import NewPostForm from '@/components/Forms/NewPostForm';
+import NewPostModalExample from '@/components/Examples/NewPostModalExample';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
-const ResourceForm = lazy(() => import('@/components/Forms/ResourceForm'));
 // const LandingPage = lazy(() => import('@/components/landingpage/LandingPage'));
 const UserRequests = lazy(() => import('@/components/PostCard/UserRequests'));
 const UserSharedResources = lazy(() => import('@/components/PostCard/UserSharedResources'));
@@ -40,7 +40,7 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
-        <Route path="/post" element={<NewPostForm />} />
+        <Route path="/post" element={<NewPostModalExample />} />
         {/* <Route path="/resource/need" element={<ResourceForm userId={user?.uid}/>} /> */}
         <Route path="/post/:id" element={<PostDetailsPage/>} />
         <Route path='/profile/auth/requests' element={<UserRequests/>} />
