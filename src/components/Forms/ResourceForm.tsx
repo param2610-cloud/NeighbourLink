@@ -197,6 +197,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       // Only send emergency notifications for "need" posts with emergency urgency
       if (postType === "need" && urgency === 3 && coordinates) {
         // Send emergency notifications to nearby users
+
         // await sendEmergencyNotifications(
         //   postId, 
         //   title,
@@ -204,6 +205,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         //   coordinates,
         //   visibilityRadius
         // );
+
       }
       console.log("Resource posted with ID: ", docRef.id);
 

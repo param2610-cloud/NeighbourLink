@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import React, { useEffect, useState, lazy, Suspense } from "react";
 import { auth } from "../firebase";
+
 import Home from "@/pages/Home";
 import MessagesList from "@/components/messaging/MessagesList";
 import ChatDetail from "@/components/messaging/ChatDetail";
@@ -15,6 +16,7 @@ import VolunteerShow from "@/pages/VolunteerShow";
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
 const ResourceForm = lazy(() => import("@/components/Forms/ResourceForm"));
+
 // const LandingPage = lazy(() => import('@/components/landingpage/LandingPage'));
 const UserRequests = lazy(() => import("@/components/PostCard/UserRequests"));
 const UserSharedResources = lazy(
@@ -45,6 +47,7 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
+
         // we will cahnge it later
         <Route path="/skill-share" element={<SkillList />} />
         <Route
@@ -68,7 +71,6 @@ const AuthRouter: React.FC = () => {
 
         <Route path="/skillHome" element={<SkillHome />} />
         <Route path="/volunteer" element={<VolunteerShow />} />
-
         <Route path="/messages" element={<MessagesList />} />
         <Route path="/messages/:conversationId" element={<ChatDetail />} />
         <Route path="/emergency/posts" element={<EmergencyPosts />} />

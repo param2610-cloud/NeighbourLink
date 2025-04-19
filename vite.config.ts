@@ -99,7 +99,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 3000,
   },
   server:{
-    host: process.env.VITE_IP
+    host: process.env.VITE_IP,
+    port:5174
     // host: '192.168.0.193'
   }
 })

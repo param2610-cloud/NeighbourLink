@@ -1,5 +1,6 @@
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
+
 import {
   Home,
   User,
@@ -10,6 +11,7 @@ import {
   HeartHandshake,
   HandHeart,
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -62,6 +64,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
   const navItems = [
     { path: "/home", label: "Home", icon: <Home size={18} /> },
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
+
     {
       path: "/saved/posts",
       label: "Saved Posts",
