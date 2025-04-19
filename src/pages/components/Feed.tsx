@@ -1,6 +1,6 @@
 import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { auth, db } from '@/firebase';
-import { collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, deleteDoc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import React, { useEffect, useState, useRef } from 'react';
 import { MoreVertical } from 'lucide-react';
 
@@ -104,7 +104,6 @@ export const fetchEvents = async (): Promise<Event[]> => {
     return querySnapshot.docs.map(doc => convertDoc<Event>(doc, 'event'));
 };
 
-// Fetch all updates - modified to get only top-level updates
 export const fetchUpdates = async (): Promise<Update[]> => {
     const updatesRef = collection(db, "updates");
     const q = query(
@@ -135,7 +134,6 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
 };
 
 export const Feed: React.FC = () => {
-    // const user = auth.currentUser;
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -175,13 +173,7 @@ export const Feed: React.FC = () => {
         loadFeedItems();
     }, []);
 
-    const handleResourceClick = (resourceId: string) => {
-        navigate(`/resource/${resourceId}`);
-    };
-
-    const handleUpdateClick = (updateId: string) => {
-        navigate(`/update/${updateId}`);
-    };
+   
 
     if (loading) {
         return (
@@ -212,7 +204,7 @@ export const Feed: React.FC = () => {
                                 return (
                                     <div
                                         key={item.id}
-                                        onClick={() => handleResourceClick(item.id!)}
+                                       
                                     >
                                         <ResourceCard resource={item as Resource} onDelete={handleDeleteItem} />
                                     </div>
@@ -225,7 +217,7 @@ export const Feed: React.FC = () => {
                                 return (
                                     <div 
                                         key={item.id}
-                                        onClick={() => handleUpdateClick(item.id!)}
+                                       
                                         className="cursor-pointer"
                                     >
                                         <UpdateCard update={item as Update} onDelete={handleDeleteItem} />
@@ -246,9 +238,6 @@ interface CardBaseProps {
 }
 
 interface ResourceCardProps extends CardBaseProps {
-export default Feed;
-
-interface ResourceCardProps {
     resource: Resource;
 }
 
@@ -259,6 +248,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
     const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = resource.images?.length || 0;
     const isOwner = user?.uid === resource.userId;
+    const navigate = useNavigate();
 
     const handleClickOutside = (event: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -349,19 +339,13 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 ">
                                 <button
                                     className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-
+                                    onClick={()=> navigate(`/resource/${resource.id}`)}
                                 >
                                     View Details
                                 </button>
                                 {
                                     isOwner && (
                                         <>
-                                            {/* <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                                                onClick={() => console.log('Edit:', resource.id)}
-                                            >
-                                                Edit
-                                            </button> */}
                                             <button
                                                 className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                                                 onClick={handleDelete}
@@ -393,8 +377,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
 };
 
 interface PromotionCardProps extends CardBaseProps {
-
-interface PromotionCardProps {
     promotion: Promotion;
 }
 
@@ -488,12 +470,6 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                                 {
                                     isOwner && (
                                         <>
-                                            {/* <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                                                onClick={() => console.log('Edit:', promotion.id)}
-                                            >
-                                                Edit
-                                            </button> */}
                                             <button
                                                 className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                                                 onClick={handleDelete}
@@ -538,12 +514,15 @@ interface EventCardProps extends CardBaseProps {
 }
 
 export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
-    const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = event.images?.length || 0;
+    const { user } = useStateContext(); // Use StateContext instead of auth.currentUser
     const isOwner = user?.uid === event.userId;
+    const [isRSVPed, setIsRSVPed] = useState(false);
+    const [isRSVPing, setIsRSVPing] = useState(false);
+    const navigate = useNavigate();
 
     const handleClickOutside = (event: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -555,10 +534,6 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-    const { user } = useStateContext(); // Use StateContext instead of AuthContext
-    const [isRSVPed, setIsRSVPed] = useState(false);
-    const [isRSVPing, setIsRSVPing] = useState(false);
-    const navigate = useNavigate();
 
     useEffect(() => {
         // Check if the current user has already RSVPed
@@ -573,6 +548,11 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
 
     const handlePrev = () => {
         setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    };
+
+    const handleDelete = () => {
+        onDelete(event.id!, 'event');
+        setShowMenu(false);
     };
 
     const handleRSVP = async () => {
@@ -610,7 +590,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
     return (
         <div 
             className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4"
-            onClick={() => navigate(`/event/${event.id}`)}
+            
         >
             {event.images && event.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
@@ -667,19 +647,13 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
                                 <button
                                     className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-
+                                    onClick={() => navigate(`/event/${event.id}`)}
                                 >
                                     View Details
                                 </button>
                                 {
                                     isOwner && (
                                         <>
-                                            {/* <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                                                onClick={() => console.log('Edit:', event.id)}
-                                            >
-                                                Edit
-                                            </button> */}
                                             <button
                                                 className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                                                 onClick={handleDelete}
@@ -754,6 +728,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
     const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = update.images?.length || 0;
     const isOwner = user?.uid === update.userId;
+    const navigate = useNavigate();
 
     const handleClickOutside = (event: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -831,18 +806,13 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
                                 <button
                                     className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    onClick={() => navigate(`/update/${update.id}`)}
                                 >
                                     View Details
                                 </button>
                                 {
                                     isOwner && (
                                         <>
-                                            {/* <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
-                                                onClick={() => console.log('Edit:', update.id)}
-                                            >
-                                                Edit
-                                            </button> */}
                                             <button
                                                 className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
                                                 onClick={handleDelete}

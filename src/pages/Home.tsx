@@ -7,11 +7,11 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { Plus, BookOpen, Gift, Calendar, Bell, MessageSquare } from 'lucide-react';
+import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
 import Feed from "./components/Feed";
 import NewPostForm from "@/components/Forms/NewPostForm";
-import QuickActionsButton from "./components/QuickAction";
 import { useMobileContext } from "@/contexts/MobileContext";
+import QuickActionsButton from "./components/QuickAction";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -72,14 +72,6 @@ const Home: React.FC = () => {
     console.log('Post created successfully!');
     // You can implement additional success handling here
   };
-
-  const actions = [
-    {
-      label: "New Update",
-      icon: MessageSquare,
-      onClick: navigateToNewUpdate
-    },
-  ];
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -219,154 +211,162 @@ const Home: React.FC = () => {
 
   return (
     <>
-      {
-        userDetails ?
-          <div className={`flex flex-col min-h-screen ${isMobile ? "mb-16" : ""} bg-gray-50 dark:bg-gray-900`}>
+    {
+      userDetails ?
+        <div className={`flex flex-col min-h-screen ${isMobile ? "mb-16" : ""} bg-gray-50 dark:bg-gray-900`}>
+          {/* Responsive Sidebar */}
+          <div
+            className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+              } md:translate-x-0 transition-transform duration-300 z-50`}
+          >
+            <Sidebar
+              // userDetails={userDetails}
+              handleLogout={handleLogout}
+              isSidebarOpen={isSidebarOpen}
+            />
+          </div>
+
+          {/* Overlay to close sidebar when clicking outside (only on mobile) */}
+          {isSidebarOpen && (
             <div
-              className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } md:translate-x-0 transition-transform duration-300 z-50`}
-            >
-              <Sidebar
-                handleLogout={handleLogout}
-                isSidebarOpen={isSidebarOpen}
-              />
+              className="fixed inset-0 bg-transparent z-30 md:hidden"
+              onClick={toggleSidebar}
+            />
+          )}
+
+          {/* Main Content Area */}
+          <div className="md:ml-64">
+            {/* Top Navigation */}
+            <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
+              <div className="flex  items-center justify-between p-4">
+                <div
+                  className="flex items-center gap-5 space-x-2 cursor-pointer"
+                  onClick={toggleSidebar}
+                >
+                  <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+                  {
+                    !isMobile && (
+                      <div>
+                        <h2 className="text-xs font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
+                        <p className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300">
+                          {userLocation ? "Current Location" : "Location unavailable"}
+                        </p>
+                      </div>
+                    )
+                  }
+                </div>
+
+                <div className="flex items-center">
+                  <h1 className="text-xl font-bold text-blue-800 dark:text-blue-700">Neighbour</h1>
+                  <h1 className="text-xl font-bold text-violet-800 dark:text-violet-700">Link</h1>
+                </div>
+
+                <div
+                  className="flex items-center space-x-2 cursor-pointer"
+                  onClick={() => navigate("/notifications")}
+                >
+                  <IoMdNotifications className="text-2xl text-gray-700 dark:text-gray-200" />
+                </div>
+              </div>
+
+              {/* Neighborhood, Radius Selector, and Filter
+              <div className="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900">
+              </div> */}
+
             </div>
 
-            {isSidebarOpen && (
-              <div
-                className="fixed inset-0 bg-transparent z-30 md:hidden"
-                onClick={toggleSidebar}
-              />
-            )}
+            {/* Quick Actions Grid */}
+            <div className="flex justify-center items-center">
 
-            <div className="md:ml-64">
-              <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
-                <div className="flex  items-center justify-between p-4">
-                  <div
-                    className="flex items-center gap-5 space-x-2 cursor-pointer"
-                    onClick={toggleSidebar}
-                  >
-                    <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
-                    {
-                      !isMobile && (
-                        <div>
-                          <h2 className="text-xs font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
-                          <p className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300">
-                            {userLocation ? "Current Location" : "Location unavailable"}
-                          </p>
-                        </div>
-                      )
-                    }
-                  </div>
 
-                  <div className="flex items-center">
-                    <h1 className="text-xl font-bold text-blue-800 dark:text-blue-700">Neighbour</h1>
-                    <h1 className="text-xl font-bold text-violet-800 dark:text-violet-700">Link</h1>
-                  </div>
-
-                  <div
-                    className="flex items-center space-x-2 cursor-pointer"
-                    onClick={() => navigate("/notifications")}
-                  >
-                    <IoMdNotifications className="text-2xl text-gray-700 dark:text-gray-200" />
-                  </div>
-                </div>
-
-                {/* Neighborhood, Radius Selector, and Filter
-                <div className="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900">
-                  <div>
-                    <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
-                    <p className="text-lg font-semibold text-indigo-700 dark:text-indigo-300">
-                      {userLocation ? "Current Location" : "Location unavailable"}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">Radius:</span>
-                    <select
-                      value={radius}
-                      onChange={(e) => setRadius(Number(e.target.value))}
-                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm text-black dark:text-white"
+              {/* <div className="overflow-x-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex space-x-4 px-4">
+                  {actions.map((action, index) => (
+                    <button
+                      key={index}
+                      onClick={action.onClick}
+                      className="flex-shrink-0 bg-gradient-to-tr from-blue-200 to-teal-200 hover:bg-gray-100 text-gray-700 font-semibold py-6 px-8 rounded-xl shadow-md border-2 border-gray-700 transition-all duration-300 ease-in-out active:scale-95 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                     >
-                      <option value={1}>1 km</option>
-                      <option value={3}>3 km</option>
-                      <option value={5}>5 km</option>
-                      <option value={10}>10 km</option>
-                    </select>
-                  </div>
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <action.icon className="h-8 w-8 mb-1 text-gray-700" />
+                        <span className="text-gray-800 font-medium">{action.label}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-
-              </div>
-
-              <div className="flex justify-center items-center">
-                <QuickActionsButton openModal={openModal} />
-              </div>
-
-              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-neutral-100 dark:bg-slate-800 h-16">
-
-                <div className="fixed gap-5 flex items-center justify-between mb-7">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-300">Radius:</span>
-                    <select
-                      value={radius}
-                      onChange={(e) => setRadius(Number(e.target.value))}
-                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-xs text-black dark:text-white"
-                    >
-                      <option value={1}>1 km</option>
-                      <option value={3}>3 km</option>
-                      <option value={5}>5 km</option>
-                      <option value={10}>10 km</option>
-                    </select>
-                  </div>
-                  {/* <div className="flex items-center space-x-2">
-                    <label className="text-gray-700 text-xs dark:text-gray-400">Filter by:</label>
-                    <select
-                      value={selectedFilter}
-                      onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-                      className="px-3 py-1 text-xs dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      <option value="all">All</option>
-                      <option value="need">Needs</option>
-                      <option value="offer">Offers</option>
-                    </select>
-                  </div> */}
-                </div>
-              </div>
-              <div className="flex-1 px-4 py-4 ">
-
-                {loading ? (
-                  <div className="flex justify-center py-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
-                  </div>
-                ) : (
-                  <Feed />
-                )}
-              </div>
-
-              <FloatingActionMenu openModal={openModal} />
-
-              <NewPostForm
-                isOpen={isModalOpen}
-                onClose={closeModal}
-                initialPostType={postType}
-                onSuccess={handleSuccess}
-                userData={userDetails}
-              />
-              {
-                isMobile && (
-
-                  <Bottombar />
-                )
-              }
+              </div> */}
+              <QuickActionsButton openModal={openModal} />
 
             </div>
+
+            {/* Feed Section */}
+            <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-neutral-100 dark:bg-slate-800 h-16">
+
+              <div className="fixed gap-5 flex items-center justify-between mb-7">
+                {/* <h3 className="text-lg font-semibold text-gray-800 dark:text-white"></h3> */}
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-600 dark:text-gray-300">Radius:</span>
+                  <select
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                    className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-xs text-black dark:text-white"
+                  >
+                    <option value={1}>1 km</option>
+                    <option value={3}>3 km</option>
+                    <option value={5}>5 km</option>
+                    <option value={10}>10 km</option>
+                  </select>
+                </div>
+                {/* <div className="flex items-center space-x-2">
+                  <label className="text-gray-700 text-xs dark:text-gray-400">Filter by:</label>
+                  <select
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
+                    className="px-3 py-1 text-xs dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="all">All</option>
+                    <option value="need">Needs</option>
+                    <option value="offer">Offers</option>
+                  </select>
+                </div> */}
+              </div>
+            </div>
+            <div className="flex-1 px-4 py-4 ">
+
+              {loading ? (
+                <div className="flex justify-center py-10">
+                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : (
+                <Feed />
+              )}
+            </div>
+
+            {/* Floating Action Button */}
+            <FloatingActionMenu openModal={openModal} />
+
+            <NewPostForm
+              isOpen={isModalOpen}
+              onClose={closeModal}
+              initialPostType={postType}
+              onSuccess={handleSuccess}
+            />
+
+            {
+              isMobile && (
+
+                <Bottombar />
+              )
+            }
+
           </div>
-          :
-          <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-            <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
-          </div>
-      }
-    </>
+        </div>
+        :
+        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
+          <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
+        </div>
+    }
+  </>
   );
 };
 
