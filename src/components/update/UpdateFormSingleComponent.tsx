@@ -7,6 +7,7 @@ import { FaArrowLeft, FaImage, FaTimes } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { toast } from 'react-toastify';
 import { uploadFileToS3 } from '@/utils/aws/aws';
+import { ImageDisplay } from '@/components/AWS/UploadFile';
 
 const NewUpdateForm: React.FC = () => {
     const [title, setTitle] = useState('');
@@ -125,16 +126,14 @@ const NewUpdateForm: React.FC = () => {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 {/* Header with back button */}
-                <div className="flex justify-between items-center mb-6">
-                    <div 
-                        className="flex gap-2 items-center text-blue-600 dark:text-blue-400 cursor-pointer"
-                        onClick={() => navigate(-1)}
-                    >
-                        <FaArrowLeft /> Back
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Update</h1>
-                    <div className="w-6"></div> {/* Spacer for alignment */}
+                <div 
+                    className="flex gap-2 items-center text-blue-600 dark:text-blue-400 cursor-pointer"
+                    onClick={() => navigate(-1)}
+                >
+                    <FaArrowLeft /> Back
                 </div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Update</h1>
+                <div className="w-6"></div> {/* Spacer for alignment */}
                 
                 {/* Form */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
@@ -191,18 +190,26 @@ const NewUpdateForm: React.FC = () => {
                             </div>
                         )}
                         
+                        {/* Already uploaded images preview */}
+                        {uploadedImages.length > 0 && (
+                            <div className="grid grid-cols-2 gap-4">
+                                {uploadedImages.map((objectKey, index) => (
+                                    <div key={index} className="relative">
+                                        <ImageDisplay 
+                                            objectKey={objectKey}
+                                            className="w-full h-32 object-cover rounded" 
+                                        />
+                                        {/* No remove button for already uploaded images */}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
                         {/* Image upload progress */}
                         {isUploading && (
                             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                                 <AiOutlineLoading3Quarters className="animate-spin" />
                                 <span>Uploading images...</span>
-                            </div>
-                        )}
-                        
-                        {/* Already uploaded images */}
-                        {uploadedImages.length > 0 && (
-                            <div className="text-sm text-green-500">
-                                {uploadedImages.length} image{uploadedImages.length !== 1 && 's'} uploaded
                             </div>
                         )}
                         

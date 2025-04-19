@@ -5,6 +5,7 @@ import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { FaImage, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { uploadFileToS3 } from '@/utils/aws/aws';
+import { ImageDisplay } from '@/components/AWS/UploadFile';
 
 interface ReplyFormProps {
     parentId: string;
@@ -15,9 +16,9 @@ interface ReplyFormProps {
 const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth }) => {
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,11 +38,6 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
         setIsSubmitting(true);
         
         try {
-            // Upload any pending images
-            if (selectedImages.length > 0 && uploadedImages.length === 0) {
-                await handleUploadImages();
-            }
-            
             // Add the reply to the updates collection
             const replyData = {
                 parentId,
@@ -67,7 +63,6 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
             
             toast.success('Reply submitted successfully', { position: 'top-center' });
             setDescription('');
-            setSelectedImages([]);
             setUploadedImages([]);
             onSuccess();
         } catch (error) {
@@ -78,49 +73,50 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
         }
     };
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files.length > 0) {
-            const newFiles = Array.from(e.target.files);
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        
+        const newFiles = Array.from(e.target.files);
             
-            // Limit to 4 images total
-            const totalImages = selectedImages.length + newFiles.length;
-            if (totalImages > 4) {
-                toast.warning('Maximum 4 images allowed', { position: 'top-center' });
-                return;
+        // Limit to 4 images total
+        const totalImages = uploadedImages.length + newFiles.length;
+        if (totalImages > 4) {
+            toast.warning('Maximum 4 images allowed', { position: 'top-center' });
+            return;
+        }
+        
+        setIsUploading(true);
+        setUploadProgress(0);
+        
+        try {
+            for (let i = 0; i < newFiles.length; i++) {
+                const file = newFiles[i];
+                const fileName = `${Date.now()}-${file.name}`;
+                
+                // Upload the file and get the object key
+                const objectKey = await uploadFileToS3(file, fileName);
+                
+                // Add the object key to the uploadedImages array
+                setUploadedImages(prev => [...prev, objectKey]);
+                
+                // Update progress
+                setUploadProgress(Math.round(((i + 1) / newFiles.length) * 100));
             }
             
-            setSelectedImages(prev => [...prev, ...newFiles]);
+            // Reset the file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (error) {
+            console.error('Error uploading images:', error);
+            toast.error('Failed to upload images. Please try again.', { position: 'top-center' });
+        } finally {
+            setIsUploading(false);
         }
     };
 
     const handleRemoveImage = (index: number) => {
-        setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const handleUploadImages = async () => {
-        if (selectedImages.length === 0) return [];
-        
-        setIsUploading(true);
-        
-        try {
-            const uploadPromises = selectedImages.map(async (file) => {
-                const fileName = `${Date.now()}-${file.name}`;
-                return await uploadFileToS3(file, fileName);
-            });
-            
-            const uploadedUrls = await Promise.all(uploadPromises);
-            setUploadedImages(uploadedUrls);
-            setSelectedImages([]);
-            console.log('Uploaded images:', uploadedUrls);
-            
-            return uploadedUrls;
-        } catch (error) {
-            console.error('Error uploading images:', error);
-            toast.error('Failed to upload images. Please try again.', { position: 'top-center' });
-            return [];
-        } finally {
-            setIsUploading(false);
-        }
+        setUploadedImages(prev => prev.filter((_, i) => i !== index));
     };
 
     return (
@@ -136,20 +132,34 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
                 />
             </div>
             
-            {/* Selected images preview */}
-            {selectedImages.length > 0 && (
+            {/* Image upload progress */}
+            {isUploading && (
+                <div className="mb-2">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+                        <div
+                            className="h-2 bg-blue-600 transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                        />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Uploading... {uploadProgress}%
+                    </p>
+                </div>
+            )}
+            
+            {/* Uploaded images */}
+            {uploadedImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
-                    {selectedImages.map((file, index) => (
-                        <div key={index} className="relative">
-                            <img
-                                src={URL.createObjectURL(file)}
-                                alt={`Preview ${index}`}
-                                className="w-full h-24 object-cover rounded"
+                    {uploadedImages.map((objectKey, index) => (
+                        <div key={index} className="relative group">
+                            <ImageDisplay 
+                                objectKey={objectKey}
+                                className="w-full h-24 object-cover rounded" 
                             />
                             <button
                                 type="button"
                                 onClick={() => handleRemoveImage(index)}
-                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
                             >
                                 <FaTimes size={12} />
                             </button>
@@ -158,27 +168,12 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
                 </div>
             )}
             
-            {/* Image upload progress */}
-            {isUploading && (
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                    <AiOutlineLoading3Quarters className="animate-spin" />
-                    <span>Uploading images...</span>
-                </div>
-            )}
-            
-            {/* Already uploaded images */}
-            {uploadedImages.length > 0 && (
-                <div className="text-sm text-green-500">
-                    {uploadedImages.length} image{uploadedImages.length !== 1 && 's'} uploaded
-                </div>
-            )}
-            
             <div className="flex items-center justify-between">
                 <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
-                    disabled={isSubmitting || selectedImages.length >= 4}
+                    disabled={isSubmitting || isUploading || uploadedImages.length >= 4}
                 >
                     <FaImage size={20} />
                     <input
@@ -188,16 +183,16 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
                         multiple
                         onChange={handleImageSelect}
                         className="hidden"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isUploading || uploadedImages.length >= 4}
                     />
                 </button>
                 
                 <button
                     type="submit"
                     className={`px-4 py-2 rounded-full bg-blue-600 text-white ${
-                        isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
+                        isSubmitting || isUploading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-700'
                     }`}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isUploading}
                 >
                     {isSubmitting ? (
                         <span className="flex items-center">

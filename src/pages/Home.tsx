@@ -332,7 +332,7 @@ const Home: React.FC = () => {
 
               {loading ? (
                 <div className="flex justify-center py-10">
-                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
+                  loading
                 </div>
               ) : (
                 <Feed />
@@ -360,7 +360,7 @@ const Home: React.FC = () => {
         </div>
         :
         <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-          <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
+          {/* <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" /> */}
         </div>
     }
   </>

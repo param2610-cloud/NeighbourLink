@@ -292,7 +292,7 @@ export const Feed: React.FC = () => {
                                 return (
                                     <div 
                                         key={item.id}
-                                        className="cursor-pointer"
+                                        className=""
                                     >
                                         <UpdateCard update={item as Update} onDelete={handleDeleteItem} />
                                     </div>
@@ -387,17 +387,17 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                 <div className="flex justify-between items-center mb-3">
                     <UserInfoDisplay userId={resource.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 ">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={()=> navigate(`/resource/${resource.id}`)}
                                 >
                                     View Details
@@ -406,7 +406,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -529,17 +529,17 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                 <div className="flex justify-between items-center mb-3">
                     <UserInfoDisplay userId={promotion.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={() => navigate(`/promotion/${promotion.id}`)}
                                 >
                                     View Details
@@ -548,7 +548,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -717,17 +717,17 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                 <div className="flex justify-between items-center mb-3">
                     <UserInfoDisplay userId={event.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={() => navigate(`/event/${event.id}`)}
                                 >
                                     View Details
@@ -736,7 +736,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
@@ -883,17 +883,17 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                 <div className="flex justify-between items-center mb-3">
                     <UserInfoDisplay userId={update.userId} />
 
-                    <div className="relative" ref={menuRef}>
+                    <div className="relative cursor-pointer" ref={menuRef}>
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 cursor-pointer"
                         >
                             <MoreVertical className="h-5 w-5" />
                         </button>
                         {showMenu && (
-                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20 cursor-pointer">
                                 <button
-                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                     onClick={() => navigate(`/update/${update.id}`)}
                                 >
                                     View Details
@@ -902,7 +902,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                                     isOwner && (
                                         <>
                                             <button
-                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                                                 onClick={handleDelete}
                                             >
                                                 Delete
