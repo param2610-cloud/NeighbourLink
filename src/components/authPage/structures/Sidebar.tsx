@@ -1,15 +1,17 @@
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
+import { GrResources } from "react-icons/gr";
 
 import {
   Home,
   User,
-  FileText,
-  Share,
   Inbox,
   Archive,
   HeartHandshake,
   HandHeart,
+  Calendar,
+  MessageSquare,
+  Newspaper, // Import an appropriate icon for updates
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -17,6 +19,7 @@ import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { AiOutlineHeart } from "react-icons/ai";
 import ThemeToggle from "@/components/common/ThemeToggle";
+import GoogleTranslate from "@/components/GoogleTranslation";
 
 interface SidebarProps {
   handleLogout: () => void;
@@ -64,21 +67,22 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
   const navItems = [
     { path: "/home", label: "Home", icon: <Home size={18} /> },
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
-
-    {
-      path: "/saved/posts",
-      label: "Saved Posts",
-      icon: <AiOutlineHeart size={18} />,
-    },
-    {
-      path: "/resource/need",
-      label: "Request Resource",
-      icon: <FileText size={18} />,
-    },
+    { path: "/messages", label: "Messages", icon: <MessageSquare size={18} /> },
+    { path: "/updates", label: "Updates", icon: <Newspaper size={18} /> },
+    // {
+    //   path: "/saved/posts",
+    //   label: "Saved Posts",
+    //   icon: <AiOutlineHeart size={18} />,
+    // },
     {
       path: "/resource/offer",
       label: "Share Resources",
       icon: <Share size={18} />,
+    },
+    {
+      path: "/events",
+      label: "Community Events",
+      icon: <Calendar size={18} />,
     },
     {
       path: "/profile/auth/requests",
@@ -98,13 +102,13 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
     {
       path: "/volunteer",
       label: "Volunteer",
-      icon: <HandHeart  size={18} />,
+      icon: <HandHeart size={18} />,
     },
   ];
 
   return (
     <aside
-      className={`w-full md:w-64 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-gray-800 fixed md:fixed transform transition-transform duration-200 ease-in-out z-20
+      className={`w-full md:w-64 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-gray-800 fixed md:fixed transform transition-transform duration-200 ease-in-out z-50
         ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
@@ -167,6 +171,9 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
 
         {/* Bottom Section */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+          <div>
+            <GoogleTranslate />
+          </div>
           <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Theme

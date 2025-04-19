@@ -7,11 +7,11 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
+import { Plus, BookOpen, Gift, Calendar, Bell, MessageSquare } from 'lucide-react';
 import Feed from "./components/Feed";
 import NewPostForm from "@/components/Forms/NewPostForm";
 import QuickActionsButton from "./components/QuickAction";
-
+import { useMobileContext } from "@/contexts/MobileContext";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -50,6 +50,7 @@ const Home: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
   const [updated,] = useState(false);
   const navigate = useNavigate();
+  const { isMobile } = useMobileContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [postType, setPostType] = useState<'resource' | 'event' | 'promotion' | 'update' | null>(null);
@@ -63,11 +64,22 @@ const Home: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  const navigateToNewUpdate = () => {
+    navigate('/update/new');
+  };
+
   const handleSuccess = () => {
     console.log('Post created successfully!');
     // You can implement additional success handling here
   };
 
+  const actions = [
+    {
+      label: "New Update",
+      icon: MessageSquare,
+      onClick: navigateToNewUpdate
+    },
+  ];
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -85,7 +97,6 @@ const Home: React.FC = () => {
     }
   }, []);
 
-
   useEffect(() => {
     if (!userLocation) return;
 
@@ -97,15 +108,12 @@ const Home: React.FC = () => {
         const q = query(postsRef, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
 
-        // const postsData: Post[] = [];
         const emergencyData: Post[] = [];
 
-        // Create an array of promises to fetch all user data in parallel
         const postsWithUserPromises = querySnapshot.docs.map(async (document) => {
           const data = document.data() as Omit<Post, "id">;
           const post = { id: document.id, ...data } as Post;
 
-          // Fetch user details if userId exists
           if (post.userId) {
             try {
               const userDoc = await getDoc(doc(db, "Users", post.userId));
@@ -121,7 +129,6 @@ const Home: React.FC = () => {
             }
           }
 
-          // Calculate distance if coordinates exist
           if (post.coordinates && userLocation) {
             post.distance = calculateDistance(
               userLocation.lat,
@@ -130,7 +137,6 @@ const Home: React.FC = () => {
               post.coordinates.lng
             );
 
-            // Filter by radius
             if (post.distance <= radius) {
               if (post.urgencyLevel === 3) {
                 emergencyData.push(post);
@@ -138,16 +144,13 @@ const Home: React.FC = () => {
               return post;
             }
           } else {
-            // Include posts without coordinates
             return post;
           }
           return null;
         });
 
-        // Wait for all the user data fetching to complete
         const resolvedPosts = await Promise.all(postsWithUserPromises);
 
-        // Filter out null values (posts outside radius)
         const filteredPosts = resolvedPosts.filter(post => post !== null) as Post[];
 
         setPosts(filteredPosts);
@@ -162,12 +165,6 @@ const Home: React.FC = () => {
 
     fetchPosts();
   }, [userLocation, radius, updated]);
-
-
-  // const filteredPosts = posts.filter(post =>
-  //   selectedFilter === "all" ? true : post.postType === selectedFilter
-  // );
-
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -188,7 +185,6 @@ const Home: React.FC = () => {
     fetchUserData();
   }, []);
 
-
   async function handleLogout() {
     try {
       await auth.signOut();
@@ -200,11 +196,9 @@ const Home: React.FC = () => {
     }
   }
 
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371;
@@ -223,97 +217,21 @@ const Home: React.FC = () => {
     return deg * (Math.PI / 180);
   };
 
-
-  // const formatTimeSince = (timestamp: Timestamp) => {
-  //   const now = new Date();
-  //   const postDate = timestamp.toDate();
-  //   const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
-
-  //   if (diffInSeconds < 60) {
-  //     return `${diffInSeconds} sec ago`;
-  //   } else if (diffInSeconds < 3600) {
-  //     return `${Math.floor(diffInSeconds / 60)} min ago`;
-  //   } else if (diffInSeconds < 86400) {
-  //     return `${Math.floor(diffInSeconds / 3600)} hr ago`;
-  //   } else {
-  //     return `${Math.floor(diffInSeconds / 86400)} days ago`;
-  //   }
-  // };
-
-
-  // const getCategoryIcon = (category: string) => {
-  //   switch (category) {
-  //     case "Medical":
-  //       return <FaMedkit className="text-red-500" />;
-  //     case "Tools":
-  //       return <FaTools className="text-yellow-600" />;
-  //     case "Books":
-  //       return <FaBook className="text-blue-600" />;
-  //     case "Household":
-  //       return <FaHome className="text-green-600" />;
-  //     case "Food":
-  //       return <FaUtensils className="text-orange-500" />;
-  //     default:
-  //       return <BsThreeDots className="text-gray-600" />;
-  //   }
-  // };
-
-
-  // const containerVariants = {
-  //   hidden: { opacity: 0 },
-  //   show: {
-  //     opacity: 1,
-  //     transition: {
-  //       staggerChildren: 0.1
-  //     }
-  //   }
-  // };
-
-  // const itemVariants = {
-  //   hidden: { y: 20, opacity: 0 },
-  //   show: {
-  //     y: 0,
-  //     opacity: 1,
-  //     transition: {
-  //       type: "spring",
-  //       stiffness: 300
-  //     }
-  //   }
-  // };
-
-  // const alertVariants = {
-  //   hidden: { x: -300, opacity: 0 },
-  //   show: {
-  //     x: 0,
-  //     opacity: 1,
-  //     transition: {
-  //       type: "spring",
-  //       damping: 25,
-  //       stiffness: 100
-  //     }
-  //   }
-  // };
-
-
-
   return (
     <>
       {
         userDetails ?
-          <div className="flex flex-col min-h-screen mb-16 bg-gray-50 dark:bg-gray-900">
-            {/* Responsive Sidebar */}
+          <div className={`flex flex-col min-h-screen ${isMobile ? "mb-16" : ""} bg-gray-50 dark:bg-gray-900`}>
             <div
               className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } md:translate-x-0 transition-transform duration-300 z-40`}
+                } md:translate-x-0 transition-transform duration-300 z-50`}
             >
               <Sidebar
-                // userDetails={userDetails}
                 handleLogout={handleLogout}
                 isSidebarOpen={isSidebarOpen}
               />
             </div>
 
-            {/* Overlay to close sidebar when clicking outside (only on mobile) */}
             {isSidebarOpen && (
               <div
                 className="fixed inset-0 bg-transparent z-30 md:hidden"
@@ -321,16 +239,24 @@ const Home: React.FC = () => {
               />
             )}
 
-            {/* Main Content Area */}
             <div className="md:ml-64">
-              {/* Top Navigation */}
-              <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
-                <div className="flex items-center justify-between p-4">
+              <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
+                <div className="flex  items-center justify-between p-4">
                   <div
-                    className="flex items-center space-x-2 cursor-pointer"
+                    className="flex items-center gap-5 space-x-2 cursor-pointer"
                     onClick={toggleSidebar}
                   >
                     <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+                    {
+                      !isMobile && (
+                        <div>
+                          <h2 className="text-xs font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
+                          <p className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300">
+                            {userLocation ? "Current Location" : "Location unavailable"}
+                          </p>
+                        </div>
+                      )
+                    }
                   </div>
 
                   <div className="flex items-center">
@@ -346,7 +272,7 @@ const Home: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Neighborhood, Radius Selector, and Filter */}
+                {/* Neighborhood, Radius Selector, and Filter
                 <div className="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900">
                   <div>
                     <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
@@ -372,47 +298,38 @@ const Home: React.FC = () => {
 
               </div>
 
-              {/* Quick Actions Grid */}
               <div className="flex justify-center items-center">
-
-
-                {/* <div className="overflow-x-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  <div className="flex space-x-4 px-4">
-                    {actions.map((action, index) => (
-                      <button
-                        key={index}
-                        onClick={action.onClick}
-                        className="flex-shrink-0 bg-gradient-to-tr from-blue-200 to-teal-200 hover:bg-gray-100 text-gray-700 font-semibold py-6 px-8 rounded-xl shadow-md border-2 border-gray-700 transition-all duration-300 ease-in-out active:scale-95 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                      >
-                        <div className="flex flex-col items-center justify-center space-y-2">
-                          <action.icon className="h-8 w-8 mb-1 text-gray-700" />
-                          <span className="text-gray-800 font-medium">{action.label}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div> */}
                 <QuickActionsButton openModal={openModal} />
-
               </div>
 
-              {/* Feed Section */}
-              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-white dark:bg-gray-800 h-18">
+              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-neutral-100 dark:bg-slate-800 h-16">
 
-                <div className="fixed bg-white dark:bg-gray-800 flex items-center justify-between mb-7">
-                  {/* <h3 className="text-lg font-semibold text-gray-800 dark:text-white"></h3> */}
+                <div className="fixed gap-5 flex items-center justify-between mb-7">
                   <div className="flex items-center space-x-2">
-                    <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
+                    <span className="text-xs text-gray-600 dark:text-gray-300">Radius:</span>
+                    <select
+                      value={radius}
+                      onChange={(e) => setRadius(Number(e.target.value))}
+                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-xs text-black dark:text-white"
+                    >
+                      <option value={1}>1 km</option>
+                      <option value={3}>3 km</option>
+                      <option value={5}>5 km</option>
+                      <option value={10}>10 km</option>
+                    </select>
+                  </div>
+                  {/* <div className="flex items-center space-x-2">
+                    <label className="text-gray-700 text-xs dark:text-gray-400">Filter by:</label>
                     <select
                       value={selectedFilter}
                       onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-                      className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="px-3 py-1 text-xs dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="all">All</option>
                       <option value="need">Needs</option>
                       <option value="offer">Offers</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div className="flex-1 px-4 py-4 ">
@@ -426,7 +343,6 @@ const Home: React.FC = () => {
                 )}
               </div>
 
-              {/* Floating Action Button */}
               <FloatingActionMenu openModal={openModal} />
 
               <NewPostForm
@@ -434,10 +350,15 @@ const Home: React.FC = () => {
                 onClose={closeModal}
                 initialPostType={postType}
                 onSuccess={handleSuccess}
+                userData={userDetails}
               />
+              {
+                isMobile && (
 
+                  <Bottombar />
+                )
+              }
 
-              <Bottombar />
             </div>
           </div>
           :
@@ -451,16 +372,14 @@ const Home: React.FC = () => {
 
 export default Home;
 
-
 export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void }> = ({ openModal }) => {
   const [isOpen, setIsOpen] = useState(false);
-  // const navigate = useNavigate();
+  const { isMobile } = useMobileContext()
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
 
-  // Define our menu options
   const menuOptions = [
     { icon: <BookOpen size={24} />, label: "Resource", id: "resource" },
     { icon: <Gift size={24} />, label: "Promotion", id: "promotion" },
@@ -468,18 +387,8 @@ export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'eve
     { icon: <Bell size={24} />, label: "Local Updates", id: "update" }
   ];
 
-  // Handler for button click to navigate with query param
-  // const handleNavigation = (type: 'resource' | 'event' | 'promotion' | 'update') => {
-  //   openModal(type);
-  //   setIsOpen(false); // optionally close menu on navigation
-  // };
-
-  // // Calculate the bottom-right position for animation origin
-  // const originPosition = "bottom-20 right-5";
-
   return (
     <div className="relative">
-      {/* Backdrop overlay when modal is open */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 bg-opacity-50 z-40 transition-opacity duration-300"
@@ -487,7 +396,6 @@ export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'eve
         />
       )}
 
-      {/* Buttons - always rendering but only visible when open */}
       <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
         <div className="grid grid-cols-2 gap-8">
           {menuOptions.map((option, index) => (
@@ -518,12 +426,8 @@ export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'eve
         </div>
       </div>
 
-
-
-
-      {/* Plus button */}
       <button
-        className="fixed bottom-20 right-5 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300"
+        className={`fixed ${isMobile ? "bottom-20 right-5" : "bottom-8 right-8"} h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300`}
         onClick={toggleMenu}
         aria-label="Open menu"
       >

@@ -136,7 +136,7 @@ const MapContainer = ({
         container: mapContainerRef.current || "map",
         zoom,
         scrollWheelZoom,
-        center,
+        center: center ? [center[1], center[0]] : undefined,
       });
 
       myMap.addControl(geolocate);
@@ -146,10 +146,12 @@ const MapContainer = ({
           geolocate.trigger();
         }
 
-        olaMaps
-          .addMarker({ offset: [0, -5], anchor: "bottom" })
-          .setLngLat(center)
-          .addTo(myMap);
+        if (center) {
+          olaMaps
+            .addMarker({ offset: [0, -5], anchor: "bottom" })
+            .setLngLat([center[1], center[0]])
+            .addTo(myMap);
+        }
       });
 
       if (showCurrentLocation) {

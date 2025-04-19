@@ -1,6 +1,7 @@
 import React from 'react';
 import { AiOutlineHome } from 'react-icons/ai';
-import { BiMessageDetail, BiSearchAlt } from 'react-icons/bi';
+import { BiMessageDetail, BiSearchAlt, BiUser } from 'react-icons/bi';
+import { HiOutlineNewspaper } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -29,7 +30,7 @@ const Bottombar: React.FC<BottombarProps> = () => {
     return (
         <>
         {/* Bottom Navigation */}
-        <div className={`fixed h-16 bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md ${getButtonClass()}`}>
+        <div className={`fixed z-50 h-16 bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md ${getButtonClass()}`}>
           <div className="flex justify-around p-3">
             <button 
               onClick={() => navigate("/")} 
@@ -49,6 +50,14 @@ const Bottombar: React.FC<BottombarProps> = () => {
             </button>
             
             <button 
+              onClick={() => navigate("/updates")} 
+              className={getNavItemClass("/updates")}
+            >
+              <HiOutlineNewspaper className="text-xl" />
+              <span className="text-xs mt-1">Updates</span>
+            </button>
+            
+            <button 
               onClick={() => navigate("/messages")} 
               className={getNavItemClass("/messages")}
             >
@@ -60,7 +69,7 @@ const Bottombar: React.FC<BottombarProps> = () => {
               onClick={() => navigate("/profileCard")} 
               className={getNavItemClass("/profileCard")}
             >
-              <CgProfile className="text-xl" />
+              <BiUser className="text-xl" />
               <span className="text-xs mt-1">Profile</span>
 
             </button>
