@@ -3,12 +3,14 @@ import { useEffect, useState, useRef } from "react";
 import { auth, db } from "../../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt } from "react-icons/fa";
+import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt, FaExclamationTriangle } from "react-icons/fa";
 import { uploadFileToS3 } from "@/utils/aws/aws";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMobileContext } from "@/contexts/MobileContext";
 import MapContainer from "@/components/MapContainer";
+
+const KOLKATA_COORDINATES: [number, number] = [22.5726, 88.3639];
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -30,20 +32,45 @@ function Register() {
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [locationSelected, setLocationSelected] = useState<boolean>(false);
+  const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
+  const [defaultCenter, setDefaultCenter] = useState<[number, number]>(KOLKATA_COORDINATES);
   const mapRef = useRef<any>(null);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const latitude = position.coords.latitude.toString();
-        const longitude = position.coords.longitude.toString();
-        setLat(latitude);
-        setLon(longitude);
-      });
-    }
+    checkLocationPermission();
   }, []);
+
+  const checkLocationPermission = () => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        setLocationPermission(result.state as 'granted' | 'denied' | 'prompt');
+        if (result.state === 'granted') {
+          fetchCurrentLocation();
+        } else if (result.state === 'denied') {
+          setDefaultCenter(KOLKATA_COORDINATES);
+          setLat(KOLKATA_COORDINATES[0].toString());
+          setLon(KOLKATA_COORDINATES[1].toString());
+          toast.warning("Location access denied. You can select your location manually on the map.", {
+            position: "bottom-center",
+          });
+        }
+      });
+    } else {
+      if ("geolocation" in navigator) {
+        fetchCurrentLocation();
+      } else {
+        setLocationPermission('denied');
+        setDefaultCenter(KOLKATA_COORDINATES);
+        setLat(KOLKATA_COORDINATES[0].toString());
+        setLon(KOLKATA_COORDINATES[1].toString());
+        toast.error("Geolocation is not supported by your browser.", {
+          position: "bottom-center",
+        });
+      }
+    }
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -56,11 +83,24 @@ function Register() {
   const handleNextStep = () => {
     if (currentStep === 1) {
       if (!email || !password || !Confirmpassword || !fname || !lname || !phone) {
-        setError("Please Fill all the details.");
+        setError("Please fill all the required fields.");
         return;
       }
       if (password !== Confirmpassword) {
-        setError("Password do not match");
+        setError("Passwords do not match.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+      }
+    } else if (currentStep === 2) {
+      if (!lat || !lon) {
+        setError("Please select your location on the map or allow location access.");
+        return;
+      }
+      if (locationPermission === 'denied' && !locationSelected) {
+        setError("Since location access is denied, please manually select your location on the map.");
         return;
       }
     }
@@ -74,6 +114,10 @@ function Register() {
 
   const handleRegister = async (e: any) => {
     e.preventDefault();
+    if (!lat || !lon) {
+      setError("Location data is missing. Please select your location on the map.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -149,6 +193,10 @@ function Register() {
       setLat(mapData.currentLocation.latitude.toString());
       setLon(mapData.currentLocation.longitude.toString());
     }
+
+    if (mapData?.permissionStatus) {
+      setLocationPermission(mapData.permissionStatus);
+    }
   };
 
   const fetchCurrentLocation = () => {
@@ -159,15 +207,25 @@ function Register() {
           const longitude = position.coords.longitude.toString();
           setLat(latitude);
           setLon(longitude);
+          setLocationPermission('granted');
+          setDefaultCenter([parseFloat(latitude), parseFloat(longitude)]);
           toast.success("Location fetched successfully!", {
             position: "bottom-center",
           });
         },
         (error) => {
           console.error("Error getting location:", error);
-          toast.error("Unable to retrieve your location. Please enable location access.", {
-            position: "bottom-center",
-          });
+          setLocationPermission('denied');
+          setDefaultCenter(KOLKATA_COORDINATES);
+          if (error.code === 1) {
+            toast.error("Location access denied. You can manually select your location on the map.", {
+              position: "bottom-center",
+            });
+          } else {
+            toast.error("Unable to retrieve your location. Please select location manually.", {
+              position: "bottom-center",
+            });
+          }
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
@@ -176,6 +234,13 @@ function Register() {
         position: "bottom-center",
       });
     }
+  };
+
+  const handleLocationPermissionDenied = () => {
+    setLocationPermission('denied');
+    toast.warn("Please manually select your location on the map.", {
+      position: "bottom-center",
+    });
   };
 
   const pageVariants = {
@@ -375,6 +440,24 @@ function Register() {
                     transition={pageTransition}
                   >
                     <h3 className="text-xl font-bold text-white mb-6">Address & Location</h3>
+                    {locationPermission === 'denied' && (
+                      <div className="mb-4 p-3 bg-yellow-400/20 border border-yellow-500 rounded-md text-white flex items-start">
+                        <FaExclamationTriangle className="text-yellow-400 mt-1 mr-2 flex-shrink-0" />
+                        <p className="text-sm">
+                          Location access is denied. You can manually select your location on the map below or 
+                          <button 
+                            onClick={() => {
+                              fetchCurrentLocation();
+                              checkLocationPermission();
+                            }}
+                            className="ml-1 underline font-medium hover:text-yellow-300"
+                          >
+                            grant permission
+                          </button>
+                          .
+                        </p>
+                      </div>
+                    )}
                     <div className="mb-4">
                       <label className="block text-white text-sm font-medium mb-2">Address</label>
                       <input
@@ -385,34 +468,54 @@ function Register() {
                       />
                     </div>
                     <div className="mb-4">
-                      <label className="block text-white text-sm font-medium mb-2">Select Location on Map</label>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Select Location on Map
+                        {!lat && !lon && <span className="text-red-300 ml-1">*</span>}
+                      </label>
                       <div className="h-64 border border-white/20 rounded-md overflow-hidden">
                         <MapContainer
                           ref={(data) => {
                             mapRef.current = data;
                             handleMapData(data);
                           }}
-                          showCurrentLocation={true}
+                          showCurrentLocation={locationPermission !== 'denied'}
                           zoom={13}
                           isSelectable={true}
                           maximumSelection={1}
                           scrollWheelZoom={true}
-                          center={lat && lon ? [parseFloat(lat), parseFloat(lon)] : undefined}
+                          center={defaultCenter}
+                          onPermissionDenied={handleLocationPermissionDenied}
                         />
                       </div>
                       {locationSelected && mapRef.current?.selectedLocations?.length > 0 && (
-                        <div className="mt-2 text-sm text-white/80">
+                        <div className="mt-2 text-sm text-white/80 bg-green-500/20 p-2 rounded-md">
                           Selected: {mapRef.current.selectedLocations[0].address}
                         </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={fetchCurrentLocation}
-                        className="mt-3 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 rounded-md text-white text-sm flex items-center justify-center transition-colors"
-                      >
-                        <FaMapMarkerAlt className="mr-2" />
-                        Fetch Current Location
-                      </button>
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={fetchCurrentLocation}
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 rounded-md text-white text-sm flex items-center justify-center transition-colors"
+                        >
+                          <FaMapMarkerAlt className="mr-2" />
+                          Get Current Location
+                        </button>
+                        {locationSelected && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLocationSelected(false);
+                              if (mapRef.current?.makers) {
+                                mapRef.current.makers.forEach((marker: any) => marker.remove());
+                              }
+                            }}
+                            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded-md text-white text-sm transition-colors"
+                          >
+                            Clear Selection
+                          </button>
+                        )}
+                      </div>
                       {lat && lon && (
                         <div className="mt-3 p-2 bg-white/10 rounded text-sm text-white/80">
                           <p>
@@ -433,6 +536,9 @@ function Register() {
                         onChange={(e) => setRadius(parseInt(e.target.value))}
                         className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer"
                       />
+                      <p className="text-xs text-white/70 mt-2">
+                        This is the radius within which you'll receive notifications about resources, events, and emergency alerts.
+                      </p>
                     </div>
                   </motion.div>
                 )}
