@@ -8,6 +8,7 @@ import {
   Inbox,
   Archive,
   HeartHandshake,
+  HandHelping,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
@@ -90,6 +91,11 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
       path: "/skillHome",
       label: "Skill Sharing",
       icon: <HeartHandshake size={18} />,
+    },
+    {
+      path: "/volunteer",
+      label: "Volunteer",
+      icon: <HandHelping size={18} />,
     },
   ];
 
