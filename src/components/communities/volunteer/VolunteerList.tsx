@@ -15,10 +15,21 @@ import { FaArrowRight, FaUserCircle, FaMapMarkerAlt } from "react-icons/fa";
 import { Switch } from "@/components/ui/switch";
 import { checkIfUserRegisteredInVolunteer } from "@/utils/communities/CheckIfRegisterd";
 import { calculateDistance } from "@/utils/utils";
+import { getOrCreateConversationWithUser } from "@/services/messagingService";
+
+// Define the filter type
+interface FilterState {
+  search: string;
+  showLocalOnly: boolean;
+}
 
 const VolunteerList = () => {
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<FilterState>({
+    search: "",
+    showLocalOnly: false,
+  });
   const navigate = useNavigate();
   const { user } = useStateContext();
 
@@ -137,6 +148,68 @@ const VolunteerList = () => {
     fetchVolunteers();
   }, []);
 
+  const filteredVolunteers = volunteers.filter((volunteer) => {
+    if (volunteer.email === user?.email) return false;
+
+    if (filter.search) {
+      const searchLower = filter.search.toLowerCase();
+      const name = `${volunteer.firstName} ${volunteer.lastName}`.toLowerCase();
+      const address = volunteer.address?.toLowerCase() || "";
+
+      if (!name.includes(searchLower) && !address.includes(searchLower)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter((prev: FilterState) => ({ ...prev, search: e.target.value }));
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFilter((prev: FilterState) => ({ ...prev, showLocalOnly: checked }));
+  };
+
+  const handleContactVolunteer = async (volunteer: any) => {
+    if (!user?.uid || !volunteer.id) return;
+
+    try {
+      setLoading(true);
+      const userQuery = query(
+        collection(db, "Users"),
+        where("email", "==", volunteer.email)
+      );
+      const userSnapshot = await getDocs(userQuery);
+
+      if (userSnapshot.empty) {
+        console.error("User not found for email:", volunteer.email);
+        return;
+      }
+
+      const volunteerProviderId = userSnapshot.docs[0].id;
+
+      const conversationId = await getOrCreateConversationWithUser(
+        user.uid,
+        volunteerProviderId
+      );
+
+      if (conversationId) {
+        console.log("Navigating to conversation:", conversationId);
+
+        navigate(`/messages/${conversationId}`);
+      } else {
+        throw new Error("Failed to create conversation");
+      }
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      alert("Failed to start conversation. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="flex justify-center items-center p-10">
@@ -216,8 +289,8 @@ const VolunteerList = () => {
         </label>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-        {volunteers.length > 0 ? (
-          volunteers.map((volunteer) => (
+        {filteredVolunteers.length > 0 ? (
+          filteredVolunteers.map((volunteer) => (
             <div
               key={volunteer.id}
               className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
@@ -276,10 +349,10 @@ const VolunteerList = () => {
 
                 {/* Contact Button */}
                 <button
-                  onClick={() => navigate(`/volunteers/${volunteer.id}`)}
+                  onClick={() => handleContactVolunteer(volunteer)}
                   className="w-full py-2.5 border border-teal-600 bg-gradient-to-r hover:text-white text-green-700 dark:bg-gradient-to-r dark:from-green-700 dark:to-teal-800 dark:text-white rounded-lg font-medium shadow-md hover:from-green-700 hover:to-teal-700 dark:hover:from-green-800 dark:hover:to-teal-900 transition-all flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                 >
-                  <span>Contact Now</span>
+                  <span>Message Now</span>
                   <FaArrowRight className="text-sm" />
                 </button>
               </div>

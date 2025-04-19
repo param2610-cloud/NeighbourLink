@@ -88,12 +88,12 @@ const SkillHome: React.FC = () => {
                   <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
                 </div>  
 
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center ">
                   <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
                     Neighbour
                   </h1>
                   <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                    Link
+                  Link
                   </h1>
                   <span className="mx-2 text-blue-500 dark:text-gray-400">
                     |
@@ -123,6 +123,19 @@ const SkillHome: React.FC = () => {
                   <div className="flex items-center space-x-3 mb-4">
                     <BsLightningChargeFill className="text-yellow-300 text-2xl" />
                     <h2 className="text-3xl font-bold">Skill Sharing Hub</h2>
+                  </div>
+
+                  {/* Add messaging button */}
+                  <div className="flex justify-end mb-4">
+                    <button 
+                      onClick={() => navigate('/messages')}
+                      className="flex items-center bg-white/20 hover:bg-white/30 rounded-full px-4 py-2 transition-colors"
+                    >
+                      <span className="text-sm font-medium">My Messages</span>
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                      </svg>
+                    </button>
                   </div>
 
                   <p className="text-lg max-w-2xl mb-6 text-blue-50">

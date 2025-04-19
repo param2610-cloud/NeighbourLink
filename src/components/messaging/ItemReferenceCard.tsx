@@ -64,7 +64,7 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
       <div className="flex items-center">
         {displayImage && (
           <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 mr-3">
-            {/* Remove className prop since ImageDisplay doesn't accept it */}
+            
             <ImageDisplay objectKey={displayImage} />
           </div>
         )}

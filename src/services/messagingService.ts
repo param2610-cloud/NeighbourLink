@@ -227,24 +227,42 @@ export const getOrCreateConversationWithUser = async (
   postTitle?: string,
   postImageUrl?: string
 ) => {
-  // Query for existing conversation
-  const q = query(
+  // First, check if there's a conversation with the specific post
+  if (postId) {
+    const postSpecificQuery = query(
+      collection(db, 'conversations'),
+      where('participants', 'array-contains', currentUserId),
+      where('postId', '==', postId)
+    );
+    
+    const postQuerySnapshot = await getDocs(postSpecificQuery);
+    
+    // Find conversation with the other user
+    for (const doc of postQuerySnapshot.docs) {
+      const convo = doc.data() as Conversation;
+      if (convo.participants.includes(otherUserId)) {
+        return doc.id;
+      }
+    }
+  }
+  
+  // If no post-specific conversation, check for any conversation between these users
+  const generalQuery = query(
     collection(db, 'conversations'),
-    where('participants', 'array-contains', currentUserId),
-    where('postId', '==', postId || null)
+    where('participants', 'array-contains', currentUserId)
   );
   
-  const querySnapshot = await getDocs(q);
+  const generalQuerySnapshot = await getDocs(generalQuery);
   
-  // Find conversation with the other user
-  for (const doc of querySnapshot.docs) {
+  // Find any conversation with the other user
+  for (const doc of generalQuerySnapshot.docs) {
     const convo = doc.data() as Conversation;
     if (convo.participants.includes(otherUserId)) {
       return doc.id;
     }
   }
   
-  // If not found, create new conversation - pass the values directly
+  // If not found, create new conversation
   return createConversation(
     [currentUserId, otherUserId], 
     postId,
