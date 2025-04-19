@@ -7,7 +7,7 @@ import ChatDetail from '@/components/messaging/ChatDetail';
 import LandingPage from '@/components/landingPage/LandingPage';
 import EmergencyPosts from '@/pages/EmergencyPosts';
 import SavedPosts from '@/components/post/SavedPosts';
-import NewPostForm from '@/components/Forms/NewPostForm';
+// import NewPostForm from '@/components/Forms/NewPostForm';
 import NewPostModalExample from '@/components/Examples/NewPostModalExample';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
