@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { ResourceCard, PromotionCard, EventCard, UpdateCard, Resource, Promotion, Event, Update } from './components/Feed';
 import { FeedItem } from './components/Feed';
 import { FloatingActionMenu } from './Home';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Reuse the convertDoc function from your Feed component
 const convertDoc = <T extends FeedItem>(doc: any, type: FeedItem['type']): T => {
@@ -163,8 +164,26 @@ const AuthPosts: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen dark:bg-gray-900">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
+            <div className="container w-full mt-16 mx-auto px-4 py-8">
+                <div className="mb-8 text-center space-y-3">
+                    <div className="h-8 w-48 mx-auto">
+                        <Skeleton  className="h-full w-full" />
+                    </div>
+                    <div className="h-4 w-32 mx-auto">
+                        <Skeleton className="h-full w-full" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {[...Array(8)].map((_, index) => (
+                        <div key={index} className="space-y-3">
+                            <Skeleton className="h-[200px] w-full rounded-xl" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[80%]" />
+                                <Skeleton className="h-4 w-[60%]" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

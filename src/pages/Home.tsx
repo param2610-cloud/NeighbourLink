@@ -6,12 +6,12 @@ import { IoMdNotifications } from "react-icons/io";
 import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
 import Feed from "./components/Feed";
 import NewPostForm from "@/components/Forms/NewPostForm";
 import { useMobileContext } from "@/contexts/MobileContext";
 import QuickActionsButton from "./components/QuickAction";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -40,13 +40,12 @@ interface Post {
 
 const Home: React.FC = () => {
   const [, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [radius, setRadius] = useState(3);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [, setHasEmergencyAlerts] = useState(false);
   const [, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
   const [userDetails, setUserDetails] = useState<any>(null);
   const [updated,] = useState(false);
   const navigate = useNavigate();
@@ -62,10 +61,6 @@ const Home: React.FC = () => {
 
   const closeModal = () => {
     setIsModalOpen(false);
-  };
-
-  const navigateToNewUpdate = () => {
-    navigate('/update/new');
   };
 
   const handleSuccess = () => {
@@ -333,13 +328,9 @@ const Home: React.FC = () => {
             </div>
             <div className="flex-1 px-4 py-4 ">
 
-              {loading ? (
-                <div className="flex justify-center py-10">
-                  <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
-                </div>
-              ) : (
+              
                 <Feed />
-              )}
+              
             </div>
 
             {/* Floating Action Button */}
@@ -362,9 +353,28 @@ const Home: React.FC = () => {
           </div>
         </div>
         :
-        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-          <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center p-4 space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-4 w-[150px]" />
+            </div>
+          </div>
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-[90%]" />
+            <Skeleton className="h-4 w-[80%]" />
+          </div>
+          <div className="p-4">
+            <Skeleton className="h-[200px] w-full rounded-xl" />
+          </div>
+          <div className="p-4 space-y-3">
+            <Skeleton className="h-4 w-[70%]" />
+            <Skeleton className="h-4 w-[60%]" />
+          </div>
         </div>
+
     }
   </>
   );

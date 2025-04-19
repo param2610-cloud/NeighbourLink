@@ -3,13 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import { UpdateWithUserData } from '@/interface/main';
-import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { FaArrowLeft, FaReply } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import UpdateCard from './UpdateCard';
 import ReplyForm from './ReplyForm';
 import { toast } from 'react-toastify';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Skeleton } from '../ui/skeleton';
 
 const UpdatePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -126,8 +126,45 @@ const UpdatePage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                <AiOutlineLoading3Quarters className="animate-spin text-4xl text-indigo-600" />
+            <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-3xl mx-auto">
+                    <div className="flex gap-2 items-center mb-6">
+                        <Skeleton className="h-4 w-20" />
+                    </div>
+                    
+                    <div className="mb-8">
+                        <Skeleton className="h-8 w-48 mb-6" />
+                        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
+                            <div className="p-4">
+                                <div className="flex items-start gap-4">
+                                    <Skeleton className="h-12 w-12 rounded-full" />
+                                    <div className="space-y-2 flex-1">
+                                        <Skeleton className="h-4 w-[200px]" />
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-3/4" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        <Skeleton className="h-6 w-32" />
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
+                                <div className="p-4">
+                                    <div className="flex items-start gap-4">
+                                        <Skeleton className="h-10 w-10 rounded-full" />
+                                        <div className="space-y-2 flex-1">
+                                            <Skeleton className="h-4 w-[150px]" />
+                                            <Skeleton className="h-4 w-full" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }

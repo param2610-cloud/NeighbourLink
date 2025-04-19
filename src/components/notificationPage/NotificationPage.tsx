@@ -10,6 +10,7 @@ import {
   NotificationItem,
 } from "@/utils/notification/NotificationHook";
 import { InfoIcon } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 // import SkillList from "../components/communities/skillSharing/SkillList";
 
 const NotificationPage: React.FC = () => {
@@ -99,13 +100,18 @@ const NotificationPage: React.FC = () => {
           </div>
 
           {loading && (
-            <div className="flex justify-center items-center p-10">
-              <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-14 w-14 border-4 border-transparent border-t-blue-600 border-b-blue-600 dark:border-t-blue-400 dark:border-b-blue-400"></div>
-                <p className="mt-4 text-gray-600 dark:text-gray-300">
-                  Loading skills...
-                </p>
+            <div className="flex flex-col gap-4 px-4">
+              {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-10 h-10">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+                <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-[250px]" />
+                <Skeleton className="h-4 w-[200px]" />
+                </div>
               </div>
+              ))}
             </div>
           )}
           <div className="px-4 space-y-2">
