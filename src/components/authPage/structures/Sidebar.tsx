@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import ThemeToggle from "@/components/common/ThemeToggle";
+import GoogleTranslate from "@/components/GoogleTranslation";
 
 interface SidebarProps {
   handleLogout: () => void;
@@ -106,7 +107,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
     {
       path: "/volunteer",
       label: "Volunteer",
-      icon: <HandHeart  size={18} />,
+      icon: <HandHeart size={18} />,
     },
   ];
 
@@ -175,6 +176,9 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
 
         {/* Bottom Section */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+          <div>
+            <GoogleTranslate />
+          </div>
           <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Theme

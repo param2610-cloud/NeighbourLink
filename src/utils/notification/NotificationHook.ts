@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ref, onValue, push, set } from "firebase/database";
+import { ref, onValue, push, set, get } from "firebase/database";
 import { realtimeDB as db } from "@/firebase";
 import { useStateContext } from "@/contexts/StateContext";
 
@@ -83,6 +83,44 @@ function listenToUserNotifications(userId: string): void {
       }
     });
   });
+}
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  action_url: string;
+  receipt: string[];
+}
+
+export async function fetchUserNotifications(
+  userId: string
+): Promise<NotificationItem[]> {
+  const notificationsRef = ref(db, "notifications");
+
+  try {
+    const snapshot = await get(notificationsRef);
+    const data = snapshot.val();
+    if (!data) return [];
+
+    const notifications: NotificationItem[] = [];
+
+    Object.entries(data).forEach(([id, notif]: [string, any]) => {
+      if (Array.isArray(notif.receipt) && notif.receipt.includes(userId)) {
+        notifications.push({
+          id,
+          title: notif.title,
+          description: notif.description,
+          action_url: notif.action_url,
+          receipt: notif.receipt,
+        });
+      }
+    });
+    return notifications;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    return [];
+  }
 }
 
 // --------------------
