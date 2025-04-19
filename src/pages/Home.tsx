@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
-import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
 import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
