@@ -42,6 +42,7 @@ const AuthRouter: React.FC = () => {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
 
+
         // we will cahnge it later
         <Route path="/skill" element={<SkillList />} />
         <Route 
@@ -65,6 +66,7 @@ const AuthRouter: React.FC = () => {
         <Route path='/saved/posts' element={<SavedPosts/>}/>
         <Route path='/register' element={<Navigate to="/"/>}/>
         <Route path='/login' element={<Navigate to="/"/>}/>
+        <Route path='/skill' element={<Navigate to="/skill"/>}/>
       </Routes>
     </Suspense>
   );
