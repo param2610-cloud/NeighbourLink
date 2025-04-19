@@ -11,7 +11,7 @@ import NewPostForm from '@/components/Forms/NewPostForm';
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import('@/components/ProfileCard/ProfileCard'));
-const ResourceForm = lazy(() => import('@/components/Forms/ResourceForm'));
+// const ResourceForm = lazy(() => import('@/components/Forms/ResourceForm'));
 // const LandingPage = lazy(() => import('@/components/landingpage/LandingPage'));
 const UserRequests = lazy(() => import('@/components/PostCard/UserRequests'));
 const UserSharedResources = lazy(() => import('@/components/PostCard/UserSharedResources'));
@@ -25,7 +25,7 @@ const LoadingFallback = () => (
 );
 
 const AuthRouter: React.FC = () => {
-  const [user, setUser] = useState<any>();
+  const [, setUser] = useState<any>();
   
   useEffect(() => {
     auth.onAuthStateChanged((user) => {

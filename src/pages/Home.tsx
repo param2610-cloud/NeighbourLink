@@ -2,11 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
-import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { ImageDisplay } from "../components/AWS/UploadFile";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
@@ -41,7 +38,7 @@ interface Post {
 }
 
 const Home: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [radius, setRadius] = useState(3);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -149,9 +146,9 @@ const Home: React.FC = () => {
   }, [userLocation, radius, updated]);
 
 
-  const filteredPosts = posts.filter(post =>
-    selectedFilter === "all" ? true : post.postType === selectedFilter
-  );
+  // const filteredPosts = posts.filter(post =>
+  //   selectedFilter === "all" ? true : post.postType === selectedFilter
+  // );
 
 
   useEffect(() => {
@@ -209,39 +206,39 @@ const Home: React.FC = () => {
   };
 
 
-  const formatTimeSince = (timestamp: Timestamp) => {
-    const now = new Date();
-    const postDate = timestamp.toDate();
-    const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
+  // const formatTimeSince = (timestamp: Timestamp) => {
+  //   const now = new Date();
+  //   const postDate = timestamp.toDate();
+  //   const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
 
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds} sec ago`;
-    } else if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)} min ago`;
-    } else if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)} hr ago`;
-    } else {
-      return `${Math.floor(diffInSeconds / 86400)} days ago`;
-    }
-  };
+  //   if (diffInSeconds < 60) {
+  //     return `${diffInSeconds} sec ago`;
+  //   } else if (diffInSeconds < 3600) {
+  //     return `${Math.floor(diffInSeconds / 60)} min ago`;
+  //   } else if (diffInSeconds < 86400) {
+  //     return `${Math.floor(diffInSeconds / 3600)} hr ago`;
+  //   } else {
+  //     return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  //   }
+  // };
 
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Medical":
-        return <FaMedkit className="text-red-500" />;
-      case "Tools":
-        return <FaTools className="text-yellow-600" />;
-      case "Books":
-        return <FaBook className="text-blue-600" />;
-      case "Household":
-        return <FaHome className="text-green-600" />;
-      case "Food":
-        return <FaUtensils className="text-orange-500" />;
-      default:
-        return <BsThreeDots className="text-gray-600" />;
-    }
-  };
+  // const getCategoryIcon = (category: string) => {
+  //   switch (category) {
+  //     case "Medical":
+  //       return <FaMedkit className="text-red-500" />;
+  //     case "Tools":
+  //       return <FaTools className="text-yellow-600" />;
+  //     case "Books":
+  //       return <FaBook className="text-blue-600" />;
+  //     case "Household":
+  //       return <FaHome className="text-green-600" />;
+  //     case "Food":
+  //       return <FaUtensils className="text-orange-500" />;
+  //     default:
+  //       return <BsThreeDots className="text-gray-600" />;
+  //   }
+  // };
 
 
   // const containerVariants = {
@@ -309,7 +306,7 @@ const Home: React.FC = () => {
             {/* Main Content Area */}
             <div className="md:ml-64">
               {/* Top Navigation */}
-              <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
+              <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
                 <div className="flex items-center justify-between p-4">
                   <div
                     className="flex items-center space-x-2 cursor-pointer"
@@ -382,7 +379,7 @@ const Home: React.FC = () => {
               </div>
 
               {/* Feed Section */}
-              <div className="fixed w-full flex-1 px-4 py-4 bg-white dark:bg-gray-800 h-18">
+              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-white dark:bg-gray-800 h-18">
 
                 <div className="fixed bg-white dark:bg-gray-800 flex items-center justify-between mb-7">
                   {/* <h3 className="text-lg font-semibold text-gray-800 dark:text-white"></h3> */}
