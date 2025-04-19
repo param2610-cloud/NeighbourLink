@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import { db } from '../../../firebase';
-import { collection, addDoc } from 'firebase/firestore';
-import { Dialog } from '@headlessui/react';
+import { useEffect, useState } from "react";
+import { db } from "../../../firebase";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
+import { Dialog } from "@headlessui/react";
 import { toast } from "react-toastify";
+import { useStateContext } from "@/contexts/StateContext";
+import { useNavigate } from "react-router-dom";
+import { checkIfUserRegisteredInSkillSharing } from "@/utils/communities/CheckIfRegisterd";
 
 interface SkillFormProps {
   isOpen: boolean;
@@ -11,65 +14,107 @@ interface SkillFormProps {
 
 const SkillSharingForm = ({ isOpen, onClose }: SkillFormProps) => {
   const [formData, setFormData] = useState({
-    description: '',
-    email: '',
-    firstName: '',
-    lastName: '',
-    skills: ''
+    description: "",
+    skills: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const { user } = useStateContext();
+
+  const navigate = useNavigate();
+
+  if (user === null) return <div className="p-4 text-center">Loading...</div>;
+
+  const isRegisterd = checkIfUserRegisteredInSkillSharing();
+
+  useEffect(() => {
+    isRegisterd.then((isRegisterd) => {
+      if (isRegisterd) {
+        navigate("/skill-share");
+      }
+    });
+  }, [isRegisterd, navigate]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
+
+    const { email, photoURL } = user;
 
     try {
       // Validate required fields
-      if (!formData.description || !formData.email || !formData.firstName || !formData.lastName || !formData.skills) {
-        throw new Error('All fields are required');
+      if (!formData.description || !formData.skills) {
+        throw new Error("All fields are required");
       }
 
-      // Validate email format
-      if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-        throw new Error('Please enter a valid email address');
+      if (formData.description.trim().length > 300) {
+        throw new Error("Description should not exceed 300 characters");
       }
 
-      // Prepare data for Firestore (no createdAt field)
-      const skillData = {
-        ...formData,
-        skills: formData.skills.trim() // Keep skills as a trimmed string
-      };
+      if (formData.skills.trim().split(",").length > 100) {
+        throw new Error("Skills should not exceed 100 values");
+      }
 
-      // Save to Firebase Firestore
-      await addDoc(collection(db, 'skill-sharing'), skillData);
-      console.log("Form data saved to Firestore:", skillData);
-      toast.success("Form submitted successfully", {
-        position: "top-center",
-      });
+      // fetch user data from Firestore
+      const userDocRef = doc(db, "Users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        if (userData) {
+          // Prepare data for Firestore (no createdAt field)
+          const skillData = {
+            ...formData,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            description: formData.description.trim(),
+            email,
+            photoURL,
+            isActive: true,
+            skills: formData.skills
+              .trim()
+              .split(",")
+              .map((skill) => skill.trim()),
+          };
 
-      setFormData({
-        description: '',
-        email: '',
-        firstName: '',
-        lastName: '',
-        skills: ''
-      });
+          // Save to Firebase Firestore
+          await addDoc(collection(db, "skill-sharing"), skillData);
+          console.log("Form data saved to Firestore:", skillData);
+          toast.success("Form submitted successfully", {
+            position: "top-center",
+          });
+
+          setFormData({
+            description: "",
+            skills: "",
+          });
+
+          navigate("/skill-share");
+        }
+      } else {
+        console.log("No such document!");
+        setError("Failed to submit form");
+        toast.error("Failed to submit form", {
+          position: "top-center",
+        });
+      }
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError('Failed to submit form');
-        toast.error('Failed to submit form', {
+        setError("Failed to submit form");
+        toast.error("Failed to submit form", {
           position: "top-center",
         });
       }
@@ -96,52 +141,10 @@ const SkillSharingForm = ({ isOpen, onClose }: SkillFormProps) => {
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Description *
                 </label>
                 <textarea
@@ -150,13 +153,16 @@ const SkillSharingForm = ({ isOpen, onClose }: SkillFormProps) => {
                   rows={3}
                   value={formData.description}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="mt-1 px-2 py-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
               </div>
 
               <div>
-                <label htmlFor="skills" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="skills"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Skills (comma separated) *
                 </label>
                 <input
@@ -166,7 +172,7 @@ const SkillSharingForm = ({ isOpen, onClose }: SkillFormProps) => {
                   value={formData.skills}
                   onChange={handleChange}
                   placeholder="e.g., HTML, CSS, JavaScript"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="mt-1 px-2 py-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   required
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -189,7 +195,7 @@ const SkillSharingForm = ({ isOpen, onClose }: SkillFormProps) => {
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit'}
+                {isSubmitting ? "Submitting..." : "Submit"}
               </button>
             </div>
           </form>
