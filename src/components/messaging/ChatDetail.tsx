@@ -121,7 +121,23 @@ const ChatDetail = () => {
   };
 
   const getDisplayName = (user: any) => {
-    return user?.displayName || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+    if (!user) return 'User';
+    
+    
+    if (user.displayName && user.displayName.trim()) {
+      return user.displayName;
+    }
+    
+    if (user.firstName || user.lastName) {
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    }
+    
+    if (user.email) {
+      
+      return user.email.split('@')[0];
+    }
+    
+    return 'User'; 
   };
 
 
