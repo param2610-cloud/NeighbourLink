@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useStateContext } from "@/contexts/StateContext";
 import { useNavigate } from "react-router-dom";
 import { checkIfUserRegisteredInSkillSharing } from "@/utils/communities/CheckIfRegisterd";
+import { FaArrowLeft } from "react-icons/fa";
 
 interface SkillFormProps {
   isOpen: boolean;
@@ -19,7 +20,6 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
   const [error, setError] = useState("");
 
   const { user } = useStateContext();
-
   const navigate = useNavigate();
 
   if (user === null) return <div className="p-4 text-center">Loading...</div>;
@@ -42,6 +42,10 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleBack = () => {
+    navigate("/");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,13 +130,21 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
 
   return (
     <div className="w-full max-w-2xl mx-auto my-8 px-4">
+      {/* Back Button */}
+      <button
+        onClick={handleBack}
+        className="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mb-4 transition-colors"
+      >
+        <FaArrowLeft className="mr-2" /> Back to Home
+      </button>
+      
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
           <h2 className="text-2xl font-bold text-white text-center">
             Share Your Skills with the Community
           </h2>
           <p className="text-blue-100 text-center mt-2">
-            Help others learn while showcasing your expertise
+            Please Register Yourself to use this Feature
           </p>
         </div>
 
@@ -192,7 +204,15 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
                 className="w-full py-3 px-4 text-white font-medium bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform transition hover:-translate-y-0.5"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Submitting..." : "Submit"}
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : "Submit"}
               </button>
             </div>
           </form>
