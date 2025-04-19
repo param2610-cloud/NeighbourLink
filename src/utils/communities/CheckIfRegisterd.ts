@@ -21,3 +21,8 @@ export const checkIfUserRegisteredInSkillSharing = async () => {
   const { user } = useStateContext();
   return await isUserRegistered(user?.email as string, "skill-sharing");
 };
+
+export const checkIfUserRegisteredInVolunteer = async () => {
+  const { user } = useStateContext();
+  return await isUserRegistered(user?.email as string, "volunteer");
+};
