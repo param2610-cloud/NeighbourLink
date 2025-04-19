@@ -32,15 +32,27 @@ import {
   X
 } from 'lucide-react';
 
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import MapContainer, { useOlaMaps } from '../MapContainer';
 import { ImageDisplay } from '../AWS/UploadFile';
-import { auth, db } from '@/firebase';
+import { db } from '@/firebase';
+import { useStateContext } from '@/contexts/StateContext';
 
 interface Location {
   latitude: number;
   longitude: number;
   address?: string;
+}
+
+interface UserProfile {
+  address?: string;
+  firstName?: string;
+  lastName?: string;
+  location?: {
+    latitude: string;
+    longitude: string;
+  };
+  [key: string]: any; // Allow for other properties
 }
 
 interface PostFormState {
@@ -118,6 +130,9 @@ interface UpdateFormData {
   visibilityRadius: string;
   images?: string[];
   duration: string;
+  parentId?: string;
+  childUpdates?: string[];
+  threadDepth?: number;
 }
 
 interface NewPostFormProps {
@@ -125,16 +140,23 @@ interface NewPostFormProps {
   onClose?: () => void;
   initialPostType?: 'resource' | 'event' | 'promotion' | 'update' | null;
   onSuccess?: () => void;
+  userData?: UserProfile | null; // Accept user data from parent component
+  parentUpdateId?: string; // Add this line to accept parent update ID for replies
+  threadDepth?: number; // Add thread depth for nested updates
 }
 
 const NewPostForm: React.FC<NewPostFormProps> = ({ 
   isOpen = false, 
   onClose = () => {}, 
   initialPostType = null,
-  onSuccess = () => {} 
+  onSuccess = () => {},
+  userData = null, // Accept user data from parent
+  parentUpdateId = undefined, // Default to undefined if not provided
+  threadDepth = 0 // Default to 0 for top-level updates
 }) => {
   const { ref: mapRef, data: mapData } = useOlaMaps();
-  const [currentUser, setUser] = useState<any>(null);
+  const { user: currentUser } = useStateContext();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(userData); // Initialize with passed data
 
   const initialFormState: PostFormState = {
     postType: initialPostType,
@@ -201,7 +223,10 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     useProfileLocation: true,
     date: '',
     visibilityRadius: '5',
-    duration: '', 
+    duration: '',
+    parentId: parentUpdateId, // Initialize with the parent ID if provided
+    childUpdates: [], // Initialize empty array for child updates
+    threadDepth: threadDepth // Set the thread depth
   };
 
   const [resourceForm, setResourceForm] = useState<ResourceFormData>(initialResourceForm);
@@ -209,11 +234,64 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   const [promotionForm, setPromotionForm] = useState<PromotionFormData>(initialPromotionForm);
   const [updateForm, setUpdateForm] = useState<UpdateFormData>(initialUpdateForm);
 
+  // Use userData directly if it's provided
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
-  }, []);
+    if (userData) {
+      setUserProfile(userData);
+    }
+  }, [userData]);
+
+  // Only fetch from Firestore if userData wasn't provided
+  useEffect(() => {
+    if (!userProfile && currentUser) {
+      console.log("Fetching user profile data from Firestore");
+      // No need to fetch if we already have the data from props
+      import('@/firebase').then(({ db }) => {
+        import('firebase/firestore').then(({ doc, getDoc }) => {
+          const userRef = doc(db, 'users', currentUser.uid);
+          getDoc(userRef).then((docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as UserProfile;
+              console.log("Fetched user profile:", data);
+              setUserProfile(data);
+            }
+          }).catch(err => console.error("Error fetching user profile:", err));
+        });
+      });
+    }
+  }, [currentUser, userProfile]);
+
+  // Set default locations from user profile when it's loaded
+  useEffect(() => {
+    if (userProfile?.location) {
+      console.log("Setting location from user profile", userProfile.location);
+      const profileLocation = {
+        latitude: parseFloat(userProfile.location.latitude),
+        longitude: parseFloat(userProfile.location.longitude),
+        address: userProfile.address || "Your location"
+      };
+
+      // Ensure the location is set for all form types
+      setResourceForm(prev => ({ ...prev, location: profileLocation }));
+      setEventForm(prev => ({ ...prev, location: profileLocation }));
+      setPromotionForm(prev => ({ ...prev, location: profileLocation }));
+      setUpdateForm(prev => ({ ...prev, location: profileLocation }));
+
+      // Also update the ref used by the map
+      if (mapRef && typeof mapRef === 'function') {
+        mapRef({
+          currentLocation: {
+            latitude: parseFloat(userProfile.location.latitude),
+            longitude: parseFloat(userProfile.location.longitude)
+          },
+          currentAddress: userProfile.address || '',
+          selectedLocations: []
+        });
+      }
+    } else {
+      console.log("User profile has no location data:", userProfile);
+    }
+  }, [userProfile, mapRef]);
 
   useEffect(() => {
     if (initialPostType && ['resource', 'event', 'promotion', 'update'].includes(initialPostType)) {
@@ -504,15 +582,19 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   const handleSubmitSuccess = () => {
     setFormState(prev => ({ ...prev, isSuccess: true }));
     
-    // Reset form after 3.5 seconds
+    // Reset form after 3.5 seconds and close the form
     setTimeout(() => {
       onSuccess();
       resetAllForms();
+      onClose(); // Close the form modal
     }, 3500);
   };
 
   const handleSubmit = async () => {
+    console.log("Starting form submission process");
+    
     if (!currentUser || !formState.postType) {
+      console.error("Authentication error or missing post type:", { currentUser, postType: formState.postType });
       setFormState(prev => ({
         ...prev,
         error: "Authentication error. Please sign in again."
@@ -520,7 +602,9 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       return;
     }
 
+    console.log("Validating form data before submission");
     if (!validateCurrentStep()) {
+      console.error("Form validation failed", formState.errors);
       setFormState(prev => ({
         ...prev,
         error: "Please fix all errors before submitting."
@@ -528,45 +612,164 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       return;
     }
 
+    console.log("Setting form to submitting state");
     setFormState(prev => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
+      console.log(`Creating ${formState.postType} post for user ${currentUser.uid}`);
       const commonData = {
         userId: currentUser.uid,
         createdAt: serverTimestamp(),
         responders: [],
         images: formState.uploadedImages,
       };
+      console.log("Common post data:", commonData);
 
       let postData: Record<string, any> = { ...commonData };
+      let locationData = null;
 
+      // Handle location data based on useProfileLocation toggle
+      console.log(`Processing ${formState.postType} form data with location handling`);
       switch (formState.postType) {
         case 'resource':
-          postData = { ...resourceForm, ...postData };
+          console.log("Resource form data:", resourceForm);
+          // Ensure we have valid location data
+          locationData = resourceForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "User location"
+              }
+            : resourceForm.location;
+          
+          console.log("Resource location data:", locationData);
+          
+          // Check if location data is valid
+          if (!locationData) {
+            console.error("Missing location data for resource post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...resourceForm, 
+            ...postData,
+            location: locationData
+          };
           break;
+
         case 'event':
-          postData = { ...eventForm, ...postData };
+          console.log("Event form data:", eventForm);
+          locationData = eventForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "Event location"
+              }
+            : eventForm.location;
+          
+          console.log("Event location data:", locationData);
+          
+          if (!locationData) {
+            console.error("Missing location data for event post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...eventForm, 
+            ...postData,
+            location: locationData
+          };
           break;
+
         case 'promotion':
-          postData = { ...promotionForm, ...postData, videoUrl: formState.uploadedVideo };
+          console.log("Promotion form data:", promotionForm);
+          locationData = promotionForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "Promotion location"
+              }
+            : promotionForm.location;
+          
+          console.log("Promotion location data:", locationData);
+          
+          if (!locationData) {
+            console.error("Missing location data for promotion post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...promotionForm, 
+            ...postData, 
+            videoUrl: formState.uploadedVideo,
+            location: locationData
+          };
           break;
+
         case 'update':
-          postData = { ...updateForm, ...postData };
+          console.log("Update form data:", updateForm);
+          locationData = updateForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "Update location"
+              }
+            : updateForm.location;
+          
+          console.log("Update location data:", locationData);
+          console.log("Parent update ID:", updateForm.parentId);
+          console.log("Thread depth:", updateForm.threadDepth);
+          
+          if (!locationData) {
+            console.error("Missing location data for update post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...updateForm, 
+            ...postData,
+            location: locationData,
+            parentId: updateForm.parentId || null, // Use null if parentId is not provided
+            childUpdates: updateForm.childUpdates || [],
+            threadDepth: updateForm.threadDepth || 0
+          };
           break;
       }
-
+      
+      // Final check to ensure we have location data before submission
+      if (!postData.location || !postData.location.latitude || !postData.location.longitude) {
+        console.error("Invalid location data in final check:", postData.location);
+        throw new Error("Invalid location data. Please check your profile settings or select a custom location.");
+      }
+      
+      console.log("Final post data to be submitted:", postData);
+      
       const collectionRef = collection(db, `${formState.postType}s`);
+      console.log(`Submitting to Firestore collection: ${formState.postType}s`);
+      
+      const docRef = await addDoc(collectionRef, postData);
+      console.log(`Document successfully added with ID: ${docRef.id}`);
 
-      await addDoc(collectionRef, postData);
+      // If this is a reply (has a parentId), update the parent document to include this as a child
+      if (formState.postType === 'update' && updateForm.parentId) {
+        console.log(`Updating parent update ${updateForm.parentId} with new child ${docRef.id}`);
+        const parentRef = doc(db, 'updates', updateForm.parentId);
+        await updateDoc(parentRef, {
+          childUpdates: arrayUnion(docRef.id)
+        });
+        console.log("Parent document updated successfully");
+      }
 
+      console.log("Post submission completed successfully");
       handleSubmitSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting form:", error);
       setFormState(prev => ({
         ...prev,
-        error: "Failed to submit form. Please try again."
+        error: error.message || "Failed to submit form. Please try again."
       }));
     } finally {
+      console.log("Form submission process completed");
       setFormState(prev => ({ ...prev, isSubmitting: false }));
     }
   };
@@ -849,6 +1052,15 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
               </div>
             )}
 
+            {resourceForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
+              </div>
+            )}
+
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 text-foreground">Visibility Radius (km)</label>
               <Input
@@ -1038,6 +1250,15 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
                   </div>
                 )}
                 {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
+              </div>
+            )}
+
+            {eventForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
               </div>
             )}
 
@@ -1312,6 +1533,15 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
               </div>
             )}
 
+            {promotionForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
+              </div>
+            )}
+
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 text-foreground">Visibility Radius (km)</label>
               <Input
@@ -1371,10 +1601,20 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       case 1:
         return (
           <>
+            {parentUpdateId && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md">
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  {threadDepth > 0 
+                    ? `This is a reply to another update (Thread depth: ${threadDepth})` 
+                    : "You're creating a new update"}
+                </p>
+              </div>
+            )}
+
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 text-foreground">Update Title</label>
               <Input
-                placeholder="Enter update title"
+                placeholder={parentUpdateId ? "Enter reply title" : "Enter update title"}
                 value={updateForm.title}
                 onChange={(e) => setUpdateForm({ ...updateForm, title: e.target.value })}
               />
@@ -1438,6 +1678,15 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
                   </div>
                 )}
                 {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
+              </div>
+            )}
+
+            {updateForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
               </div>
             )}
 

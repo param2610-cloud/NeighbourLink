@@ -13,7 +13,14 @@ import SkillSharingForm from "@/components/communities/skillSharing/SkillSharing
 import SkillHome from "@/pages/skillSharing";
 import VolunteerShow from "@/pages/VolunteerShow";
 import { useNotification } from "@/utils/notification/NotificationHook";
-import NotificationPage from "@/components/notificationPage/NotificationPage";
+import NotificationPage from "@/components/notificationPage/NotificationPage"
+import AuthPosts from "@/pages/AuthPosts";
+import NotFoundPage from "@/pages/NotFoundPage";
+import EventsPage from "@/pages/EventsPage";
+import EventDetailsPage from "@/components/event/EventDetailsPage";
+import UpdatePage from "@/components/update/SpecificUpdatePage";
+import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
+import UpdatesPage from "@/components/update/UpdatesFeedPage";
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
@@ -26,6 +33,7 @@ const UserSharedResources = lazy(
 );
 const SearchPage = lazy(() => import("@/components/search/SearchPage"));
 const PostDetailsPage = lazy(() => import("@/components/post/PostDetailsPage"));
+const ResourceDetailsPage = lazy(() => import("@/components/resource/ResourceDetailsPage"));
 
 const LoadingFallback = () => (
   <div className="flex justify-center items-center h-screen">
@@ -57,6 +65,8 @@ const AuthRouter: React.FC = () => {
           path="/skills-sharing-register"
           element={<SkillSharingForm isOpen={true} />}
         />
+        // Example of how to add the route in your router file
+        <Route path="/event/:id" element={<EventDetailsPage />} />
         <Route
           path="/resource/offer"
           element={<ResourceForm userId={user?.uid} />}
@@ -66,7 +76,9 @@ const AuthRouter: React.FC = () => {
           element={<ResourceForm userId={user?.uid} />}
         />
         <Route path="/post/:id" element={<PostDetailsPage />} />
+        <Route path="/resource/:id" element={<ResourceDetailsPage />} />
         <Route path="/profile/auth/requests" element={<UserRequests />} />
+        <Route path="/auth/posts" element={<AuthPosts />} />
         <Route
           path="/profile/auth/shared-resources"
           element={<UserSharedResources />}
@@ -78,8 +90,16 @@ const AuthRouter: React.FC = () => {
         <Route path="/messages/:conversationId" element={<ChatDetail />} />
         <Route path="/emergency/posts" element={<EmergencyPosts />} />
         <Route path="/saved/posts" element={<SavedPosts />} />
+        <Route path="/events" element={<EventsPage />} />
+        
+        {/* New Update Routes */}
+        <Route path="/updates" element={<UpdatesPage />} />
+        <Route path="/update/:id" element={<UpdatePage />} />
+        <Route path="/update/new" element={<NewUpdateForm />} />
+        
         <Route path="/register" element={<Navigate to="/" />} />
         <Route path="/login" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

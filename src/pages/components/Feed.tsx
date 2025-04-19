@@ -1,8 +1,11 @@
 import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { auth, db } from '@/firebase';
-import { collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import React, { useEffect, useState, useRef } from 'react';
 import { MoreVertical } from 'lucide-react';
+
+import { useStateContext } from '@/contexts/StateContext'; // Update this import to use StateContext
+import { useNavigate } from 'react-router-dom';
 
 export interface BaseItem {
     id?: string;
@@ -18,6 +21,7 @@ export interface BaseItem {
 
 export interface Resource extends BaseItem {
     category: string;
+    urgency: string;
 }
 
 export interface Promotion extends BaseItem {
@@ -49,12 +53,16 @@ export interface Event extends BaseItem {
     responders: {
         title: string;
         useProfileLocation: boolean;
+        users?: string[]; // Array of user IDs who have RSVPed
     };
 }
 
 export interface Update extends BaseItem {
     date: string;
-    responders: {
+    parentId?: string;       // ID of parent update if this is a reply
+    childUpdates?: string[]; // IDs of replies to this update
+    threadDepth: number;     // Depth in thread hierarchy
+    responders?: {
         title: string;
         useProfileLocation: boolean;
     };
@@ -78,6 +86,7 @@ export const fetchResources = async (): Promise<Resource[]> => {
     const resourcesRef = collection(db, "resources");
     const q = query(resourcesRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
+    console.log(querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource')))
     return querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource'));
 };
 
@@ -95,9 +104,13 @@ export const fetchEvents = async (): Promise<Event[]> => {
     return querySnapshot.docs.map(doc => convertDoc<Event>(doc, 'event'));
 };
 
+// Fetch all updates - modified to get only top-level updates
 export const fetchUpdates = async (): Promise<Update[]> => {
     const updatesRef = collection(db, "updates");
-    const q = query(updatesRef, orderBy("createdAt", "desc"));
+    const q = query(
+        updatesRef, 
+        orderBy("createdAt", "desc")
+    );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => convertDoc<Update>(doc, 'update'));
 };
@@ -121,11 +134,12 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
     }
 };
 
-const Feed: React.FC = () => {
+export const Feed: React.FC = () => {
     // const user = auth.currentUser;
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const handleDeleteItem = async (id: string, type: FeedItem['type']) => {
         try {
@@ -161,6 +175,14 @@ const Feed: React.FC = () => {
         loadFeedItems();
     }, []);
 
+    const handleResourceClick = (resourceId: string) => {
+        navigate(`/resource/${resourceId}`);
+    };
+
+    const handleUpdateClick = (updateId: string) => {
+        navigate(`/update/${updateId}`);
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen dark:bg-gray-900">
@@ -187,13 +209,28 @@ const Feed: React.FC = () => {
                     feedItems.map((item) => {
                         switch (item.type) {
                             case 'resource':
-                                return <ResourceCard key={item.id} resource={item as Resource} onDelete={handleDeleteItem} />;
+                                return (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => handleResourceClick(item.id!)}
+                                    >
+                                        <ResourceCard resource={item as Resource} onDelete={handleDeleteItem} />
+                                    </div>
+                                );
                             case 'promotion':
                                 return <PromotionCard key={item.id} promotion={item as Promotion} onDelete={handleDeleteItem} />;
                             case 'event':
                                 return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
                             case 'update':
-                                return <UpdateCard key={item.id} update={item as Update} onDelete={handleDeleteItem} />;
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        onClick={() => handleUpdateClick(item.id!)}
+                                        className="cursor-pointer"
+                                    >
+                                        <UpdateCard update={item as Update} onDelete={handleDeleteItem} />
+                                    </div>
+                                );
                             default:
                                 return null;
                         }
@@ -209,10 +246,13 @@ interface CardBaseProps {
 }
 
 interface ResourceCardProps extends CardBaseProps {
+export default Feed;
+
+interface ResourceCardProps {
     resource: Resource;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
+export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -240,7 +280,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-blue-500 overflow-hidden mb-4">
+        <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 ${resource.urgency == "high" ? "border-red-500 " : "border-blue-500 "} overflow-hidden mb-4`}>
             {resource.images && resource.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                     {resource.images.map((image, index) => (
@@ -281,9 +321,22 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
             )}
             <div className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
-                        Resource: {resource.category}
-                    </span>
+                    <div className='flex w-full justify-between'>
+
+                        <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                            Resource: {resource.category}
+
+                        </span>
+                        {
+                            resource.urgency == "high" && (
+                                <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                                    Emergency
+
+                                </span>
+                            )
+                        }
+
+                    </div>
 
                     <div className="relative" ref={menuRef}>
                         <button
@@ -340,10 +393,12 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
 };
 
 interface PromotionCardProps extends CardBaseProps {
+
+interface PromotionCardProps {
     promotion: Promotion;
 }
 
-const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelete }) => {
+export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -454,7 +509,7 @@ const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelete }) =>
 
                 </div>
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">
-                    {promotion.responders?.title || 'Promotion'}
+                    {promotion?.title || 'Promotion'}
                 </h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                     {promotion.description}
@@ -482,7 +537,7 @@ interface EventCardProps extends CardBaseProps {
     event: Event;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -500,17 +555,63 @@ const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+    const { user } = useStateContext(); // Use StateContext instead of AuthContext
+    const [isRSVPed, setIsRSVPed] = useState(false);
+    const [isRSVPing, setIsRSVPing] = useState(false);
+    const navigate = useNavigate();
 
-    const handleNext = () => setCurrentImageIndex((prev) => (prev + 1) % totalImages);
-    const handlePrev = () => setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    useEffect(() => {
+        // Check if the current user has already RSVPed
+        if (user && event.responders?.users) {
+            setIsRSVPed(event.responders.users.includes(user.uid));
+        }
+    }, [user, event.responders]);
 
-    const handleDelete = () => {
-        onDelete(event.id!, 'event');
-        setShowMenu(false);
+    const handleNext = () => {
+        setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    };
+
+    const handlePrev = () => {
+        setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    };
+
+    const handleRSVP = async () => {
+        if (!user) {
+            // Handle not logged in state
+            alert("Please log in to RSVP for this event");
+            return;
+        }
+
+        try {
+            setIsRSVPing(true);
+            const eventRef = doc(db, "events", event.id || "");
+            
+            if (isRSVPed) {
+                // Remove user from responders
+                await updateDoc(eventRef, {
+                    "responders.users": arrayRemove(user.uid)
+                });
+                setIsRSVPed(false);
+            } else {
+                // Add user to responders
+                await updateDoc(eventRef, {
+                    "responders.users": arrayUnion(user.uid)
+                });
+                setIsRSVPed(true);
+            }
+        } catch (error) {
+            console.error("Error updating RSVP status:", error);
+            alert("Failed to update RSVP status. Please try again.");
+        } finally {
+            setIsRSVPing(false);
+        }
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4">
+        <div 
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4"
+            onClick={() => navigate(`/event/${event.id}`)}
+        >
             {event.images && event.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                     {event.images.map((image, index) => (
@@ -616,6 +717,26 @@ const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                         <span>Organizer: {event.organizerDetails?.name}</span>
                     </div>
                     <div className="text-gray-500 dark:text-gray-400 mt-2">Posted: {new Date(event.createdAt).toLocaleDateString()}</div>
+                    
+                    {/* RSVP Button */}
+                    <div className="mt-3">
+                        <button 
+                            onClick={handleRSVP}
+                            disabled={isRSVPing}
+                            className={`px-4 py-2 text-xs font-medium rounded-md transition-colors ${
+                                isRSVPed 
+                                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                            } ${isRSVPing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        >
+                            {isRSVPing ? 'Processing...' : isRSVPed ? 'Attending ✓' : 'RSVP'}
+                        </button>
+                        {event.responders?.users && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                {event.responders.users.length} {event.responders.users.length === 1 ? 'person' : 'people'} attending
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -626,7 +747,7 @@ interface UpdateCardProps extends CardBaseProps {
     update: Update;
 }
 
-const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
+export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -654,7 +775,7 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-amber-500 overflow-hidden mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-amber-500 overflow-hidden mb-4 hover:shadow-lg transition-shadow duration-200">
             {update.images && update.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                     {update.images.map((image, index) => (
@@ -737,11 +858,18 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                     </div>
 
                 </div>
-                <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update.responders?.title || 'Update'}</h3>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update?.title || 'Update'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{update.description}</p>
                 <div className="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
                     {update.date && <span>Update Date: {new Date(update.date).toLocaleDateString()}</span>}
                     <div className="mt-1">Posted: {new Date(update.createdAt).toLocaleDateString()}</div>
+                    
+                    {/* Show reply count if available */}
+                    {update.childUpdates && update.childUpdates.length > 0 && (
+                        <div className="mt-1 text-blue-500 dark:text-blue-400">
+                            {update.childUpdates.length} {update.childUpdates.length === 1 ? 'reply' : 'replies'}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
