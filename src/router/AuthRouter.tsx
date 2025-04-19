@@ -9,6 +9,7 @@ import EmergencyPosts from "@/pages/EmergencyPosts";
 import SavedPosts from "@/components/post/SavedPosts";
 import SkillList from "@/components/communities/skillSharing/SkillList";
 import SkillSharingForm from "@/components/communities/skillSharing/SkillSharingForm";
+import SkillHome from "@/pages/skillSharing";
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
@@ -47,12 +48,7 @@ const AuthRouter: React.FC = () => {
         <Route path="/skill-share" element={<SkillList />} />
         <Route
           path="/skills-sharing-register"
-          element={
-            <SkillSharingForm
-              isOpen={true}
-              onClose={() => console.log("Form closed")}
-            />
-          }
+          element={<SkillSharingForm isOpen={true} />}
         />
         <Route
           path="/resource/offer"
