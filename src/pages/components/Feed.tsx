@@ -1,7 +1,9 @@
 import { ImageDisplay } from '@/components/AWS/UploadFile';
-import { db } from '@/firebase';
-import { collection, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import { auth, db } from '@/firebase';
+import { collection, deleteDoc, doc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import React, { useEffect, useState, useRef } from 'react';
+import { MoreVertical } from 'lucide-react';
+
 import { useStateContext } from '@/contexts/StateContext'; // Update this import to use StateContext
 import { useNavigate } from 'react-router-dom';
 
@@ -19,6 +21,7 @@ export interface BaseItem {
 
 export interface Resource extends BaseItem {
     category: string;
+    urgency: string;
 }
 
 export interface Promotion extends BaseItem {
@@ -65,7 +68,6 @@ export interface Update extends BaseItem {
     };
 }
 
-// Union type for items in feed
 export type FeedItem = Resource | Promotion | Event | Update;
 
 const convertDoc = <T extends BaseItem>(doc: any, type: FeedItem['type']): T => {
@@ -84,25 +86,21 @@ export const fetchResources = async (): Promise<Resource[]> => {
     const resourcesRef = collection(db, "resources");
     const q = query(resourcesRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
-
+    console.log(querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource')))
     return querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource'));
 };
 
-// Fetch all promotions
 export const fetchPromotions = async (): Promise<Promotion[]> => {
     const promotionsRef = collection(db, "promotions");
     const q = query(promotionsRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
-
     return querySnapshot.docs.map(doc => convertDoc<Promotion>(doc, 'promotion'));
 };
 
-// Fetch all events
 export const fetchEvents = async (): Promise<Event[]> => {
     const eventsRef = collection(db, "events");
     const q = query(eventsRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
-
     return querySnapshot.docs.map(doc => convertDoc<Event>(doc, 'event'));
 };
 
@@ -114,11 +112,9 @@ export const fetchUpdates = async (): Promise<Update[]> => {
         orderBy("createdAt", "desc")
     );
     const querySnapshot = await getDocs(q);
-
     return querySnapshot.docs.map(doc => convertDoc<Update>(doc, 'update'));
 };
 
-// Fetch all feed items from all collections
 export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
     try {
         const [resources, promotions, events, updates] = await Promise.all([
@@ -128,9 +124,7 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
             fetchUpdates()
         ]);
 
-        // Combine all items and sort by createdAt (newest first)
         const allItems: FeedItem[] = [...resources, ...promotions, ...events, ...updates];
-
         return allItems.sort((a, b) => {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
@@ -140,11 +134,29 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
     }
 };
 
-const Feed: React.FC = () => {
+export const Feed: React.FC = () => {
+    // const user = auth.currentUser;
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+
+    const handleDeleteItem = async (id: string, type: FeedItem['type']) => {
+        try {
+            let collectionName: string;
+            switch (type) {
+                case 'resource': collectionName = 'resources'; break;
+                case 'promotion': collectionName = 'promotions'; break;
+                case 'event': collectionName = 'events'; break;
+                case 'update': collectionName = 'updates'; break;
+                default: return;
+            }
+            await deleteDoc(doc(db, collectionName, id));
+            setFeedItems(prev => prev.filter(item => item.id !== id));
+        } catch (error) {
+            console.error('Error deleting item:', error);
+        }
+    };
 
     useEffect(() => {
         const loadFeedItems = async () => {
@@ -160,7 +172,6 @@ const Feed: React.FC = () => {
                 setLoading(false);
             }
         };
-
         loadFeedItems();
     }, []);
 
@@ -203,13 +214,13 @@ const Feed: React.FC = () => {
                                         key={item.id}
                                         onClick={() => handleResourceClick(item.id!)}
                                     >
-                                        <ResourceCard resource={item as Resource} />
+                                        <ResourceCard resource={item as Resource} onDelete={handleDeleteItem} />
                                     </div>
                                 );
                             case 'promotion':
-                                return <PromotionCard key={item.id} promotion={item as Promotion} />;
+                                return <PromotionCard key={item.id} promotion={item as Promotion} onDelete={handleDeleteItem} />;
                             case 'event':
-                                return <EventCard key={item.id} event={item as Event} />;
+                                return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
                             case 'update':
                                 return (
                                     <div 
@@ -217,7 +228,7 @@ const Feed: React.FC = () => {
                                         onClick={() => handleUpdateClick(item.id!)}
                                         className="cursor-pointer"
                                     >
-                                        <UpdateCard update={item as Update} />
+                                        <UpdateCard update={item as Update} onDelete={handleDeleteItem} />
                                     </div>
                                 );
                             default:
@@ -230,41 +241,58 @@ const Feed: React.FC = () => {
     );
 };
 
+interface CardBaseProps {
+    onDelete: (id: string, type: FeedItem['type']) => void;
+}
+
+interface ResourceCardProps extends CardBaseProps {
 export default Feed;
 
 interface ResourceCardProps {
     resource: Resource;
 }
 
-export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
+export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
+    const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = resource.images?.length || 0;
-    const date = new Date(resource.createdAt).toLocaleDateString();
+    const isOwner = user?.uid === resource.userId;
 
-    const handleNext = () => {
-        setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    const handleClickOutside = (event: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            setShowMenu(false);
+        }
     };
 
-    const handlePrev = () => {
-        setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleNext = () => setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    const handlePrev = () => setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+
+    const handleDelete = () => {
+        onDelete(resource.id!, 'resource');
+        setShowMenu(false);
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-blue-500 overflow-hidden mb-4">
+        <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 ${resource.urgency == "high" ? "border-red-500 " : "border-blue-500 "} overflow-hidden mb-4`}>
             {resource.images && resource.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                     {resource.images.map((image, index) => (
                         <div
                             key={image}
-                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                                }`}
+                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full object-cover overflow-hidden">
                                 <ImageDisplay objectKey={image} />
                             </div>
                         </div>
                     ))}
-
                     {totalImages > 1 && (
                         <>
                             <button
@@ -283,8 +311,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
                                 {resource.images.map((_, index) => (
                                     <div
                                         key={index}
-                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                                            }`}
+                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
                                     />
                                 ))}
                             </div>
@@ -293,9 +320,62 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
                 </div>
             )}
             <div className="p-4">
-                <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full mb-2">
-                    Resource: {resource.category}
-                </span>
+                <div className="flex justify-between items-center mb-2">
+                    <div className='flex w-full justify-between'>
+
+                        <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                            Resource: {resource.category}
+
+                        </span>
+                        {
+                            resource.urgency == "high" && (
+                                <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                                    Emergency
+
+                                </span>
+                            )
+                        }
+
+                    </div>
+
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                        >
+                            <MoreVertical className="h-5 w-5" />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 ">
+                                <button
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+
+                                >
+                                    View Details
+                                </button>
+                                {
+                                    isOwner && (
+                                        <>
+                                            {/* <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={() => console.log('Edit:', resource.id)}
+                                            >
+                                                Edit
+                                            </button> */}
+                                            <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={handleDelete}
+                                            >
+                                                Delete
+                                            </button>
+                                        </>
+                                    )
+                                }
+                            </div>
+                        )}
+                    </div>
+
+                </div>
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{resource.title || 'Resource'}</h3>
                 <p className="text-xs font-light text-gray-600 dark:text-gray-300 mt-1">{resource.description}</p>
                 <div className="flex items-center mt-3 text-[10px] text-gray-500 dark:text-gray-400">
@@ -305,28 +385,44 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
                     <span>Duration: {resource.duration}</span>
                 </div>
                 <div className="flex gap-2 items-center text-[10px] text-gray-500 dark:text-gray-400 mt-1">
-                    <span>Posted: {date}</span>
+                    <span>Posted: {new Date(resource.createdAt).toLocaleDateString()}</span>
                 </div>
             </div>
         </div>
     );
 };
 
+interface PromotionCardProps extends CardBaseProps {
+
 interface PromotionCardProps {
     promotion: Promotion;
 }
 
-export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
+export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelete }) => {
+    const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = promotion.images?.length || 0;
-    const date = new Date(promotion.createdAt).toLocaleDateString();
+    const isOwner = user?.uid === promotion.userId;
 
-    const handleNext = () => {
-        setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    const handleClickOutside = (event: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            setShowMenu(false);
+        }
     };
 
-    const handlePrev = () => {
-        setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleNext = () => setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    const handlePrev = () => setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+
+    const handleDelete = () => {
+        onDelete(promotion.id!, 'promotion');
+        setShowMenu(false);
     };
 
     return (
@@ -336,15 +432,13 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
                     {promotion.images.map((image, index) => (
                         <div
                             key={image}
-                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                                }`}
+                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full flex justify-center items-center object-cover overflow-hidden">
                                 <ImageDisplay objectKey={image} />
                             </div>
                         </div>
                     ))}
-
                     {totalImages > 1 && (
                         <>
                             <button
@@ -363,8 +457,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
                                 {promotion.images.map((_, index) => (
                                     <div
                                         key={index}
-                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                                            }`}
+                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
                                     />
                                 ))}
                             </div>
@@ -373,9 +466,48 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
                 </div>
             )}
             <div className="p-4">
-                <span className="inline-block px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full mb-2">
-                    Promotion
-                </span>
+                <div className="flex justify-between items-center mb-2">
+                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                        Promotion
+                    </span>
+
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                        >
+                            <MoreVertical className="h-5 w-5" />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
+                                <button
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                    View Details
+                                </button>
+                                {
+                                    isOwner && (
+                                        <>
+                                            {/* <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={() => console.log('Edit:', promotion.id)}
+                                            >
+                                                Edit
+                                            </button> */}
+                                            <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={handleDelete}
+                                            >
+                                                Delete
+                                            </button>
+                                        </>
+                                    )
+                                }
+                            </div>
+                        )}
+                    </div>
+
+                </div>
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">
                     {promotion?.title || 'Promotion'}
                 </h3>
@@ -393,7 +525,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
                         Phone: {promotion.contactInfo?.contact}
                     </p>
                     <div className="flex items-center mt-2 text-gray-500 dark:text-gray-400">
-                        <span>Posted: {date}</span>
+                        <span>Posted: {new Date(promotion.createdAt).toLocaleDateString()}</span>
                     </div>
                 </div>
             </div>
@@ -401,14 +533,28 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
     );
 };
 
-interface EventCardProps {
+interface EventCardProps extends CardBaseProps {
     event: Event;
 }
-const EventCard: React.FC<EventCardProps> = ({ event }) => {
+
+export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
+    const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = event.images?.length || 0;
-    const createdDate = new Date(event.createdAt).toLocaleDateString();
-    const eventDate = event.timingInfo?.date;
+    const isOwner = user?.uid === event.userId;
+
+    const handleClickOutside = (event: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            setShowMenu(false);
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
     const { user } = useStateContext(); // Use StateContext instead of AuthContext
     const [isRSVPed, setIsRSVPed] = useState(false);
     const [isRSVPing, setIsRSVPing] = useState(false);
@@ -471,16 +617,13 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
                     {event.images.map((image, index) => (
                         <div
                             key={image}
-                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-                                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                            }`}
+                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full flex justify-center items-center object-cover overflow-hidden">
                                 <ImageDisplay objectKey={image} />
                             </div>
                         </div>
                     ))}
-
                     {totalImages > 1 && (
                         <>
                             <button
@@ -499,9 +642,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
                                 {event.images.map((_, index) => (
                                     <div
                                         key={index}
-                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                                            index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                                        }`}
+                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
                                     />
                                 ))}
                             </div>
@@ -510,15 +651,49 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
                 </div>
             )}
             <div className="p-4">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex justify-between items-center mb-2">
                     <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
                         Event: {event.eventType}
                     </span>
-                    {event.isRegistrationRequired && (
-                        <span className="inline-block px-2 py-1 text-xs font-semibold bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-full">
-                            Registration Required
-                        </span>
-                    )}
+
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                        >
+                            <MoreVertical className="h-5 w-5" />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
+                                <button
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+
+                                >
+                                    View Details
+                                </button>
+                                {
+                                    isOwner && (
+                                        <>
+                                            {/* <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={() => console.log('Edit:', event.id)}
+                                            >
+                                                Edit
+                                            </button> */}
+                                            <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={handleDelete}
+                                            >
+                                                Delete
+                                            </button>
+                                        </>
+                                    )
+                                }
+
+                            </div>
+                        )}
+                    </div>
+
                 </div>
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{event.title || 'Event'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{event.description}</p>
@@ -527,7 +702,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        <span>Date: {eventDate} - Time: {event.timingInfo?.time}</span>
+                        <span>Date: {event.timingInfo?.date} - Time: {event.timingInfo?.time}</span>
                     </div>
                     <div className="flex items-center text-gray-700 dark:text-gray-300 mt-1">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -541,7 +716,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
                         </svg>
                         <span>Organizer: {event.organizerDetails?.name}</span>
                     </div>
-                    <div className="text-gray-500 dark:text-gray-400 mt-2">Posted: {createdDate}</div>
+                    <div className="text-gray-500 dark:text-gray-400 mt-2">Posted: {new Date(event.createdAt).toLocaleDateString()}</div>
                     
                     {/* RSVP Button */}
                     <div className="mt-3">
@@ -568,22 +743,35 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     );
 };
 
-interface UpdateCardProps {
+interface UpdateCardProps extends CardBaseProps {
     update: Update;
 }
 
-const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
+export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
+    const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const totalImages = update.images?.length || 0;
-    const createdDate = new Date(update.createdAt).toLocaleDateString();
-    const updateDate = update.date ? new Date(update.date).toLocaleDateString() : null;
+    const isOwner = user?.uid === update.userId;
 
-    const handleNext = () => {
-        setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    const handleClickOutside = (event: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            setShowMenu(false);
+        }
     };
 
-    const handlePrev = () => {
-        setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    useEffect(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleNext = () => setCurrentImageIndex((prev) => (prev + 1) % totalImages);
+    const handlePrev = () => setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+
+    const handleDelete = () => {
+        onDelete(update.id!, 'update');
+        setShowMenu(false);
     };
 
     return (
@@ -593,16 +781,13 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
                     {update.images.map((image, index) => (
                         <div
                             key={image}
-                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-                                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                            }`}
+                            className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full flex justify-center items-center object-cover overflow-hidden">
                                 <ImageDisplay objectKey={image} />
                             </div>
                         </div>
                     ))}
-
                     {totalImages > 1 && (
                         <>
                             <button
@@ -621,9 +806,7 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
                                 {update.images.map((_, index) => (
                                     <div
                                         key={index}
-                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                                            index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                                        }`}
+                                        className={`w-2 h-2 rounded-full transition-colors duration-300 ${index === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
                                     />
                                 ))}
                             </div>
@@ -632,14 +815,54 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
                 </div>
             )}
             <div className="p-4">
-                <span className="inline-block px-2 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full mb-2">
-                    Update
-                </span>
+                <div className="flex justify-between items-center mb-2">
+                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full">
+                        Update
+                    </span>
+
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={() => setShowMenu(!showMenu)}
+                            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1"
+                        >
+                            <MoreVertical className="h-5 w-5" />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 z-20">
+                                <button
+                                    className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                >
+                                    View Details
+                                </button>
+                                {
+                                    isOwner && (
+                                        <>
+                                            {/* <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={() => console.log('Edit:', update.id)}
+                                            >
+                                                Edit
+                                            </button> */}
+                                            <button
+                                                className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                                onClick={handleDelete}
+                                            >
+                                                Delete
+                                            </button>
+                                        </>
+                                    )
+                                }
+
+                            </div>
+                        )}
+                    </div>
+
+                </div>
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update?.title || 'Update'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{update.description}</p>
                 <div className="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
-                    {updateDate && <span>Update Date: {updateDate}</span>}
-                    <div className="mt-1">Posted: {createdDate}</div>
+                    {update.date && <span>Update Date: {new Date(update.date).toLocaleDateString()}</span>}
+                    <div className="mt-1">Posted: {new Date(update.createdAt).toLocaleDateString()}</div>
                     
                     {/* Show reply count if available */}
                     {update.childUpdates && update.childUpdates.length > 0 && (
@@ -652,3 +875,5 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
         </div>
     );
 };
+
+export default Feed;

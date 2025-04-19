@@ -14,6 +14,10 @@ const config: Config = {
         'blue-600': '#2563eb',
         'blue-500': '#3b82f6',
       },
+      zIndex: {
+        '100': '100',
+        '200': '200',
+      },
     },
   },
   plugins: [],

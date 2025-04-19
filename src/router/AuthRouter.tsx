@@ -12,6 +12,9 @@ import SkillList from "@/components/communities/skillSharing/SkillList";
 import SkillSharingForm from "@/components/communities/skillSharing/SkillSharingForm";
 import SkillHome from "@/pages/skillSharing";
 import VolunteerShow from "@/pages/VolunteerShow";
+import { useNotification } from "@/utils/notification/NotificationHook";
+import AuthPosts from "@/pages/AuthPosts";
+import NotFoundPage from "@/pages/NotFoundPage";
 import EventsPage from "@/pages/EventsPage";
 import EventDetailsPage from "@/components/event/EventDetailsPage";
 import UpdatePage from "@/components/update/SpecificUpdatePage";
@@ -46,6 +49,8 @@ const AuthRouter: React.FC = () => {
     });
   });
 
+  useNotification();
+
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
@@ -53,7 +58,6 @@ const AuthRouter: React.FC = () => {
         <Route path="/profileCard" element={<ProfileCard />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/home" element={<LandingPage />} />
-
         // we will cahnge it later
         <Route path="/skill-share" element={<SkillList />} />
         <Route
@@ -73,11 +77,11 @@ const AuthRouter: React.FC = () => {
         <Route path="/post/:id" element={<PostDetailsPage />} />
         <Route path="/resource/:id" element={<ResourceDetailsPage />} />
         <Route path="/profile/auth/requests" element={<UserRequests />} />
+        <Route path="/auth/posts" element={<AuthPosts />} />
         <Route
           path="/profile/auth/shared-resources"
           element={<UserSharedResources />}
         />
-
         <Route path="/skillHome" element={<SkillHome />} />
         <Route path="/volunteer" element={<VolunteerShow />} />
         <Route path="/messages" element={<MessagesList />} />
@@ -93,6 +97,7 @@ const AuthRouter: React.FC = () => {
         
         <Route path="/register" element={<Navigate to="/" />} />
         <Route path="/login" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

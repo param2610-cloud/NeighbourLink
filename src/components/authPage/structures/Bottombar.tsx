@@ -30,7 +30,7 @@ const Bottombar: React.FC<BottombarProps> = () => {
     return (
         <>
         {/* Bottom Navigation */}
-        <div className={`fixed h-16 bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md ${getButtonClass()}`}>
+        <div className={`fixed z-50 h-16 bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md ${getButtonClass()}`}>
           <div className="flex justify-around p-3">
             <button 
               onClick={() => navigate("/")} 

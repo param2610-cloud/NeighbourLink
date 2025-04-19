@@ -1,11 +1,10 @@
 import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
+import { GrResources } from "react-icons/gr";
 
 import {
   Home,
   User,
-  FileText,
-  Share,
   Inbox,
   Archive,
   HeartHandshake,
@@ -69,16 +68,11 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
     { path: "/messages", label: "Messages", icon: <MessageSquare size={18} /> },
     { path: "/updates", label: "Updates", icon: <Newspaper size={18} /> },
-    {
-      path: "/saved/posts",
-      label: "Saved Posts",
-      icon: <AiOutlineHeart size={18} />,
-    },
-    {
-      path: "/resource/need",
-      label: "Request Resource",
-      icon: <FileText size={18} />,
-    },
+    // {
+    //   path: "/saved/posts",
+    //   label: "Saved Posts",
+    //   icon: <AiOutlineHeart size={18} />,
+    // },
     {
       path: "/resource/offer",
       label: "Share Resources",
@@ -113,7 +107,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
 
   return (
     <aside
-      className={`w-full md:w-64 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-gray-800 fixed md:fixed transform transition-transform duration-200 ease-in-out z-20
+      className={`w-full md:w-64 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-gray-800 fixed md:fixed transform transition-transform duration-200 ease-in-out z-50
         ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}

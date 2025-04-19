@@ -11,6 +11,7 @@ import { Plus, BookOpen, Gift, Calendar, Bell, MessageSquare } from 'lucide-reac
 import Feed from "./components/Feed";
 import NewPostForm from "@/components/Forms/NewPostForm";
 import QuickActionsButton from "./components/QuickAction";
+import { useMobileContext } from "@/contexts/MobileContext";
 
 type FilterType = "all" | "need" | "offer";
 
@@ -49,6 +50,7 @@ const Home: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
   const [updated,] = useState(false);
   const navigate = useNavigate();
+  const { isMobile } = useMobileContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [postType, setPostType] = useState<'resource' | 'event' | 'promotion' | 'update' | null>(null);
@@ -219,10 +221,10 @@ const Home: React.FC = () => {
     <>
       {
         userDetails ?
-          <div className="flex flex-col min-h-screen mb-16 bg-gray-50 dark:bg-gray-900">
+          <div className={`flex flex-col min-h-screen ${isMobile ? "mb-16" : ""} bg-gray-50 dark:bg-gray-900`}>
             <div
               className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } md:translate-x-0 transition-transform duration-300 z-40`}
+                } md:translate-x-0 transition-transform duration-300 z-50`}
             >
               <Sidebar
                 handleLogout={handleLogout}
@@ -238,13 +240,23 @@ const Home: React.FC = () => {
             )}
 
             <div className="md:ml-64">
-              <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
-                <div className="flex items-center justify-between p-4">
+              <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
+                <div className="flex  items-center justify-between p-4">
                   <div
-                    className="flex items-center space-x-2 cursor-pointer"
+                    className="flex items-center gap-5 space-x-2 cursor-pointer"
                     onClick={toggleSidebar}
                   >
                     <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+                    {
+                      !isMobile && (
+                        <div>
+                          <h2 className="text-xs font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
+                          <p className="text-[10px] font-semibold text-indigo-700 dark:text-indigo-300">
+                            {userLocation ? "Current Location" : "Location unavailable"}
+                          </p>
+                        </div>
+                      )
+                    }
                   </div>
 
                   <div className="flex items-center">
@@ -260,6 +272,7 @@ const Home: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Neighborhood, Radius Selector, and Filter
                 <div className="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900">
                   <div>
                     <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300">Your Neighborhood</h2>
@@ -289,21 +302,34 @@ const Home: React.FC = () => {
                 <QuickActionsButton openModal={openModal} />
               </div>
 
-              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-white dark:bg-gray-800 h-18">
+              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-neutral-100 dark:bg-slate-800 h-16">
 
-                <div className="fixed bg-white dark:bg-gray-800 flex items-center justify-between mb-7">
+                <div className="fixed gap-5 flex items-center justify-between mb-7">
                   <div className="flex items-center space-x-2">
-                    <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
+                    <span className="text-xs text-gray-600 dark:text-gray-300">Radius:</span>
+                    <select
+                      value={radius}
+                      onChange={(e) => setRadius(Number(e.target.value))}
+                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-xs text-black dark:text-white"
+                    >
+                      <option value={1}>1 km</option>
+                      <option value={3}>3 km</option>
+                      <option value={5}>5 km</option>
+                      <option value={10}>10 km</option>
+                    </select>
+                  </div>
+                  {/* <div className="flex items-center space-x-2">
+                    <label className="text-gray-700 text-xs dark:text-gray-400">Filter by:</label>
                     <select
                       value={selectedFilter}
                       onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-                      className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="px-3 py-1 text-xs dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="all">All</option>
                       <option value="need">Needs</option>
                       <option value="offer">Offers</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div className="flex-1 px-4 py-4 ">
@@ -326,8 +352,13 @@ const Home: React.FC = () => {
                 onSuccess={handleSuccess}
                 userData={userDetails}
               />
+              {
+                isMobile && (
 
-              <Bottombar />
+                  <Bottombar />
+                )
+              }
+
             </div>
           </div>
           :
@@ -343,6 +374,7 @@ export default Home;
 
 export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void }> = ({ openModal }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isMobile } = useMobileContext()
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -395,7 +427,7 @@ export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'eve
       </div>
 
       <button
-        className="fixed bottom-20 right-5 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300"
+        className={`fixed ${isMobile ? "bottom-20 right-5" : "bottom-8 right-8"} h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300`}
         onClick={toggleMenu}
         aria-label="Open menu"
       >
