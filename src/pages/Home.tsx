@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
-import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
 import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
@@ -308,7 +306,7 @@ const Home: React.FC = () => {
             {/* Responsive Sidebar */}
             <div
               className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } md:translate-x-0 transition-transform duration-300 z-40`}
+                } md:translate-x-0 transition-transform duration-300 z-50`}
             >
               <Sidebar
                 // userDetails={userDetails}
@@ -408,7 +406,7 @@ const Home: React.FC = () => {
                       <option value={10}>10 km</option>
                     </select>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  {/* <div className="flex items-center space-x-2">
                     <label className="text-gray-700 text-xs dark:text-gray-400">Filter by:</label>
                     <select
                       value={selectedFilter}
@@ -419,7 +417,7 @@ const Home: React.FC = () => {
                       <option value="need">Needs</option>
                       <option value="offer">Offers</option>
                     </select>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div className="flex-1 px-4 py-4 ">

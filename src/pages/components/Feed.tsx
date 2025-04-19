@@ -18,6 +18,7 @@ export interface BaseItem {
 
 export interface Resource extends BaseItem {
     category: string;
+    urgency: string;
 }
 
 export interface Promotion extends BaseItem {
@@ -78,6 +79,7 @@ export const fetchResources = async (): Promise<Resource[]> => {
     const resourcesRef = collection(db, "resources");
     const q = query(resourcesRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
+    console.log(querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource')))
     return querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource'));
 };
 
@@ -121,7 +123,7 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
     }
 };
 
-const Feed: React.FC = () => {
+export const Feed: React.FC = () => {
     // const user = auth.currentUser;
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -212,7 +214,7 @@ interface ResourceCardProps extends CardBaseProps {
     resource: Resource;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
+export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -240,7 +242,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-blue-500 overflow-hidden mb-4">
+        <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 ${resource.urgency == "high" ? "border-red-500 " : "border-blue-500 "} overflow-hidden mb-4`}>
             {resource.images && resource.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
                     {resource.images.map((image, index) => (
@@ -281,9 +283,22 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }) => {
             )}
             <div className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
-                        Resource: {resource.category}
-                    </span>
+                    <div className='flex w-full justify-between'>
+
+                        <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                            Resource: {resource.category}
+
+                        </span>
+                        {
+                            resource.urgency == "high" && (
+                                <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
+                                    Emergency
+
+                                </span>
+                            )
+                        }
+
+                    </div>
 
                     <div className="relative" ref={menuRef}>
                         <button
@@ -343,7 +358,7 @@ interface PromotionCardProps extends CardBaseProps {
     promotion: Promotion;
 }
 
-const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelete }) => {
+export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -482,7 +497,7 @@ interface EventCardProps extends CardBaseProps {
     event: Event;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
+export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
@@ -626,7 +641,7 @@ interface UpdateCardProps extends CardBaseProps {
     update: Update;
 }
 
-const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
+export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
     const user = auth.currentUser;
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [showMenu, setShowMenu] = useState(false);
