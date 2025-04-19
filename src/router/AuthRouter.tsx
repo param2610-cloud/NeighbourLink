@@ -21,6 +21,8 @@ import EventDetailsPage from "@/components/event/EventDetailsPage";
 import UpdatePage from "@/components/update/SpecificUpdatePage";
 import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
 import UpdatesPage from "@/components/update/UpdatesFeedPage";
+import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
+import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));

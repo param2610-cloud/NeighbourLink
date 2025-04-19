@@ -4,12 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { ResourceCard, PromotionCard, EventCard, UpdateCard, Resource, Promotion, Event, Update } from './components/Feed';
 import { FeedItem } from './components/Feed';
 import { FloatingActionMenu } from './Home';
-<<<<<<< HEAD
 import { Skeleton } from '@/components/ui/skeleton';
-=======
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
->>>>>>> ba6de5ea1ec7658f2f6ff674c55910307d9d519f
 
 // Reuse the convertDoc function from your Feed component
 const convertDoc = <T extends FeedItem>(doc: any, type: FeedItem['type']): T => {

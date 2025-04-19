@@ -63,11 +63,8 @@ const Home: React.FC = () => {
     setIsModalOpen(false);
   };
 
-<<<<<<< HEAD
-=======
 
 
->>>>>>> ba6de5ea1ec7658f2f6ff674c55910307d9d519f
   const handleSuccess = () => {
     console.log('Post created successfully!');
     // You can implement additional success handling here
@@ -333,15 +330,7 @@ const Home: React.FC = () => {
             </div>
             <div className="flex-1 px-4 py-4 ">
 
-<<<<<<< HEAD
               
-=======
-              {loading ? (
-                <div className="flex justify-center py-10">
-                  loading
-                </div>
-              ) : (
->>>>>>> ba6de5ea1ec7658f2f6ff674c55910307d9d519f
                 <Feed />
               
             </div>
@@ -366,7 +355,6 @@ const Home: React.FC = () => {
           </div>
         </div>
         :
-<<<<<<< HEAD
         <div className="flex flex-col space-y-4">
           <div className="flex items-center p-4 space-x-4">
             <Skeleton className="h-12 w-12 rounded-full" />
@@ -387,10 +375,6 @@ const Home: React.FC = () => {
             <Skeleton className="h-4 w-[70%]" />
             <Skeleton className="h-4 w-[60%]" />
           </div>
-=======
-        <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-          {/* <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" /> */}
->>>>>>> ba6de5ea1ec7658f2f6ff674c55910307d9d519f
         </div>
 
     }
