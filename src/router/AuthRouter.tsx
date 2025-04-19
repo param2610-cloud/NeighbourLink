@@ -13,6 +13,7 @@ import SkillSharingForm from "@/components/communities/skillSharing/SkillSharing
 import SkillHome from "@/pages/skillSharing";
 import VolunteerShow from "@/pages/VolunteerShow";
 import { useNotification } from "@/utils/notification/NotificationHook";
+import NotificationPage from "@/components/notificationPage/NotificationPage";
 
 // const Profile = lazy(() => import('@/components/authPage/Profile'));
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
@@ -71,6 +72,7 @@ const AuthRouter: React.FC = () => {
           element={<UserSharedResources />}
         />
         <Route path="/skillHome" element={<SkillHome />} />
+        <Route path="/notifications" element={<NotificationPage />} />
         <Route path="/volunteer" element={<VolunteerShow />} />
         <Route path="/messages" element={<MessagesList />} />
         <Route path="/messages/:conversationId" element={<ChatDetail />} />
