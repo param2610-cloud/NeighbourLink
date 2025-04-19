@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
 import { uploadFileToS3 } from '@/utils/aws/aws';
 
-// Components
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,27 +23,36 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 
-// Icons
 import {
-  MapPin,
-  Calendar,
   Upload,
   ArrowRight,
   ArrowLeft,
   Check,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 
-// Firebase
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import MapContainer, { useOlaMaps } from '../MapContainer';
 import { ImageDisplay } from '../AWS/UploadFile';
-import { auth, db } from '@/firebase';
+import { db } from '@/firebase';
+import { useStateContext } from '@/contexts/StateContext';
 
 interface Location {
   latitude: number;
   longitude: number;
   address?: string;
+}
+
+interface UserProfile {
+  address?: string;
+  firstName?: string;
+  lastName?: string;
+  location?: {
+    latitude: string;
+    longitude: string;
+  };
+  [key: string]: any; // Allow for other properties
 }
 
 interface PostFormState {
@@ -61,7 +68,6 @@ interface PostFormState {
   errors: Record<string, string>;
 }
 
-// Resource form state
 interface ResourceFormData {
   type: 'offer' | 'need';
   category: 'food' | 'shelter' | 'medical' | 'transportation' | 'other';
@@ -75,7 +81,6 @@ interface ResourceFormData {
   images?: string[];
 }
 
-// Event form state
 interface EventFormData {
   title: string;
   description: string;
@@ -100,7 +105,6 @@ interface EventFormData {
   duration: string;
 }
 
-// Promotion form state
 interface PromotionFormData {
   title: string;
   description: string;
@@ -117,7 +121,6 @@ interface PromotionFormData {
   duration: string;
 }
 
-// Update form state
 interface UpdateFormData {
   title: string;
   description: string;
@@ -127,16 +130,36 @@ interface UpdateFormData {
   visibilityRadius: string;
   images?: string[];
   duration: string;
+  parentId?: string;
+  childUpdates?: string[];
+  threadDepth?: number;
 }
 
-const NewPostForm: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [currentUser, setUser] = useState<any>(null);
-  const { ref: mapRef, data: mapData } = useOlaMaps();
+interface NewPostFormProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  initialPostType?: 'resource' | 'event' | 'promotion' | 'update' | null;
+  onSuccess?: () => void;
+  userData?: UserProfile | null; // Accept user data from parent component
+  parentUpdateId?: string; // Add this line to accept parent update ID for replies
+  threadDepth?: number; // Add thread depth for nested updates
+}
 
-  const [formState, setFormState] = useState<PostFormState>({
-    postType: null,
+const NewPostForm: React.FC<NewPostFormProps> = ({ 
+  isOpen = false, 
+  onClose = () => {}, 
+  initialPostType = null,
+  onSuccess = () => {},
+  userData = null, // Accept user data from parent
+  parentUpdateId = undefined, // Default to undefined if not provided
+  threadDepth = 0 // Default to 0 for top-level updates
+}) => {
+  const { ref: mapRef, data: mapData } = useOlaMaps();
+  const { user: currentUser } = useStateContext();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(userData); // Initialize with passed data
+
+  const initialFormState: PostFormState = {
+    postType: initialPostType,
     currentStep: 1,
     totalSteps: 3,
     isSubmitting: false,
@@ -146,9 +169,11 @@ const NewPostForm: React.FC = () => {
     uploadedImages: [],
     uploadedVideo: null,
     errors: {},
-  });
+  };
 
-  const [resourceForm, setResourceForm] = useState<ResourceFormData>({
+  const [formState, setFormState] = useState<PostFormState>(initialFormState);
+
+  const initialResourceForm: ResourceFormData = {
     type: 'offer',
     category: 'food',
     title: '',
@@ -157,9 +182,9 @@ const NewPostForm: React.FC = () => {
     duration: '',
     useProfileLocation: true,
     visibilityRadius: '5',
-  });
+  };
 
-  const [eventForm, setEventForm] = useState<EventFormData>({
+  const initialEventForm: EventFormData = {
     title: '',
     description: '',
     eventType: 'cultural',
@@ -177,9 +202,9 @@ const NewPostForm: React.FC = () => {
     isRegistrationRequired: false,
     visibilityRadius: '5',
     duration: '',
-  });
+  };
 
-  const [promotionForm, setPromotionForm] = useState<PromotionFormData>({
+  const initialPromotionForm: PromotionFormData = {
     title: '',
     description: '',
     contactInfo: {
@@ -190,35 +215,93 @@ const NewPostForm: React.FC = () => {
     useProfileLocation: true,
     visibilityRadius: '5',
     duration: '',
-  });
+  };
 
-  const [updateForm, setUpdateForm] = useState<UpdateFormData>({
+  const initialUpdateForm: UpdateFormData = {
     title: '',
     description: '',
     useProfileLocation: true,
     date: '',
     visibilityRadius: '5',
     duration: '',
-  });
+    parentId: parentUpdateId, // Initialize with the parent ID if provided
+    childUpdates: [], // Initialize empty array for child updates
+    threadDepth: threadDepth // Set the thread depth
+  };
+
+  const [resourceForm, setResourceForm] = useState<ResourceFormData>(initialResourceForm);
+  const [eventForm, setEventForm] = useState<EventFormData>(initialEventForm);
+  const [promotionForm, setPromotionForm] = useState<PromotionFormData>(initialPromotionForm);
+  const [updateForm, setUpdateForm] = useState<UpdateFormData>(initialUpdateForm);
+
+  // Use userData directly if it's provided
+  useEffect(() => {
+    if (userData) {
+      setUserProfile(userData);
+    }
+  }, [userData]);
+
+  // Only fetch from Firestore if userData wasn't provided
+  useEffect(() => {
+    if (!userProfile && currentUser) {
+      console.log("Fetching user profile data from Firestore");
+      // No need to fetch if we already have the data from props
+      import('@/firebase').then(({ db }) => {
+        import('firebase/firestore').then(({ doc, getDoc }) => {
+          const userRef = doc(db, 'users', currentUser.uid);
+          getDoc(userRef).then((docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as UserProfile;
+              console.log("Fetched user profile:", data);
+              setUserProfile(data);
+            }
+          }).catch(err => console.error("Error fetching user profile:", err));
+        });
+      });
+    }
+  }, [currentUser, userProfile]);
+
+  // Set default locations from user profile when it's loaded
+  useEffect(() => {
+    if (userProfile?.location) {
+      console.log("Setting location from user profile", userProfile.location);
+      const profileLocation = {
+        latitude: parseFloat(userProfile.location.latitude),
+        longitude: parseFloat(userProfile.location.longitude),
+        address: userProfile.address || "Your location"
+      };
+
+      // Ensure the location is set for all form types
+      setResourceForm(prev => ({ ...prev, location: profileLocation }));
+      setEventForm(prev => ({ ...prev, location: profileLocation }));
+      setPromotionForm(prev => ({ ...prev, location: profileLocation }));
+      setUpdateForm(prev => ({ ...prev, location: profileLocation }));
+
+      // Also update the ref used by the map
+      if (mapRef && typeof mapRef === 'function') {
+        mapRef({
+          currentLocation: {
+            latitude: parseFloat(userProfile.location.latitude),
+            longitude: parseFloat(userProfile.location.longitude)
+          },
+          currentAddress: userProfile.address || '',
+          selectedLocations: []
+        });
+      }
+    } else {
+      console.log("User profile has no location data:", userProfile);
+    }
+  }, [userProfile, mapRef]);
 
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
-  }, []);
-
-  // Initialize form based on URL params
-  useEffect(() => {
-    const type = searchParams.get('type');
-    if (type && ['resource', 'event', 'promotion', 'update'].includes(type)) {
+    if (initialPostType && ['resource', 'event', 'promotion', 'update'].includes(initialPostType)) {
       setFormState(prev => ({
         ...prev,
-        postType: type as PostFormState['postType'],
+        postType: initialPostType,
       }));
     }
-  }, [searchParams]);
+  }, [initialPostType]);
 
-  // Update form location when map location changes
   useEffect(() => {
     if (mapData && mapData.selectedLocations.length > 0) {
       const selectedLocation = mapData.selectedLocations[0];
@@ -244,6 +327,14 @@ const NewPostForm: React.FC = () => {
       }
     }
   }, [mapData, formState.postType]);
+
+  const resetAllForms = () => {
+    setFormState({...initialFormState, postType: null});
+    setResourceForm(initialResourceForm);
+    setEventForm(initialEventForm);
+    setPromotionForm(initialPromotionForm);
+    setUpdateForm(initialUpdateForm);
+  };
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -488,8 +579,22 @@ const NewPostForm: React.FC = () => {
     }
   };
 
+  const handleSubmitSuccess = () => {
+    setFormState(prev => ({ ...prev, isSuccess: true }));
+    
+    // Reset form after 3.5 seconds and close the form
+    setTimeout(() => {
+      onSuccess();
+      resetAllForms();
+      onClose(); // Close the form modal
+    }, 3500);
+  };
+
   const handleSubmit = async () => {
+    console.log("Starting form submission process");
+    
     if (!currentUser || !formState.postType) {
+      console.error("Authentication error or missing post type:", { currentUser, postType: formState.postType });
       setFormState(prev => ({
         ...prev,
         error: "Authentication error. Please sign in again."
@@ -497,7 +602,9 @@ const NewPostForm: React.FC = () => {
       return;
     }
 
+    console.log("Validating form data before submission");
     if (!validateCurrentStep()) {
+      console.error("Form validation failed", formState.errors);
       setFormState(prev => ({
         ...prev,
         error: "Please fix all errors before submitting."
@@ -505,123 +612,295 @@ const NewPostForm: React.FC = () => {
       return;
     }
 
+    console.log("Setting form to submitting state");
     setFormState(prev => ({ ...prev, isSubmitting: true, error: null }));
 
     try {
-      // Prepare common data for all post types
+      console.log(`Creating ${formState.postType} post for user ${currentUser.uid}`);
       const commonData = {
         userId: currentUser.uid,
         createdAt: serverTimestamp(),
         responders: [],
         images: formState.uploadedImages,
       };
+      console.log("Common post data:", commonData);
 
-      // Add post type specific data
       let postData: Record<string, any> = { ...commonData };
+      let locationData = null;
 
+      // Handle location data based on useProfileLocation toggle
+      console.log(`Processing ${formState.postType} form data with location handling`);
       switch (formState.postType) {
         case 'resource':
-          postData = { ...resourceForm, ...postData };
+          console.log("Resource form data:", resourceForm);
+          // Ensure we have valid location data
+          locationData = resourceForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "User location"
+              }
+            : resourceForm.location;
+          
+          console.log("Resource location data:", locationData);
+          
+          // Check if location data is valid
+          if (!locationData) {
+            console.error("Missing location data for resource post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...resourceForm, 
+            ...postData,
+            location: locationData
+          };
           break;
+
         case 'event':
-          postData = { ...eventForm, ...postData };
+          console.log("Event form data:", eventForm);
+          locationData = eventForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "Event location"
+              }
+            : eventForm.location;
+          
+          console.log("Event location data:", locationData);
+          
+          if (!locationData) {
+            console.error("Missing location data for event post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...eventForm, 
+            ...postData,
+            location: locationData
+          };
           break;
+
         case 'promotion':
-          postData = { ...promotionForm, ...postData, videoUrl: formState.uploadedVideo };
+          console.log("Promotion form data:", promotionForm);
+          locationData = promotionForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "Promotion location"
+              }
+            : promotionForm.location;
+          
+          console.log("Promotion location data:", locationData);
+          
+          if (!locationData) {
+            console.error("Missing location data for promotion post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...promotionForm, 
+            ...postData, 
+            videoUrl: formState.uploadedVideo,
+            location: locationData
+          };
           break;
+
         case 'update':
-          postData = { ...updateForm, ...postData };
+          console.log("Update form data:", updateForm);
+          locationData = updateForm.useProfileLocation && userProfile?.location 
+            ? {
+                latitude: parseFloat(userProfile.location.latitude),
+                longitude: parseFloat(userProfile.location.longitude),
+                address: userProfile.address || "Update location"
+              }
+            : updateForm.location;
+          
+          console.log("Update location data:", locationData);
+          console.log("Parent update ID:", updateForm.parentId);
+          console.log("Thread depth:", updateForm.threadDepth);
+          
+          if (!locationData) {
+            console.error("Missing location data for update post");
+            throw new Error("Location data is missing. Please try again or select a custom location.");
+          }
+
+          postData = { 
+            ...updateForm, 
+            ...postData,
+            location: locationData,
+            parentId: updateForm.parentId || null, // Use null if parentId is not provided
+            childUpdates: updateForm.childUpdates || [],
+            threadDepth: updateForm.threadDepth || 0
+          };
           break;
       }
-
-      // Add collection reference based on post type
+      
+      // Final check to ensure we have location data before submission
+      if (!postData.location || !postData.location.latitude || !postData.location.longitude) {
+        console.error("Invalid location data in final check:", postData.location);
+        throw new Error("Invalid location data. Please check your profile settings or select a custom location.");
+      }
+      
+      console.log("Final post data to be submitted:", postData);
+      
       const collectionRef = collection(db, `${formState.postType}s`);
+      console.log(`Submitting to Firestore collection: ${formState.postType}s`);
+      
+      const docRef = await addDoc(collectionRef, postData);
+      console.log(`Document successfully added with ID: ${docRef.id}`);
 
-      // Add document to Firestore
-      await addDoc(collectionRef, postData);
+      // If this is a reply (has a parentId), update the parent document to include this as a child
+      if (formState.postType === 'update' && updateForm.parentId) {
+        console.log(`Updating parent update ${updateForm.parentId} with new child ${docRef.id}`);
+        const parentRef = doc(db, 'updates', updateForm.parentId);
+        await updateDoc(parentRef, {
+          childUpdates: arrayUnion(docRef.id)
+        });
+        console.log("Parent document updated successfully");
+      }
 
-      setFormState(prev => ({ ...prev, isSuccess: true }));
-
-      // Navigate to appropriate page after successful submission
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-    } catch (error) {
+      console.log("Post submission completed successfully");
+      handleSubmitSuccess();
+    } catch (error: any) {
       console.error("Error submitting form:", error);
       setFormState(prev => ({
         ...prev,
-        error: "Failed to submit form. Please try again."
+        error: error.message || "Failed to submit form. Please try again."
       }));
     } finally {
+      console.log("Form submission process completed");
       setFormState(prev => ({ ...prev, isSubmitting: false }));
     }
   };
 
-  if (!formState.postType) {
+  if (!isOpen) return null;
+
+  const renderImageUploadSection = () => {
     return (
-      <Card className="w-full max-w-3xl mx-auto mt-8">
-        <CardHeader>
-          <CardTitle>Create a New Post</CardTitle>
-          <CardDescription>Select the type of post you want to create</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="bg-secondary/20 rounded-lg p-4 h-full flex flex-col">
+        <h3 className="text-lg font-medium mb-4 text-foreground">Media</h3>
+        
+        {formState.uploadedImages.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto mb-4">
+              {formState.uploadedImages.map((image, index) => (
+                <div key={index} className="relative group rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md">
+                  <ImageDisplay objectKey={image} className="w-full aspect-square object-cover rounded-md" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                    <button
+                      type="button"
+                      className="bg-red-500 text-white rounded-full p-1 ml-auto"
+                      onClick={() => {
+                        const newImages = [...formState.uploadedImages];
+                        newImages.splice(index, 1);
+                        setFormState(prev => ({ ...prev, uploadedImages: newImages }));
+                        
+                        if (formState.postType === 'event' && eventForm.bannerImageIndex === index) {
+                          setEventForm({ ...eventForm, bannerImageIndex: undefined });
+                        }
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {formState.postType === 'event' && eventForm.bannerImageIndex === index && (
+                    <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
+                      Banner
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="border-t border-border pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById(`${formState.postType}-images`)?.click()}
+                disabled={formState.uploadingImages}
+                className="w-full flex items-center justify-center gap-2 border-dashed"
+              >
+                <Upload className="h-4 w-4" />
+                {formState.uploadingImages ? 'Uploading...' : 'Add More Images'}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="border-2 border-dashed border-border rounded-lg p-6 text-center flex-1 flex flex-col items-center justify-center">
+            <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h4 className="text-base font-medium mb-2 text-foreground">Upload Images</h4>
+            <p className="text-sm text-muted-foreground mb-6">
+              Drag and drop or click to upload
+            </p>
             <Button
-              onClick={() => setFormState(prev => ({ ...prev, postType: 'resource' }))}
-              className="h-24 flex flex-col gap-2"
-              variant="outline"
+              type="button"
+              variant="secondary"
+              onClick={() => document.getElementById(`${formState.postType}-images`)?.click()}
+              disabled={formState.uploadingImages}
+              className="bg-secondary text-secondary-foreground hover:bg-accent"
             >
-              <span className="text-lg font-medium">Resource</span>
-              <span className="text-sm text-muted-foreground">Offer or request resources</span>
-            </Button>
-            <Button
-              onClick={() => setFormState(prev => ({ ...prev, postType: 'event' }))}
-              className="h-24 flex flex-col gap-2"
-              variant="outline"
-            >
-              <span className="text-lg font-medium">Event</span>
-              <span className="text-sm text-muted-foreground">Create a community event</span>
-            </Button>
-            <Button
-              onClick={() => setFormState(prev => ({ ...prev, postType: 'promotion' }))}
-              className="h-24 flex flex-col gap-2"
-              variant="outline"
-            >
-              <span className="text-lg font-medium">Promotion</span>
-              <span className="text-sm text-muted-foreground">Promote your business or service</span>
-            </Button>
-            <Button
-              onClick={() => setFormState(prev => ({ ...prev, postType: 'update' }))}
-              className="h-24 flex flex-col gap-2"
-              variant="outline"
-            >
-              <span className="text-lg font-medium">Update</span>
-              <span className="text-sm text-muted-foreground">Share news or updates</span>
+              {formState.uploadingImages ? 'Uploading...' : 'Select Files'}
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        )}
+        
+        <input
+          id={`${formState.postType}-images`}
+          type="file"
+          multiple
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFileUpload(e.target.files)}
+          disabled={formState.uploadingImages}
+        />
+        
+        {formState.postType === 'promotion' && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2 text-foreground">Promotional Video (Optional)</h4>
+            {formState.uploadedVideo ? (
+              <div className="relative group p-3 border rounded-md border-border">
+                <p className="text-sm text-foreground truncate">{formState.uploadedVideo.split('/').pop()}</p>
+                <button
+                  type="button"
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                  onClick={() => setFormState(prev => ({ ...prev, uploadedVideo: null }))}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => document.getElementById('promotion-video')?.click()}
+                disabled={formState.uploadingImages}
+                className="w-full text-sm"
+              >
+                {formState.uploadingImages ? 'Uploading...' : 'Select Video'}
+              </Button>
+            )}
+            <input
+              id="promotion-video"
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(e) => e.target.files && handleVideoUpload(e.target.files[0])}
+              disabled={formState.uploadingImages}
+            />
+          </div>
+        )}
+        
+        {formState.uploadingImages && (
+          <div className="mt-4">
+            <p className="text-sm text-muted-foreground mb-2">Uploading...</p>
+            <Progress value={65} className="h-1 bg-accent" />
+          </div>
+        )}
+      </div>
     );
-  }
-
-  if (formState.isSuccess) {
-    return (
-      <Card className="w-full max-w-3xl mx-auto mt-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-600">
-            <Check className="w-6 h-6" />
-            Post Created Successfully!
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>Your post has been created and will be visible to others.</p>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={() => navigate('/')}>Go to Home</Button>
-        </CardFooter>
-      </Card>
-    );
-  }
+  };
 
   const renderPostTypeForm = () => {
     switch (formState.postType) {
@@ -644,7 +923,7 @@ const NewPostForm: React.FC = () => {
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Type</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Type</label>
               <RadioGroup
                 value={resourceForm.type}
                 onValueChange={(value) => setResourceForm({ ...resourceForm, type: value as 'offer' | 'need' })}
@@ -652,23 +931,23 @@ const NewPostForm: React.FC = () => {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="offer" id="offer" />
-                  <label htmlFor="offer" className="cursor-pointer">I want to offer resources</label>
+                  <label htmlFor="offer" className="cursor-pointer text-foreground">I want to offer resources</label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="need" id="need" />
-                  <label htmlFor="need" className="cursor-pointer">I need resources</label>
+                  <label htmlFor="need" className="cursor-pointer text-foreground">I need resources</label>
                 </div>
               </RadioGroup>
-              {formState.errors.type && <p className="text-sm text-red-500 mt-1">{formState.errors.type}</p>}
+              {formState.errors.type && <p className="text-sm text-destructive mt-1">{formState.errors.type}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Category</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Category</label>
               <Select
                 value={resourceForm.category}
                 onValueChange={(value) => setResourceForm({ ...resourceForm, category: value as any })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-input">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -676,68 +955,71 @@ const NewPostForm: React.FC = () => {
                   <SelectItem value="shelter">Shelter</SelectItem>
                   <SelectItem value="medical">Medical</SelectItem>
                   <SelectItem value="transportation">Transportation</SelectItem>
+                  <SelectItem value="studybooks">Study Books</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              {formState.errors.category && <p className="text-sm text-red-500 mt-1">{formState.errors.category}</p>}
+              {formState.errors.category && <p className="text-sm text-destructive mt-1">{formState.errors.category}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Title</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Title</label>
               <Input
                 placeholder="Enter a brief title"
                 value={resourceForm.title}
                 onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
               />
-              {formState.errors.title && <p className="text-sm text-red-500 mt-1">{formState.errors.title}</p>}
+              {formState.errors.title && <p className="text-sm text-destructive mt-1">{formState.errors.title}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Description</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Description</label>
               <Textarea
                 placeholder="Describe your resource request or offer in detail"
                 value={resourceForm.description}
                 onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
                 className="min-h-32"
               />
-              {formState.errors.description && <p className="text-sm text-red-500 mt-1">{formState.errors.description}</p>}
+              {formState.errors.description && <p className="text-sm text-destructive mt-1">{formState.errors.description}</p>}
             </div>
           </>
         );
       case 2:
         return (
           <>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Urgency Level</label>
-              <Select
-                value={resourceForm.urgency}
-                onValueChange={(value) => setResourceForm({ ...resourceForm, urgency: value as any })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select urgency level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                </SelectContent>
-              </Select>
-              {formState.errors.urgency && <p className="text-sm text-red-500 mt-1">{formState.errors.urgency}</p>}
-            </div>
+            {resourceForm.type === 'need' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Urgency Level</label>
+                <Select
+                  value={resourceForm.urgency}
+                  onValueChange={(value) => setResourceForm({ ...resourceForm, urgency: value as any })}
+                >
+                  <SelectTrigger className="border-input">
+                    <SelectValue placeholder="Select urgency level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high" className="text-urgent-text-light dark:text-urgent-text-dark">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+                {formState.errors.urgency && <p className="text-sm text-destructive mt-1">{formState.errors.urgency}</p>}
+              </div>
+            )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Duration (How long this post will be active)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Duration (How long this post will be active)</label>
               <Input
                 placeholder="e.g., 7 days, until April 30th"
                 value={resourceForm.duration}
                 onChange={(e) => setResourceForm({ ...resourceForm, duration: e.target.value })}
               />
-              {formState.errors.duration && <p className="text-sm text-red-500 mt-1">{formState.errors.duration}</p>}
+              {formState.errors.duration && <p className="text-sm text-destructive mt-1">{formState.errors.duration}</p>}
             </div>
 
             <div className="flex flex-row items-center justify-between mb-4">
               <div className="space-y-0.5">
-                <label className="block text-sm font-medium">Use Profile Location</label>
+                <label className="block text-sm font-medium text-foreground">Use Profile Location</label>
                 <p className="text-sm text-muted-foreground">
                   Toggle to use your profile location or select a custom location
                 </p>
@@ -750,7 +1032,7 @@ const NewPostForm: React.FC = () => {
 
             {!resourceForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
                   <MapContainer
                     ref={mapRef}
@@ -766,80 +1048,58 @@ const NewPostForm: React.FC = () => {
                     Selected: {mapData.selectedLocations[0].address}
                   </div>
                 )}
-                {formState.errors.location && <p className="text-sm text-red-500 mt-1">{formState.errors.location}</p>}
+                {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
+              </div>
+            )}
+
+            {resourceForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Visibility Radius (km)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Visibility Radius (km)</label>
               <Input
                 type="number"
                 placeholder="Enter visibility radius in km"
                 value={resourceForm.visibilityRadius}
                 onChange={(e) => setResourceForm({ ...resourceForm, visibilityRadius: e.target.value })}
               />
-              {formState.errors.visibilityRadius && <p className="text-sm text-red-500 mt-1">{formState.errors.visibilityRadius}</p>}
+              {formState.errors.visibilityRadius && <p className="text-sm text-destructive mt-1">{formState.errors.visibilityRadius}</p>}
             </div>
           </>
         );
       case 3:
         return (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Upload Photos</label>
-              <div className="mt-2">
-                <div className="border border-dashed rounded-lg p-8 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => document.getElementById('resource-images')?.click()}
-                      disabled={formState.uploadingImages}
-                    >
-                      {formState.uploadingImages ? 'Uploading...' : 'Select Files'}
-                    </Button>
-                    <input
-                      id="resource-images"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      disabled={formState.uploadingImages}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Drag and drop or click to upload
-                  </p>
-                </div>
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              Add images to help others understand your resource better. You can add multiple images.
+            </p>
+            
+            {formState.postType === 'event' && formState.uploadedImages.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Select a Banner Image</label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Click on an image on the left to set it as the event banner
+                </p>
               </div>
-
-              {formState.uploadedImages.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Uploaded Images</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    {formState.uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <ImageDisplay objectKey={image} className="w-full h-24 object-cover rounded-md" />
-                        <button
-                          type="button"
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                          onClick={() => {
-                            const newImages = [...formState.uploadedImages];
-                            newImages.splice(index, 1);
-                            setFormState(prev => ({ ...prev, uploadedImages: newImages }));
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            )}
+            
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={formState.isSubmitting}
+                className="nl-button-primary bg-button-blue hover:bg-button-blue-hover"
+              >
+                {formState.isSubmitting ? 'Submitting...' : 'Create Post'}
+              </Button>
             </div>
-          </>
+          </div>
         );
       default:
         return null;
@@ -852,33 +1112,33 @@ const NewPostForm: React.FC = () => {
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Event Title</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Event Title</label>
               <Input
                 placeholder="Enter event title"
                 value={eventForm.title}
                 onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
               />
-              {formState.errors.title && <p className="text-sm text-red-500 mt-1">{formState.errors.title}</p>}
+              {formState.errors.title && <p className="text-sm text-destructive mt-1">{formState.errors.title}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Event Description</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Event Description</label>
               <Textarea
                 placeholder="Describe the event in detail"
                 value={eventForm.description}
                 onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
                 className="min-h-32"
               />
-              {formState.errors.description && <p className="text-sm text-red-500 mt-1">{formState.errors.description}</p>}
+              {formState.errors.description && <p className="text-sm text-destructive mt-1">{formState.errors.description}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Event Type</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Event Type</label>
               <Select
                 value={eventForm.eventType}
                 onValueChange={(value) => setEventForm({ ...eventForm, eventType: value as any })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-input">
                   <SelectValue placeholder="Select event type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -890,15 +1150,15 @@ const NewPostForm: React.FC = () => {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              {formState.errors.eventType && <p className="text-sm text-red-500 mt-1">{formState.errors.eventType}</p>}
+              {formState.errors.eventType && <p className="text-sm text-destructive mt-1">{formState.errors.eventType}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Organizer Details</label>
-              <Card className="mt-2">
+              <label className="block text-sm font-medium mb-2 text-foreground">Organizer Details</label>
+              <Card className="mt-2 border-border">
                 <CardContent className="pt-4">
                   <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Name</label>
                     <Input
                       placeholder="Organizer name"
                       value={eventForm.organizerDetails.name}
@@ -911,12 +1171,12 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['organizerDetails.name'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['organizerDetails.name']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['organizerDetails.name']}</p>
                     )}
                   </div>
 
                   <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Contact</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Contact</label>
                     <Input
                       placeholder="Contact number"
                       value={eventForm.organizerDetails.contact}
@@ -929,12 +1189,12 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['organizerDetails.contact'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['organizerDetails.contact']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['organizerDetails.contact']}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Email</label>
                     <Input
                       placeholder="Email address"
                       value={eventForm.organizerDetails.email}
@@ -947,7 +1207,7 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['organizerDetails.email'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['organizerDetails.email']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['organizerDetails.email']}</p>
                     )}
                   </div>
                 </CardContent>
@@ -960,7 +1220,7 @@ const NewPostForm: React.FC = () => {
           <>
             <div className="flex flex-row items-center justify-between mb-4">
               <div className="space-y-0.5">
-                <label className="block text-sm font-medium">Use Profile Location</label>
+                <label className="block text-sm font-medium text-foreground">Use Profile Location</label>
                 <p className="text-sm text-muted-foreground">
                   Toggle to use your profile location or select a custom location
                 </p>
@@ -973,7 +1233,7 @@ const NewPostForm: React.FC = () => {
 
             {!eventForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
                   <MapContainer
                     ref={mapRef}
@@ -989,16 +1249,25 @@ const NewPostForm: React.FC = () => {
                     Selected: {mapData.selectedLocations[0].address}
                   </div>
                 )}
-                {formState.errors.location && <p className="text-sm text-red-500 mt-1">{formState.errors.location}</p>}
+                {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
+              </div>
+            )}
+
+            {eventForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Event Timing</label>
-              <Card className="mt-2">
+              <label className="block text-sm font-medium mb-2 text-foreground">Event Timing</label>
+              <Card className="mt-2 border-border">
                 <CardContent className="pt-4">
                   <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Date</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Date</label>
                     <Input
                       type="date"
                       value={eventForm.timingInfo.date}
@@ -1011,12 +1280,12 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['timingInfo.date'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['timingInfo.date']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['timingInfo.date']}</p>
                     )}
                   </div>
 
                   <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Time</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Time</label>
                     <Input
                       type="time"
                       value={eventForm.timingInfo.time}
@@ -1029,12 +1298,12 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['timingInfo.time'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['timingInfo.time']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['timingInfo.time']}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Duration</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Duration</label>
                     <Input
                       placeholder="e.g., 2 hours, All day"
                       value={eventForm.timingInfo.duration}
@@ -1047,7 +1316,7 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['timingInfo.duration'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['timingInfo.duration']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['timingInfo.duration']}</p>
                     )}
                   </div>
                 </CardContent>
@@ -1056,7 +1325,7 @@ const NewPostForm: React.FC = () => {
 
             <div className="flex flex-row items-center justify-between mb-4">
               <div className="space-y-0.5">
-                <label className="block text-sm font-medium">Registration Required</label>
+                <label className="block text-sm font-medium text-foreground">Registration Required</label>
                 <p className="text-sm text-muted-foreground">
                   Toggle if attendees need to register for the event
                 </p>
@@ -1069,20 +1338,20 @@ const NewPostForm: React.FC = () => {
 
             {eventForm.isRegistrationRequired && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Registration Link</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Registration Link</label>
                 <Input
                   placeholder="Registration URL"
                   value={eventForm.registrationLink || ''}
                   onChange={(e) => setEventForm({ ...eventForm, registrationLink: e.target.value })}
                 />
                 {formState.errors.registrationLink && (
-                  <p className="text-sm text-red-500 mt-1">{formState.errors.registrationLink}</p>
+                  <p className="text-sm text-destructive mt-1">{formState.errors.registrationLink}</p>
                 )}
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Visibility Radius (km)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Visibility Radius (km)</label>
               <Input
                 type="number"
                 placeholder="Enter visibility radius in km"
@@ -1090,100 +1359,48 @@ const NewPostForm: React.FC = () => {
                 onChange={(e) => setEventForm({ ...eventForm, visibilityRadius: e.target.value })}
               />
               {formState.errors.visibilityRadius && (
-                <p className="text-sm text-red-500 mt-1">{formState.errors.visibilityRadius}</p>
+                <p className="text-sm text-destructive mt-1">{formState.errors.visibilityRadius}</p>
               )}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Post Duration (How long this event post will be active)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Post Duration (How long this event post will be active)</label>
               <Input
                 placeholder="e.g., Until event date, 30 days"
                 value={eventForm.duration}
                 onChange={(e) => setEventForm({ ...eventForm, duration: e.target.value })}
               />
-              {formState.errors.duration && <p className="text-sm text-red-500 mt-1">{formState.errors.duration}</p>}
+              {formState.errors.duration && <p className="text-sm text-destructive mt-1">{formState.errors.duration}</p>}
             </div>
           </>
         );
       case 3:
         return (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Upload Event Images</label>
-              <div className="mt-2">
-                <div className="border border-dashed rounded-lg p-8 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => document.getElementById('event-images')?.click()}
-                      disabled={formState.uploadingImages}
-                    >
-                      {formState.uploadingImages ? 'Uploading...' : 'Select Files'}
-                    </Button>
-                    <input
-                      id="event-images"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      disabled={formState.uploadingImages}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Drag and drop or click to upload
-                  </p>
-                </div>
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              Add images to help others understand your event better. You can add multiple images.
+            </p>
+            
+            {formState.postType === 'event' && formState.uploadedImages.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Select a Banner Image</label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Click on an image on the left to set it as the event banner
+                </p>
               </div>
-
-              {formState.uploadedImages.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Uploaded Images</h4>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Select an image to use as the event banner
-                  </p>
-                  <div className="grid grid-cols-3 gap-4">
-                    {formState.uploadedImages.map((image, index) => (
-                      <div
-                        key={index}
-                        className={`relative group cursor-pointer ${eventForm.bannerImageIndex === index
-                            ? 'ring-2 ring-primary ring-offset-2'
-                            : ''
-                          }`}
-                        onClick={() => setEventForm({ ...eventForm, bannerImageIndex: index })}
-                      >
-                        <ImageDisplay objectKey={image} className="w-full h-24 object-cover rounded-md" />
-                        <button
-                          type="button"
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const newImages = [...formState.uploadedImages];
-                            newImages.splice(index, 1);
-                            setFormState(prev => ({ ...prev, uploadedImages: newImages }));
-
-                            // Reset banner image if it was deleted
-                            if (eventForm.bannerImageIndex === index) {
-                              setEventForm({ ...eventForm, bannerImageIndex: undefined });
-                            }
-                          }}
-                        >
-                          ×
-                        </button>
-                        {eventForm.bannerImageIndex === index && (
-                          <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
-                            Banner
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            )}
+            
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={formState.isSubmitting}
+                className="nl-button-primary bg-button-blue hover:bg-button-blue-hover"
+              >
+                {formState.isSubmitting ? 'Submitting...' : 'Create Post'}
+              </Button>
             </div>
-          </>
+          </div>
         );
       default:
         return null;
@@ -1196,32 +1413,32 @@ const NewPostForm: React.FC = () => {
         return (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Promotion Title</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Promotion Title</label>
               <Input
                 placeholder="Enter promotion title"
                 value={promotionForm.title}
                 onChange={(e) => setPromotionForm({ ...promotionForm, title: e.target.value })}
               />
-              {formState.errors.title && <p className="text-sm text-red-500 mt-1">{formState.errors.title}</p>}
+              {formState.errors.title && <p className="text-sm text-destructive mt-1">{formState.errors.title}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Promotion Description</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Promotion Description</label>
               <Textarea
                 placeholder="Describe what you're promoting"
                 value={promotionForm.description}
                 onChange={(e) => setPromotionForm({ ...promotionForm, description: e.target.value })}
                 className="min-h-32"
               />
-              {formState.errors.description && <p className="text-sm text-red-500 mt-1">{formState.errors.description}</p>}
+              {formState.errors.description && <p className="text-sm text-destructive mt-1">{formState.errors.description}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Contact Information</label>
-              <Card className="mt-2">
+              <label className="block text-sm font-medium mb-2 text-foreground">Contact Information</label>
+              <Card className="mt-2 border-border">
                 <CardContent className="pt-4">
                   <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Name</label>
                     <Input
                       placeholder="Contact name"
                       value={promotionForm.contactInfo.name}
@@ -1234,12 +1451,12 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['contactInfo.name'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['contactInfo.name']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['contactInfo.name']}</p>
                     )}
                   </div>
 
                   <div className="mb-2">
-                    <label className="block text-sm font-medium mb-1">Contact Number</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Contact Number</label>
                     <Input
                       placeholder="Phone number"
                       value={promotionForm.contactInfo.contact}
@@ -1252,12 +1469,12 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['contactInfo.contact'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['contactInfo.contact']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['contactInfo.contact']}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <label className="block text-sm font-medium mb-1 text-foreground">Email</label>
                     <Input
                       placeholder="Email address"
                       value={promotionForm.contactInfo.email}
@@ -1270,7 +1487,7 @@ const NewPostForm: React.FC = () => {
                       })}
                     />
                     {formState.errors['contactInfo.email'] && (
-                      <p className="text-sm text-red-500 mt-1">{formState.errors['contactInfo.email']}</p>
+                      <p className="text-sm text-destructive mt-1">{formState.errors['contactInfo.email']}</p>
                     )}
                   </div>
                 </CardContent>
@@ -1283,7 +1500,7 @@ const NewPostForm: React.FC = () => {
           <>
             <div className="flex flex-row items-center justify-between mb-4">
               <div className="space-y-0.5">
-                <label className="block text-sm font-medium">Use Profile Location</label>
+                <label className="block text-sm font-medium text-foreground">Use Profile Location</label>
                 <p className="text-sm text-muted-foreground">
                   Toggle to use your profile location or select a custom location
                 </p>
@@ -1296,7 +1513,7 @@ const NewPostForm: React.FC = () => {
 
             {!promotionForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
                   <MapContainer
                     ref={mapRef}
@@ -1312,12 +1529,21 @@ const NewPostForm: React.FC = () => {
                     Selected: {mapData.selectedLocations[0].address}
                   </div>
                 )}
-                {formState.errors.location && <p className="text-sm text-red-500 mt-1">{formState.errors.location}</p>}
+                {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
+              </div>
+            )}
+
+            {promotionForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Visibility Radius (km)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Visibility Radius (km)</label>
               <Input
                 type="number"
                 placeholder="Enter visibility radius in km"
@@ -1328,12 +1554,12 @@ const NewPostForm: React.FC = () => {
                 Promotions with visibility under 5km are free. Larger radius may incur charges.
               </p>
               {formState.errors.visibilityRadius && (
-                <p className="text-sm text-red-500 mt-1">{formState.errors.visibilityRadius}</p>
+                <p className="text-sm text-destructive mt-1">{formState.errors.visibilityRadius}</p>
               )}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Promotion Duration</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Promotion Duration</label>
               <Input
                 placeholder="e.g., 7 days, 30 days"
                 value={promotionForm.duration}
@@ -1342,116 +1568,28 @@ const NewPostForm: React.FC = () => {
               <p className="text-sm text-muted-foreground mt-1">
                 Longer duration promotions may incur additional charges.
               </p>
-              {formState.errors.duration && <p className="text-sm text-red-500 mt-1">{formState.errors.duration}</p>}
+              {formState.errors.duration && <p className="text-sm text-destructive mt-1">{formState.errors.duration}</p>}
             </div>
           </>
         );
       case 3:
         return (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Upload Promotion Images</label>
-              <div className="mt-2">
-                <div className="border border-dashed rounded-lg p-8 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => document.getElementById('promotion-images')?.click()}
-                      disabled={formState.uploadingImages}
-                    >
-                      {formState.uploadingImages ? 'Uploading...' : 'Select Files'}
-                    </Button>
-                    <input
-                      id="promotion-images"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      disabled={formState.uploadingImages}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Drag and drop or click to upload
-                  </p>
-                </div>
-              </div>
-
-              {formState.uploadedImages.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Uploaded Images</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    {formState.uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <ImageDisplay objectKey={image} className="w-full h-24 object-cover rounded-md" />
-                        <button
-                          type="button"
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                          onClick={() => {
-                            const newImages = [...formState.uploadedImages];
-                            newImages.splice(index, 1);
-                            setFormState(prev => ({ ...prev, uploadedImages: newImages }));
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              Add images to help others understand your promotion better. You can add multiple images.
+            </p>
+            
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={formState.isSubmitting}
+                className="nl-button-primary bg-button-blue hover:bg-button-blue-hover"
+              >
+                {formState.isSubmitting ? 'Submitting...' : 'Create Post'}
+              </Button>
             </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Upload Promotional Video (Optional)</label>
-              <div className="mt-2">
-                <div className="border border-dashed rounded-lg p-8 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => document.getElementById('promotion-video')?.click()}
-                      disabled={formState.uploadingImages}
-                    >
-                      {formState.uploadingImages ? 'Uploading...' : 'Select Video'}
-                    </Button>
-                    <input
-                      id="promotion-video"
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      onChange={(e) => e.target.files && handleVideoUpload(e.target.files[0])}
-                      disabled={formState.uploadingImages}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Upload a single video file (max 50MB)
-                  </p>
-                </div>
-              </div>
-
-              {formState.uploadedVideo && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Uploaded Video</h4>
-                  <div className="relative group p-4 border rounded-md">
-                    <p className="text-sm">{formState.uploadedVideo.split('/').pop()}</p>
-                    <button
-                      type="button"
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                      onClick={() => {
-                        setFormState(prev => ({ ...prev, uploadedVideo: null }));
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </>
+          </div>
         );
       default:
         return null;
@@ -1463,35 +1601,45 @@ const NewPostForm: React.FC = () => {
       case 1:
         return (
           <>
+            {parentUpdateId && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md">
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  {threadDepth > 0 
+                    ? `This is a reply to another update (Thread depth: ${threadDepth})` 
+                    : "You're creating a new update"}
+                </p>
+              </div>
+            )}
+
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Update Title</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Update Title</label>
               <Input
-                placeholder="Enter update title"
+                placeholder={parentUpdateId ? "Enter reply title" : "Enter update title"}
                 value={updateForm.title}
                 onChange={(e) => setUpdateForm({ ...updateForm, title: e.target.value })}
               />
-              {formState.errors.title && <p className="text-sm text-red-500 mt-1">{formState.errors.title}</p>}
+              {formState.errors.title && <p className="text-sm text-destructive mt-1">{formState.errors.title}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Update Description</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Update Description</label>
               <Textarea
                 placeholder="Describe your update in detail"
                 value={updateForm.description}
                 onChange={(e) => setUpdateForm({ ...updateForm, description: e.target.value })}
                 className="min-h-32"
               />
-              {formState.errors.description && <p className="text-sm text-red-500 mt-1">{formState.errors.description}</p>}
+              {formState.errors.description && <p className="text-sm text-destructive mt-1">{formState.errors.description}</p>}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Update Date</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Update Date</label>
               <Input
                 type="date"
                 value={updateForm.date}
                 onChange={(e) => setUpdateForm({ ...updateForm, date: e.target.value })}
               />
-              {formState.errors.date && <p className="text-sm text-red-500 mt-1">{formState.errors.date}</p>}
+              {formState.errors.date && <p className="text-sm text-destructive mt-1">{formState.errors.date}</p>}
             </div>
           </>
         );
@@ -1500,7 +1648,7 @@ const NewPostForm: React.FC = () => {
           <>
             <div className="flex flex-row items-center justify-between mb-4">
               <div className="space-y-0.5">
-                <label className="block text-sm font-medium">Use Profile Location</label>
+                <label className="block text-sm font-medium text-foreground">Use Profile Location</label>
                 <p className="text-sm text-muted-foreground">
                   Toggle to use your profile location or select a custom location
                 </p>
@@ -1513,7 +1661,7 @@ const NewPostForm: React.FC = () => {
 
             {!updateForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
                   <MapContainer
                     ref={mapRef}
@@ -1529,12 +1677,21 @@ const NewPostForm: React.FC = () => {
                     Selected: {mapData.selectedLocations[0].address}
                   </div>
                 )}
-                {formState.errors.location && <p className="text-sm text-red-500 mt-1">{formState.errors.location}</p>}
+                {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
+              </div>
+            )}
+
+            {updateForm.useProfileLocation && userProfile?.address && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2 text-foreground">Your Profile Location</label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {userProfile.address}
+                </div>
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Visibility Radius (km)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Visibility Radius (km)</label>
               <Input
                 type="number"
                 placeholder="Enter visibility radius in km"
@@ -1542,139 +1699,264 @@ const NewPostForm: React.FC = () => {
                 onChange={(e) => setUpdateForm({ ...updateForm, visibilityRadius: e.target.value })}
               />
               {formState.errors.visibilityRadius && (
-                <p className="text-sm text-red-500 mt-1">{formState.errors.visibilityRadius}</p>
+                <p className="text-sm text-destructive mt-1">{formState.errors.visibilityRadius}</p>
               )}
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">Update Duration (How long this update will be active)</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">Update Duration (How long this update will be active)</label>
               <Input
                 placeholder="e.g., 7 days, 30 days"
                 value={updateForm.duration}
                 onChange={(e) => setUpdateForm({ ...updateForm, duration: e.target.value })}
               />
-              {formState.errors.duration && <p className="text-sm text-red-500 mt-1">{formState.errors.duration}</p>}
+              {formState.errors.duration && <p className="text-sm text-destructive mt-1">{formState.errors.duration}</p>}
             </div>
           </>
         );
       case 3:
         return (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-medium mb-2">Upload Update Images</label>
-              <div className="mt-2">
-                <div className="border border-dashed rounded-lg p-8 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => document.getElementById('update-images')?.click()}
-                      disabled={formState.uploadingImages}
-                    >
-                      {formState.uploadingImages ? 'Uploading...' : 'Select Files'}
-                    </Button>
-                    <input
-                      id="update-images"
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e.target.files)}
-                      disabled={formState.uploadingImages}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Drag and drop or click to upload
-                  </p>
-                </div>
-              </div>
-
-              {formState.uploadedImages.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-2">Uploaded Images</h4>
-                  <div className="grid grid-cols-3 gap-4">
-                    {formState.uploadedImages.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <ImageDisplay objectKey={image} className="w-full h-24 object-cover rounded-md" />
-                        <button
-                          type="button"
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                          onClick={() => {
-                            const newImages = [...formState.uploadedImages];
-                            newImages.splice(index, 1);
-                            setFormState(prev => ({ ...prev, uploadedImages: newImages }));
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          <div className="space-y-4">
+            <p className="text-sm text-foreground">
+              Add images to help others understand your update better. You can add multiple images.
+            </p>
+            
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={formState.isSubmitting}
+                className="nl-button-primary bg-button-blue hover:bg-button-blue-hover"
+              >
+                {formState.isSubmitting ? 'Submitting...' : 'Create Post'}
+              </Button>
             </div>
-          </>
+          </div>
         );
       default:
         return null;
     }
   };
 
-  return (
-    <div className="w-full max-w-3xl mx-auto mt-8 px-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="capitalize">
-            {formState.postType} Post
-          </CardTitle>
-          <CardDescription>
-            Create a new {formState.postType} post to share with your community
-          </CardDescription>
-          <Progress
-            value={(formState.currentStep / formState.totalSteps) * 100}
-            className="h-1 mt-2"
-          />
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {formState.error && (
-            <div className="bg-red-50 p-4 rounded-md flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-              <p className="text-red-500 text-sm">{formState.error}</p>
+  // Success animation component
+  const SuccessAnimation = () => {
+    return (
+      <Card className="w-full border-border">
+        <CardContent className="pt-6 pb-6 flex flex-col items-center justify-center">
+          <div className="success-animation">
+            <div className="success-circle">
+              <Check className="success-check" strokeWidth={3} />
             </div>
-          )}
-
-          {renderPostTypeForm()}
+          </div>
+          <h2 className="text-xl font-medium mt-6 text-foreground transition-opacity animate-fadeIn">
+            Post Created Successfully!
+          </h2>
+          <p className="text-muted-foreground mt-2 text-center animate-fadeIn">
+            Your post has been published and will be visible to your community
+          </p>
         </CardContent>
-
-        <CardFooter className="flex justify-between pt-6 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={prevStep}
-            disabled={formState.currentStep === 1}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Previous
-          </Button>
-
-          {formState.currentStep < formState.totalSteps ? (
-            <Button type="button" onClick={nextStep}>
-              Next
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={formState.isSubmitting}
-            >
-              {formState.isSubmitting ? 'Submitting...' : 'Create Post'}
-            </Button>
-          )}
-        </CardFooter>
       </Card>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+        {!formState.postType ? (
+          <Card className="w-full border-border">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-foreground">Create a New Post</CardTitle>
+                <CardDescription className="text-muted-foreground">Select the type of post you want to create</CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full" 
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button
+                  onClick={() => setFormState(prev => ({ ...prev, postType: 'resource' }))}
+                  className="h-24 flex flex-col gap-2 bg-background border-border hover:bg-accent text-foreground"
+                  variant="outline"
+                >
+                  <span className="text-lg font-medium">Resource</span>
+                  <span className="text-sm text-muted-foreground">Offer or request resources</span>
+                </Button>
+                <Button
+                  onClick={() => setFormState(prev => ({ ...prev, postType: 'event' }))}
+                  className="h-24 flex flex-col gap-2 bg-background border-border hover:bg-accent text-foreground"
+                  variant="outline"
+                >
+                  <span className="text-lg font-medium">Event</span>
+                  <span className="text-sm text-muted-foreground">Create a community event</span>
+                </Button>
+                <Button
+                  onClick={() => setFormState(prev => ({ ...prev, postType: 'promotion' }))}
+                  className="h-24 flex flex-col gap-2 bg-background border-border hover:bg-accent text-foreground"
+                  variant="outline"
+                >
+                  <span className="text-lg font-medium">Promotion</span>
+                  <span className="text-sm text-muted-foreground">Promote your business or service</span>
+                </Button>
+                <Button
+                  onClick={() => setFormState(prev => ({ ...prev, postType: 'update' }))}
+                  className="h-24 flex flex-col gap-2 bg-background border-border hover:bg-accent text-foreground"
+                  variant="outline"
+                >
+                  <span className="text-lg font-medium">Update</span>
+                  <span className="text-sm text-muted-foreground">Share news or updates</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : formState.isSuccess ? (
+          <SuccessAnimation />
+        ) : (
+          <Card className="border-border bg-white dark:bg-gray-800 flex-1">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="capitalize text-foreground">
+                  {formState.postType} Post
+                </CardTitle>
+                <CardDescription className="text-muted-foreground">
+                  Create a new {formState.postType} post to share with your community
+                </CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full" 
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            
+            <div>
+              <Progress
+                value={(formState.currentStep / formState.totalSteps) * 100}
+                className="h-1 bg-accent"
+              />
+            </div>
+
+            <CardContent className="pt-6">
+              {formState.error && (
+                <div className="bg-emergency-bg-light dark:bg-emergency-bg-dark p-4 rounded-md mb-4 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-emergency-text-light dark:text-emergency-text-dark mt-0.5" />
+                  <p className="text-emergency-text-light dark:text-emergency-text-dark text-sm">{formState.error}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-1">
+                  {renderImageUploadSection()}
+                </div>
+                
+                <div className="md:col-span-2">
+                  {renderPostTypeForm()}
+                </div>
+              </div>
+            </CardContent>
+
+            <CardFooter className="flex justify-between pt-6 border-t border-border">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                disabled={formState.currentStep === 1}
+                className="border-border text-foreground hover:bg-accent"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Previous
+              </Button>
+
+              {formState.currentStep < formState.totalSteps ? (
+                <Button 
+                  type="button" 
+                  onClick={nextStep}
+                  className="nl-button-primary bg-button-blue hover:bg-button-blue-hover"
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={formState.isSubmitting}
+                  className="nl-button-primary bg-button-blue hover:bg-button-blue-hover"
+                >
+                  {formState.isSubmitting ? 'Submitting...' : 'Create Post'}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        )}
+      </div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .success-animation {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 1rem;
+        }
+        
+        .success-circle {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background-color: #4CAF50;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transform: scale(0);
+          animation: scaleIn 0.5s ease-out forwards, pulse 2s infinite 0.5s;
+        }
+        
+        .success-check {
+          stroke: white;
+          stroke-width: 3;
+          width: 50px;
+          height: 50px;
+          opacity: 0;
+          transform: scale(0.5);
+          animation: checkIn 0.5s ease-out 0.3s forwards;
+        }
+        
+        @keyframes scaleIn {
+          0% { transform: scale(0); }
+          70% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+        
+        @keyframes checkIn {
+          0% { opacity: 0; transform: scale(0.5); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.8s ease-out forwards;
+          animation-delay: 0.3s;
+          opacity: 0;
+        }
+      `}} />
     </div>
   );
 };

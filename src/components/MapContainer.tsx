@@ -9,8 +9,11 @@ interface MapContainerProps {
   showCurrentLocation?: boolean;
   isSelectable?: boolean;
   maximumSelection?: number;
+  onPermissionDenied?: () => void;
 }
 
+// Kolkata coordinates as fallback
+const KOLKATA_COORDINATES: [number, number] = [22.5726, 88.3639];
 const MAP_API_KEY = import.meta.env.VITE_OLA_MAP_APIKEY as string;
 
 const olaMaps = new OlaMaps({
@@ -35,6 +38,7 @@ export const useOlaMaps = () => {
     selectedLocations: (loc & {
       address: string;
     })[];
+    permissionStatus?: "granted" | "denied" | "prompt";
   } | null>(null);
 
   const getGoogleMapDirectionUrls = ({
@@ -88,12 +92,13 @@ export const useOlaMaps = () => {
 
 const MapContainer = ({
   showCurrentLocation,
-  center,
+  center = KOLKATA_COORDINATES, // Default to Kolkata
   zoom = 15,
   scrollWheelZoom = true,
   ref = () => {},
   isSelectable = false,
   maximumSelection = 1,
+  onPermissionDenied,
 }: MapContainerProps) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [currentLocation, setCurrentLocation] = useState<{
@@ -110,12 +115,38 @@ const MapContainer = ({
   >([]);
 
   const [currentAddress, setCurrentAddress] = useState<string>("");
+  const [permissionStatus, setPermissionStatus] = useState<
+    "granted" | "denied" | "prompt" | "checking"
+  >("checking");
+  const [showPermissionBanner, setShowPermissionBanner] = useState<boolean>(
+    false
+  );
+  const [makers, setMarkers] = useState<any[]>([]);
 
   useEffect(() => {
-    ref({ selectedLocations, currentLocation, currentAddress });
-  }, [selectedLocations, currentLocation]);
+    // Check permission status on component mount
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: "geolocation" }).then((result) => {
+        setPermissionStatus(result.state as "granted" | "denied" | "prompt");
+        setShowPermissionBanner(result.state === "denied");
 
-  const [makers, setMarkers] = useState<any[]>([]);
+        // Listen for changes to permission status
+        result.onchange = () => {
+          setPermissionStatus(result.state as "granted" | "denied" | "prompt");
+          setShowPermissionBanner(result.state === "denied");
+        };
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    ref({
+      selectedLocations,
+      currentLocation,
+      currentAddress,
+      permissionStatus,
+    });
+  }, [selectedLocations, currentLocation, currentAddress, permissionStatus]);
 
   const getAddressUrl = (lat: number, lng: number) =>
     `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat}%2C${lng}&api_key=${MAP_API_KEY}`;
@@ -128,6 +159,35 @@ const MapContainer = ({
     return address;
   };
 
+  const requestLocationPermission = () => {
+    setShowPermissionBanner(false);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setPermissionStatus("granted");
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ latitude, longitude });
+
+          // If map is already initialized, center it to the user's location
+          if (window.map) {
+            window.map.flyTo({
+              center: [longitude, latitude],
+              zoom: 15,
+              essential: true,
+            });
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setPermissionStatus("denied");
+          setShowPermissionBanner(true);
+          if (onPermissionDenied) onPermissionDenied();
+        }
+      );
+    }
+  };
+
   useEffect(() => {
     if (mapContainerRef.current) {
       let myMap = olaMaps.init({
@@ -136,20 +196,27 @@ const MapContainer = ({
         container: mapContainerRef.current || "map",
         zoom,
         scrollWheelZoom,
-        center,
+        center: center
+          ? [center[1], center[0]]
+          : [KOLKATA_COORDINATES[1], KOLKATA_COORDINATES[0]],
       });
+
+      // Store map instance globally for access in requestLocationPermission
+      window.map = myMap;
 
       myMap.addControl(geolocate);
 
       myMap.on("load", () => {
-        if (showCurrentLocation) {
+        if (showCurrentLocation && permissionStatus === "granted") {
           geolocate.trigger();
         }
 
-        olaMaps
-          .addMarker({ offset: [0, -5], anchor: "bottom" })
-          .setLngLat(center)
-          .addTo(myMap);
+        if (center) {
+          olaMaps
+            .addMarker({ offset: [0, -5], anchor: "bottom" })
+            .setLngLat([center[1], center[0]])
+            .addTo(myMap);
+        }
       });
 
       if (showCurrentLocation) {
@@ -163,6 +230,15 @@ const MapContainer = ({
             .addMarker({ offset: [0, -5], anchor: "bottom" })
             .setLngLat([longitude, latitude])
             .addTo(myMap);
+        });
+
+        // Handle error events
+        geolocate.on("error", (e: any) => {
+          console.log("Geolocation error:", e);
+          
+          setPermissionStatus("denied");
+          setShowPermissionBanner(true);
+          if (onPermissionDenied) onPermissionDenied();
         });
       }
 
@@ -204,14 +280,30 @@ const MapContainer = ({
           mapContainerRef.current.innerHTML = "";
         }
         if (!!myMap) myMap?.remove();
+        // Clean up global reference
+        if (window.map) {
+          window.map = undefined;
+        }
       };
     }
-  }, [mapContainerRef, showCurrentLocation, center, zoom]);
+  }, [mapContainerRef, showCurrentLocation, center, zoom, permissionStatus]);
 
   return (
     <div className="w-full h-full relative">
+      {showPermissionBanner && (
+        <div className="absolute top-0 left-0 right-0 z-50 bg-yellow-500 text-white p-2 text-sm text-center">
+          Location access is denied.
+          <button
+            onClick={requestLocationPermission}
+            className="ml-2 underline font-medium hover:text-yellow-100"
+          >
+            Grant access
+          </button>
+        </div>
+      )}
+
       {selectedLocations.length + 1 > maximumSelection && (
-        <div className="absolute h-full w-full bg-black/20 flex justify-center items-center z-50">
+        <div className="absolute h-full w-full bg-black/20 flex justify-center items-center z-40">
           <button
             onClick={() => {
               setSelectedLocations([]);
@@ -219,8 +311,9 @@ const MapContainer = ({
                 marker.remove();
               });
             }}
+            className="px-4 py-2 bg-white/90 hover:bg-white rounded-md shadow-lg text-gray-800"
           >
-            Click here reset pointer
+            Reset selection
           </button>
         </div>
       )}
@@ -229,33 +322,11 @@ const MapContainer = ({
   );
 };
 
+// Add type definition for the window object to include map
+declare global {
+  interface Window {
+    map?: any;
+  }
+}
+
 export default MapContainer;
-
-// function App() {
-//   const { ref, data, getDistanceAndDuration } = useOlaMaps();
-
-//   if (data && (data?.selectedLocations.length || 0) > 0) {
-//     console.log("selectedLocations", data.selectedLocations);
-//     console.log("currentLocation", data.currentLocation);
-
-//     getDistanceAndDuration({
-//       origin: data.currentLocation,
-//       destination: data.selectedLocations[0],
-//       mode: "driving",
-//     }).then(console.log);
-//   }
-
-//   return (
-//     <div className="w-[400px] aspect-square">
-//       <MapContainer
-//         // center={[51.505, -0.09]}
-//         ref={ref}
-//         showCurrentLocation={true}
-//         zoom={13}
-//         scrollWheelZoom={false}
-//         isSelectable={true}
-//         maximumSelection={3}
-//       />
-//     </div>
-//   );
-// }

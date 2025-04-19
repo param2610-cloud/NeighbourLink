@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as v1 from 'firebase-functions/v1'; // Explicitly import v1 namespace
 import * as admin from 'firebase-admin';
+import { onNewMessage } from './messagingFunctions';
 
 admin.initializeApp();
 
@@ -194,3 +195,101 @@ export const onNewChatMessage = v1.firestore
       console.error('Error sending chat notification:', error);
     }
   });
+
+// Simple message notification handler
+export const onNewSimpleMessage = functions.firestore
+  .document('simple_messages/{messageId}')
+  .onCreate(async (snapshot, context) => {
+    const messageData = snapshot.data();
+    const messageId = context.params.messageId;
+    
+    if (!messageData) return;
+    
+    try {
+      // Get conversation to find participants
+      const conversationRef = admin.firestore().collection('simple_conversations').doc(messageData.conversationId);
+      const conversationSnapshot = await conversationRef.get();
+      
+      if (!conversationSnapshot.exists) {
+        console.log(`Conversation ${messageData.conversationId} does not exist`);
+        return;
+      }
+      
+      const conversationData = conversationSnapshot.data();
+      if (!conversationData) return;
+      
+      // Find recipient (everyone except sender)
+      const recipientIds = conversationData.participants.filter(
+        (participantId: string) => participantId !== messageData.senderId
+      );
+      
+      if (recipientIds.length === 0) {
+        console.log('No recipients found');
+        return;
+      }
+      
+      // Get sender information
+      const senderRef = admin.firestore().collection('Users').doc(messageData.senderId);
+      const senderSnapshot = await senderRef.get();
+      const senderData = senderSnapshot.exists ? senderSnapshot.data() : null;
+      
+      const senderName = senderData?.displayName || 
+                         `${senderData?.firstName || ''} ${senderData?.lastName || ''}`.trim() || 
+                         'User';
+      
+      // Create message preview
+      let messagePreview = '';
+      if (messageData.text) {
+        messagePreview = messageData.text.length > 50 ? 
+          messageData.text.substring(0, 47) + '...' : 
+          messageData.text;
+      } else if (messageData.mediaUrls && messageData.mediaUrls.length > 0) {
+        if (messageData.mediaTypes && messageData.mediaTypes.length > 0) {
+          const mediaType = messageData.mediaTypes[0];
+          messagePreview = `Sent a ${mediaType}`;
+        } else {
+          messagePreview = 'Sent an attachment';
+        }
+      }
+      
+      // Send notification to each recipient
+      for (const recipientId of recipientIds) {
+        // Get recipient's FCM token
+        const recipientRef = admin.firestore().collection('Users').doc(recipientId);
+        const recipientSnapshot = await recipientRef.get();
+        
+        if (!recipientSnapshot.exists) {
+          console.log(`Recipient ${recipientId} not found`);
+          continue;
+        }
+        
+        const recipientData = recipientSnapshot.data();
+        if (!recipientData || !recipientData.fcmToken) {
+          console.log(`No FCM token for recipient ${recipientId}`);
+          continue;
+        }
+        
+        // Send the notification
+        await admin.messaging().send({
+          token: recipientData.fcmToken,
+          notification: {
+            title: `Message from ${senderName}`,
+            body: messagePreview || 'New message',
+          },
+          data: {
+            type: 'simple_message',
+            conversationId: messageData.conversationId,
+            senderId: messageData.senderId,
+            messageId: messageId
+          }
+        });
+        
+        console.log(`Notification sent to recipient ${recipientId}`);
+      }
+    } catch (error) {
+      console.error('Error sending message notification:', error);
+    }
+  });
+
+// Export messaging functions
+export { onNewMessage };

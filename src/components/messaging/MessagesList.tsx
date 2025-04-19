@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase'; // Import db directly
 import { Conversation, getUserConversations } from '../../services/messagingService';
 import { formatDistanceToNow } from 'date-fns';
-import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { FaArrowLeft } from 'react-icons/fa';
 import Bottombar from '../authPage/structures/Bottombar';
+import { Skeleton } from '../ui/skeleton';
 
 const MessagesList = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -70,13 +70,28 @@ const MessagesList = () => {
   const getConversationTitle = (conversation: Conversation) => {
     const otherUser = getOtherParticipant(conversation);
 
+    // If there's a post title, use it
     if (conversation.postTitle) {
       return `Re: ${conversation.postTitle}`;
     }
 
-    return otherUser ?
-      (otherUser.displayName || otherUser.firstName || 'Unknown User') :
-      'Conversation';
+    // For direct conversations, show the other person's name
+    if (otherUser) {
+      // Check different possible name fields
+      if (otherUser.displayName && otherUser.displayName.trim()) {
+        return otherUser.displayName;
+      }
+      
+      if (otherUser.firstName || otherUser.lastName) {
+        return `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim();
+      }
+      
+      if (otherUser.email) {
+        return otherUser.email.split('@')[0]; // Use email prefix
+      }
+    }
+    
+    return 'Conversation'; // Default fallback
   };
 
   const formatTimestamp = (timestamp: any) => {
@@ -97,8 +112,23 @@ const MessagesList = () => {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <AiOutlineLoading3Quarters size={40} className="animate-spin text-indigo-600" />
+      <div className="flex flex-col h-screen">
+        <div className="p-4 border-b ">
+          <div className="h-8 w-48 mb-4">
+        <Skeleton className="h-full w-full" />
+          </div>
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+          </div>
+        </div>
+          ))}
+        </div>
       </div>
     );
   }

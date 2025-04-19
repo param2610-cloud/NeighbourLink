@@ -7,11 +7,8 @@ import GuestLayout from "@/layouts/GuestLayout";
 import GuestRouter from "./GuestRouter";
 import { ToastContainer } from "react-toastify";
 import { auth } from "@/firebase";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 
-// const LoadingSpinner = () => (
-    
-// );
 
 function PlayGround() {
     const [loading, setLoading] = useState(true);
@@ -26,16 +23,12 @@ function PlayGround() {
     }, []);
 
     if (loading) {
-        return <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-        <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
-    </div>;
+        return <NeighbourLinkLoader/>;
     }
 
     return (
         <Router>
-            <Suspense fallback={<div className="fixed top-0 left-0 z-50 flex items-center justify-center w-full h-full bg-white bg-opacity-50">
-        <AiOutlineLoading3Quarters className="animate-spin text-4xl text-blue-600" />
-    </div>}>
+            <Suspense fallback={<NeighbourLinkLoader />}>
                 {user ? (
                     <AuthLayout>
                         <AuthRouter />

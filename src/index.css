@@ -6,11 +6,12 @@
 
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Base Theme */
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -30,11 +31,15 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+
+  /* Chart Colors */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Sidebar */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -43,6 +48,120 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* NeighbourLink Theme Colors */
+  --blue-primary: #1e40af; /* text-blue-800 */
+  --violet-primary: #7e22ce; /* text-violet-800 */
+  --indigo-light: #eef2ff; /* bg-indigo-50 */
+  --indigo-dark: #312e81; /* dark:bg-indigo-900 */
+  --indigo-text: #4f46e5; /* text-indigo-700 */
+  --indigo-text-dark: #a5b4fc; /* dark:text-indigo-300 */
+
+  /* Status Colors */
+  --red-bg-light: #fee2e2; /* bg-red-100 */
+  --red-bg-dark: #7f1d1d; /* dark:bg-red-900 */
+  --red-text: #dc2626; /* text-red-600 */
+  --red-text-dark: #f87171; /* dark:text-red-400 */
+
+  --yellow-text: #d97706; /* text-yellow-600 */
+  --yellow-bg-light: #fef3c7; /* bg-yellow-100 */
+  --yellow-bg-dark: #78350f; /* dark:bg-yellow-900 */
+
+  --green-bg-light: #d1fae5; /* bg-green-100 */
+  --green-bg-dark: #065f46; /* dark:bg-green-800 */
+  --green-text: #047857; /* text-green-800 */
+  --green-text-dark: #6ee7b7; /* dark:text-green-200 */
+
+  --blue-bg-light: #dbeafe; /* bg-blue-100 */
+  --blue-bg-dark: #1e3a8a; /* dark:bg-blue-800 */
+  --blue-text: #1e40af; /* text-blue-800 */
+  --blue-text-dark: #bfdbfe; /* dark:text-blue-200 */
+
+  --purple-bg-light: #f3e8ff; /* bg-purple-100 */
+  --purple-bg-dark: #581c87; /* dark:bg-purple-800 */
+  --purple-text: #7e22ce; /* text-purple-800 */
+  --purple-text-dark: #e9d5ff; /* dark:text-purple-300 */
+
+  /* Gradient Colors */
+  --blue-gradient-from: #93c5fd; /* from-blue-200 */
+  --teal-gradient-to: #99f6e4; /* to-teal-200 */
+  --blue-gradient-dark-from: #2563eb; /* from-blue-600 */
+  --teal-gradient-dark-to: #14b8a6; /* to-teal-500 */
+
+  /* Button Colors */
+  --button-blue: #2563eb; /* bg-blue-600 */
+  --button-blue-hover: #1d4ed8; /* hover:bg-blue-700 */
+
+  /* Home Component Specific Colors */
+  /* Text Colors */
+  --text-gray-700: #374151;
+  --text-gray-800: #1f2937;
+  --text-gray-900: #111827;
+
+  /* Background Colors */
+  --bg-white: #ffffff;
+  --bg-gray-50: #f9fafb;
+  --bg-gray-100: #f3f4f6;
+  --bg-gray-800: #1f2937;
+  --bg-gray-900: #111827;
+
+  /* Category Icon Colors */
+  --icon-red-500: #ef4444;
+  --icon-yellow-600: #d97706;
+  --icon-blue-600: #2563eb;
+  --icon-green-600: #059669;
+  --icon-orange-500: #f97316;
+  --icon-gray-600: #4b5563;
+
+  /* Post Type Colors */
+  /* Need */
+  --need-bg-light: #dbeafe; /* bg-blue-100 */
+  --need-text-light: #1e40af; /* text-blue-800 */
+  --need-bg-dark: #1e3a8a; /* dark:bg-blue-900 */
+  --need-text-dark: #bfdbfe; /* dark:text-blue-200 */
+
+  /* Offer */
+  --offer-bg-light: #d1fae5; /* bg-green-100 */
+  --offer-text-light: #047857; /* text-green-800 */
+  --offer-bg-dark: #065f46; /* dark:bg-green-900 */
+  --offer-text-dark: #6ee7b7; /* dark:text-green-200 */
+
+  /* Urgency Colors */
+  /* Urgent */
+  --urgent-bg-light: #fef3c7; /* bg-yellow-100 */
+  --urgent-text-light: #d97706; /* text-yellow-800 */
+  --urgent-bg-dark: #78350f; /* dark:bg-yellow-900 */
+  --urgent-text-dark: #fcd34d; /* dark:text-yellow-200 */
+
+  /* Emergency */
+  --emergency-bg-light: #fee2e2; /* bg-red-100 */
+  --emergency-text-light: #b91c1c; /* text-red-800 */
+  --emergency-bg-dark: #7f1d1d; /* dark:bg-red-900 */
+  --emergency-text-dark: #f87171; /* dark:text-red-200 */
+
+  /* App Brand Colors */
+  --brand-blue: #1e40af; /* text-blue-800 */
+  --brand-violet: #7e22ce; /* text-violet-800 */
+
+  /* Gradient Colors */
+  --gradient-from-blue: #93c5fd; /* from-blue-200 */
+  --gradient-to-teal: #99f6e4; /* to-teal-200 */
+  --gradient-from-blue-dark: #2563eb; /* from-blue-600 */
+  --gradient-to-teal-dark: #14b8a6; /* to-teal-500 */
+
+  /* Notification area colors */
+  --bg-indigo-50: #eef2ff;
+  --text-indigo-700: #4338ca;
+
+  /* Action button colors */
+  --button-blue-600: #2563eb;
+  --button-blue-700: #1d4ed8;
+
+  /* Floating menu colors */
+  --floating-menu-from: #2563eb; /* from-blue-600 */
+  --floating-menu-to: #14b8a6; /* to-teal-500 */
+  --floating-hover-from: #eff6ff; /* from-blue-50 */
+  --floating-hover-to: #ccfbf1; /* to-teal-50 */
 }
 
 .dark {
@@ -77,6 +196,49 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* NeighbourLink Theme Colors - Dark Mode */
+  --blue-primary: #93c5fd; /* dark:text-blue-700 */
+  --violet-primary: #c4b5fd; /* dark:text-violet-700 */
+  --indigo-light: #312e81; /* dark:bg-indigo-900 */
+  --indigo-text: #a5b4fc; /* dark:text-indigo-300 */
+
+  /* Status Colors - Dark Mode Overrides */
+  --red-bg-light: #7f1d1d; /* dark:bg-red-900 */
+  --red-text: #f87171; /* dark:text-red-400 */
+
+  --yellow-bg-light: #78350f; /* dark:bg-yellow-900 */
+  --yellow-text: #fcd34d; /* dark:text-yellow-200 */
+
+  --green-bg-light: #065f46; /* dark:bg-green-800 */
+  --green-text: #6ee7b7; /* dark:text-green-200 */
+
+  --blue-bg-light: #1e3a8a; /* dark:bg-blue-800 */
+  --blue-text: #bfdbfe; /* dark:text-blue-200 */
+
+  --purple-bg-light: #581c87; /* dark:bg-purple-800 */
+  --purple-text: #e9d5ff; /* dark:text-purple-300 */
+
+  /* Home Component Specific Colors - Dark Mode */
+  --text-gray-700: #d1d5db; /* dark text-gray equivalent */
+  --text-gray-800: #e5e7eb; /* dark text-gray equivalent */
+  --text-gray-900: #f3f4f6; /* dark text-gray equivalent */
+
+  --bg-white: #1f2937; /* dark bg equivalent */
+  --bg-gray-50: #111827; /* dark bg-gray equivalent */
+  --bg-gray-100: #1f2937; /* dark bg-gray equivalent */
+
+  /* App Brand Colors - Dark Mode */
+  --brand-blue: #93c5fd; /* dark:text-blue-300 */
+  --brand-violet: #c4b5fd; /* dark:text-violet-300 */
+
+  /* Notification area colors - Dark Mode */
+  --bg-indigo-50: #312e81; /* dark:bg-indigo-900 */
+  --text-indigo-700: #a5b4fc; /* dark:text-indigo-300 */
+
+  /* Action button colors - Dark Mode */
+  --button-blue-600: #3b82f6; /* dark mode equivalent */
+  --button-blue-700: #2563eb; /* dark mode equivalent */
 }
 
 @theme inline {
@@ -115,6 +277,27 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* NeighbourLink Theme Extensions */
+  --color-blue-primary: var(--blue-primary);
+  --color-violet-primary: var(--violet-primary);
+  --color-indigo-light: var(--indigo-light);
+  --color-indigo-dark: var(--indigo-dark);
+  --color-indigo-text: var(--indigo-text);
+
+  /* Home Component Extensions */
+  --color-need-bg: var(--need-bg-light);
+  --color-need-text: var(--need-text-light);
+  --color-offer-bg: var(--offer-bg-light);
+  --color-offer-text: var(--offer-text-light);
+  --color-urgent-bg: var(--urgent-bg-light);
+  --color-urgent-text: var(--urgent-text-light);
+  --color-emergency-bg: var(--emergency-bg-light);
+  --color-emergency-text: var(--emergency-text-light);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-violet: var(--brand-violet);
+  --color-floating-menu-gradient-from: var(--floating-menu-from);
+  --color-floating-menu-gradient-to: var(--floating-menu-to);
 }
 
 @layer base {
@@ -124,4 +307,144 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+body {
+  top: 0 !important;
+}
+
+*[id=":2.container"] {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-te-gadget-icon {
+  display: none;
+}
+
+/* Color Change Here */
+.goog-te-gadget-simple {
+  background-color: #ecebf0 !important;
+  border: 0 !important;
+  font-size: 10pt;
+  font-weight: 800;
+  display: inline-block;
+  padding: 10px 10px !important;
+  cursor: pointer;
+  zoom: 1;
+  width: 100%;
+  background-color: #8678ff !important;
+  color: #262626;
+  border-radius: 7px;
+}
+
+.goog-te-gadget-simple a {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.goog-te-gadget-simple span {
+  color: #3e3065 !important;
+}
+
+/* Custom utility classes for NeighbourLink */
+.nl-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nl-button-primary {
+  background-color: var(--button-blue);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  transition: background-color 0.2s;
+}
+
+.nl-button-primary:hover {
+  background-color: var(--button-blue-hover);
+}
+
+.nl-gradient-light {
+  background: linear-gradient(
+    to right,
+    var(--blue-gradient-from),
+    var(--teal-gradient-to)
+  );
+}
+
+.nl-gradient-dark {
+  background: linear-gradient(
+    to right,
+    var(--blue-gradient-dark-from),
+    var(--teal-gradient-dark-to)
+  );
+}
+
+/* Custom utility classes for Home component */
+.nl-post-need {
+  background-color: var(--need-bg-light);
+  color: var(--need-text-light);
+}
+
+.nl-post-offer {
+  background-color: var(--offer-bg-light);
+  color: var(--offer-text-light);
+}
+
+.nl-urgent {
+  background-color: var(--urgent-bg-light);
+  color: var(--urgent-text-light);
+}
+
+.nl-emergency {
+  background-color: var(--emergency-bg-light);
+  color: var(--emergency-text-light);
+}
+
+.nl-floating-button {
+  background-color: var(--button-blue-600);
+}
+
+.nl-floating-button:hover {
+  background-color: var(--button-blue-700);
+}
+
+.nl-floating-menu-gradient {
+  background: linear-gradient(
+    to right,
+    var(--floating-menu-from),
+    var(--floating-menu-to)
+  );
+}
+
+.nl-floating-menu-hover {
+  background: linear-gradient(
+    to right,
+    var(--floating-hover-from),
+    var(--floating-hover-to)
+  );
+}
+
+.dark .nl-post-need {
+  background-color: var(--need-bg-dark);
+  color: var(--need-text-dark);
+}
+
+.dark .nl-post-offer {
+  background-color: var(--offer-bg-dark);
+  color: var(--offer-text-dark);
+}
+
+.dark .nl-urgent {
+  background-color: var(--urgent-bg-dark);
+  color: var(--urgent-text-dark);
+}
+
+.dark .nl-emergency {
+  background-color: var(--emergency-bg-dark);
+  color: var(--emergency-text-dark);
 }
