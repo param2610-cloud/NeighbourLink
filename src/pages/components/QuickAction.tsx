@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Zap, Search, Bell , Users, BookOpen, Calendar } from 'lucide-react';
+import { Zap, Search, Bell, Users, BookOpen, Calendar, MessageSquare } from 'lucide-react';
 import { useMobileContext } from '@/contexts/MobileContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -63,13 +63,13 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
 
 interface QuickActionsButtonProps {
     openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void;
-  }
-  
-  const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) => {
+}
+
+const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { isMobile } = useMobileContext();
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
     const toggleMenu = () => {
         if (!isModalOpen) {
@@ -96,11 +96,18 @@ interface QuickActionsButtonProps {
 
     const quickActions = [
         { icon: <Search size={20} />, label: 'Search', action: () => navigate("/search") },
-        { icon: <BookOpen size={20} />, label: 'Resorce', action: () =>  openModal('resource')},
-        // { icon: <Gift size={24} />, label: 'Offer', action: () => console.log('Offer clicked') },
+        { icon: <BookOpen size={20} />, label: 'Resorce', action: () => openModal('resource') },
         { icon: <Bell size={20} />, label: 'Promote', action: () => openModal('promotion') },
         { icon: <Calendar size={20} />, label: 'Event', action: () => openModal('event') },
         { icon: <Users size={20} />, label: 'Update', action: () => openModal('update') },
+        {
+            icon: <MessageSquare size={20} />,
+            label: 'New Update',
+            action: () => {
+                toggleMenu();
+                navigate('/update/new');
+            },
+        },
     ];
 
     const handleActionClick = (action: () => void) => {

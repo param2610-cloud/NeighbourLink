@@ -1,7 +1,10 @@
 import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { db } from '@/firebase';
-import { collection, getDocs, orderBy, query, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
+import { useStateContext } from '@/contexts/StateContext'; // Update this import to use StateContext
+import { useNavigate } from 'react-router-dom';
+
 export interface BaseItem {
     id?: string;
     createdAt: string;
@@ -47,12 +50,16 @@ export interface Event extends BaseItem {
     responders: {
         title: string;
         useProfileLocation: boolean;
+        users?: string[]; // Array of user IDs who have RSVPed
     };
 }
 
 export interface Update extends BaseItem {
     date: string;
-    responders: {
+    parentId?: string;       // ID of parent update if this is a reply
+    childUpdates?: string[]; // IDs of replies to this update
+    threadDepth: number;     // Depth in thread hierarchy
+    responders?: {
         title: string;
         useProfileLocation: boolean;
     };
@@ -72,23 +79,6 @@ const convertDoc = <T extends BaseItem>(doc: any, type: FeedItem['type']): T => 
             : data.createdAt
     } as T;
 };
-
-// const formatTimeSince = (timestamp: Timestamp) => {
-//     const now = new Date();
-//     const postDate = timestamp.toDate();
-//     const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
-
-//     if (diffInSeconds < 60) {
-//       return `${diffInSeconds} sec ago`;
-//     } else if (diffInSeconds < 3600) {
-//       return `${Math.floor(diffInSeconds / 60)} min ago`;
-//     } else if (diffInSeconds < 86400) {
-//       return `${Math.floor(diffInSeconds / 3600)} hr ago`;
-//     } else {
-//       return `${Math.floor(diffInSeconds / 86400)} days ago`;
-//     }
-//   };
-
 
 export const fetchResources = async (): Promise<Resource[]> => {
     const resourcesRef = collection(db, "resources");
@@ -116,10 +106,13 @@ export const fetchEvents = async (): Promise<Event[]> => {
     return querySnapshot.docs.map(doc => convertDoc<Event>(doc, 'event'));
 };
 
-// Fetch all updates
+// Fetch all updates - modified to get only top-level updates
 export const fetchUpdates = async (): Promise<Update[]> => {
     const updatesRef = collection(db, "updates");
-    const q = query(updatesRef, orderBy("createdAt", "desc"));
+    const q = query(
+        updatesRef, 
+        orderBy("createdAt", "desc")
+    );
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map(doc => convertDoc<Update>(doc, 'update'));
@@ -147,14 +140,11 @@ export const fetchAllFeedItems = async (): Promise<FeedItem[]> => {
     }
 };
 
-// interface FeedProps {
-//     // Add props here if needed
-// }
-
 const Feed: React.FC = () => {
     const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const loadFeedItems = async () => {
@@ -173,6 +163,14 @@ const Feed: React.FC = () => {
 
         loadFeedItems();
     }, []);
+
+    const handleResourceClick = (resourceId: string) => {
+        navigate(`/resource/${resourceId}`);
+    };
+
+    const handleUpdateClick = (updateId: string) => {
+        navigate(`/update/${updateId}`);
+    };
 
     if (loading) {
         return (
@@ -193,8 +191,6 @@ const Feed: React.FC = () => {
 
     return (
         <div className="container w-full sm:w-[550px] mt-16 mx-auto px-4 py-8 bg-transparent">
-            {/* <h1 className="text-3xl font-bold mb-6 dark:text-white">Your Feed</h1> */}
-
             <div className="space-y-4">
                 {feedItems.length === 0 ? (
                     <p className="text-gray-500 dark:text-gray-400">No feed items to display.</p>
@@ -202,13 +198,28 @@ const Feed: React.FC = () => {
                     feedItems.map((item) => {
                         switch (item.type) {
                             case 'resource':
-                                return <ResourceCard key={item.id} resource={item as Resource} />;
+                                return (
+                                    <div
+                                        key={item.id}
+                                        onClick={() => handleResourceClick(item.id!)}
+                                    >
+                                        <ResourceCard resource={item as Resource} />
+                                    </div>
+                                );
                             case 'promotion':
                                 return <PromotionCard key={item.id} promotion={item as Promotion} />;
                             case 'event':
                                 return <EventCard key={item.id} event={item as Event} />;
                             case 'update':
-                                return <UpdateCard key={item.id} update={item as Update} />;
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        onClick={() => handleUpdateClick(item.id!)}
+                                        className="cursor-pointer"
+                                    >
+                                        <UpdateCard update={item as Update} />
+                                    </div>
+                                );
                             default:
                                 return null;
                         }
@@ -220,8 +231,6 @@ const Feed: React.FC = () => {
 };
 
 export default Feed;
-
-
 
 interface ResourceCardProps {
     resource: Resource;
@@ -244,7 +253,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-blue-500 overflow-hidden mb-4">
             {resource.images && resource.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                    {/* Images container with fade transition */}
                     {resource.images.map((image, index) => (
                         <div
                             key={image}
@@ -284,7 +292,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
                     )}
                 </div>
             )}
-            {/* ... rest of the card content remains the same ... */}
             <div className="p-4">
                 <span className="inline-block px-2 py-1 text-xs font-semibold bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full mb-2">
                     Resource: {resource.category}
@@ -304,9 +311,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
         </div>
     );
 };
-
-
-
 
 interface PromotionCardProps {
     promotion: Promotion;
@@ -329,7 +333,6 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-purple-500 overflow-hidden mb-4">
             {promotion.images && promotion.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                    {/* Images container with fade transition */}
                     {promotion.images.map((image, index) => (
                         <div
                             key={image}
@@ -374,7 +377,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
                     Promotion
                 </span>
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">
-                    {promotion.responders?.title || 'Promotion'}
+                    {promotion?.title || 'Promotion'}
                 </h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                     {promotion.description}
@@ -406,6 +409,17 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     const totalImages = event.images?.length || 0;
     const createdDate = new Date(event.createdAt).toLocaleDateString();
     const eventDate = event.timingInfo?.date;
+    const { user } = useStateContext(); // Use StateContext instead of AuthContext
+    const [isRSVPed, setIsRSVPed] = useState(false);
+    const [isRSVPing, setIsRSVPing] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if the current user has already RSVPed
+        if (user && event.responders?.users) {
+            setIsRSVPed(event.responders.users.includes(user.uid));
+        }
+    }, [user, event.responders]);
 
     const handleNext = () => {
         setCurrentImageIndex((prev) => (prev + 1) % totalImages);
@@ -415,11 +429,45 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         setCurrentImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
     };
 
+    const handleRSVP = async () => {
+        if (!user) {
+            // Handle not logged in state
+            alert("Please log in to RSVP for this event");
+            return;
+        }
+
+        try {
+            setIsRSVPing(true);
+            const eventRef = doc(db, "events", event.id || "");
+            
+            if (isRSVPed) {
+                // Remove user from responders
+                await updateDoc(eventRef, {
+                    "responders.users": arrayRemove(user.uid)
+                });
+                setIsRSVPed(false);
+            } else {
+                // Add user to responders
+                await updateDoc(eventRef, {
+                    "responders.users": arrayUnion(user.uid)
+                });
+                setIsRSVPed(true);
+            }
+        } catch (error) {
+            console.error("Error updating RSVP status:", error);
+            alert("Failed to update RSVP status. Please try again.");
+        } finally {
+            setIsRSVPing(false);
+        }
+    };
+
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4">
+        <div 
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4"
+            onClick={() => navigate(`/event/${event.id}`)}
+        >
             {event.images && event.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                    {/* Images container with fade transition */}
                     {event.images.map((image, index) => (
                         <div
                             key={image}
@@ -494,6 +542,26 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
                         <span>Organizer: {event.organizerDetails?.name}</span>
                     </div>
                     <div className="text-gray-500 dark:text-gray-400 mt-2">Posted: {createdDate}</div>
+                    
+                    {/* RSVP Button */}
+                    <div className="mt-3">
+                        <button 
+                            onClick={handleRSVP}
+                            disabled={isRSVPing}
+                            className={`px-4 py-2 text-xs font-medium rounded-md transition-colors ${
+                                isRSVPed 
+                                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                            } ${isRSVPing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        >
+                            {isRSVPing ? 'Processing...' : isRSVPed ? 'Attending ✓' : 'RSVP'}
+                        </button>
+                        {event.responders?.users && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                {event.responders.users.length} {event.responders.users.length === 1 ? 'person' : 'people'} attending
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -519,10 +587,9 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-amber-500 overflow-hidden mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-amber-500 overflow-hidden mb-4 hover:shadow-lg transition-shadow duration-200">
             {update.images && update.images.length > 0 && (
                 <div className="relative w-full h-72 bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                    {/* Images container with fade transition */}
                     {update.images.map((image, index) => (
                         <div
                             key={image}
@@ -568,11 +635,18 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update }) => {
                 <span className="inline-block px-2 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full mb-2">
                     Update
                 </span>
-                <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update.responders?.title || 'Update'}</h3>
+                <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update?.title || 'Update'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{update.description}</p>
                 <div className="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
                     {updateDate && <span>Update Date: {updateDate}</span>}
                     <div className="mt-1">Posted: {createdDate}</div>
+                    
+                    {/* Show reply count if available */}
+                    {update.childUpdates && update.childUpdates.length > 0 && (
+                        <div className="mt-1 text-blue-500 dark:text-blue-400">
+                            {update.childUpdates.length} {update.childUpdates.length === 1 ? 'reply' : 'replies'}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

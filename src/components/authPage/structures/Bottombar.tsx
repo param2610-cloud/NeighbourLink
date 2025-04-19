@@ -1,6 +1,7 @@
 import React from 'react';
 import { AiOutlineHome } from 'react-icons/ai';
-import { BiMessageDetail, BiSearchAlt } from 'react-icons/bi';
+import { BiMessageDetail, BiSearchAlt, BiUser } from 'react-icons/bi';
+import { HiOutlineNewspaper } from 'react-icons/hi';
 import { CgProfile } from 'react-icons/cg';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -49,6 +50,14 @@ const Bottombar: React.FC<BottombarProps> = () => {
             </button>
             
             <button 
+              onClick={() => navigate("/updates")} 
+              className={getNavItemClass("/updates")}
+            >
+              <HiOutlineNewspaper className="text-xl" />
+              <span className="text-xs mt-1">Updates</span>
+            </button>
+            
+            <button 
               onClick={() => navigate("/messages")} 
               className={getNavItemClass("/messages")}
             >
@@ -60,7 +69,7 @@ const Bottombar: React.FC<BottombarProps> = () => {
               onClick={() => navigate("/profileCard")} 
               className={getNavItemClass("/profileCard")}
             >
-              <CgProfile className="text-xl" />
+              <BiUser className="text-xl" />
               <span className="text-xs mt-1">Profile</span>
 
             </button>

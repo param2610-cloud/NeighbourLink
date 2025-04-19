@@ -10,6 +10,9 @@ import {
   Archive,
   HeartHandshake,
   HandHeart,
+  Calendar,
+  MessageSquare,
+  Newspaper, // Import an appropriate icon for updates
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -64,7 +67,8 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
   const navItems = [
     { path: "/home", label: "Home", icon: <Home size={18} /> },
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
-
+    { path: "/messages", label: "Messages", icon: <MessageSquare size={18} /> },
+    { path: "/updates", label: "Updates", icon: <Newspaper size={18} /> },
     {
       path: "/saved/posts",
       label: "Saved Posts",
@@ -79,6 +83,11 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
       path: "/resource/offer",
       label: "Share Resources",
       icon: <Share size={18} />,
+    },
+    {
+      path: "/events",
+      label: "Community Events",
+      icon: <Calendar size={18} />,
     },
     {
       path: "/profile/auth/requests",
