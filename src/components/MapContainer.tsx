@@ -179,6 +179,7 @@ const MapContainer = ({
           }
         },
         (error) => {
+          console.error("Geolocation error:", error);
           setPermissionStatus("denied");
           setShowPermissionBanner(true);
           if (onPermissionDenied) onPermissionDenied();
@@ -233,6 +234,8 @@ const MapContainer = ({
 
         // Handle error events
         geolocate.on("error", (e: any) => {
+          console.log("Geolocation error:", e);
+          
           setPermissionStatus("denied");
           setShowPermissionBanner(true);
           if (onPermissionDenied) onPermissionDenied();
