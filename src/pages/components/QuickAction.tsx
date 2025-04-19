@@ -109,10 +109,10 @@ interface QuickActionsButtonProps {
     };
 
     return (
-        <div className={`fixed top-33 ${isMobile ? "right-5" : "right-20"} z-50`}>
+        <div className={`fixed top-17.5 ${isMobile ? "right-5" : "right-20"} z-50`}>
             {/* Main button */}
             <button
-                className={`p-4 rounded-full border-blue-600 text-neutral-900 dark:text-neutral-100 shadow-lg transition-all duration-300 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isOpen ? 'transform rotate-45' : ''}`}
+                className={`p-3 text-neutral-900 dark:text-neutral-300 dark:bg-gray-900 rounded-full border dark:border-0 shadow-lg transition-all duration-300 ${isOpen ? 'transform rotate-45' : ''}`}
                 onClick={toggleMenu}
                 aria-label="Quick Actions"
             >
@@ -127,7 +127,7 @@ interface QuickActionsButtonProps {
                 >
                     {/* Actions container */}
                     <div
-                        className={`fixed top-20 ${isMobile ? "right-20" : "right-30"} inset-0 pointer-events-none flex items-center justify-center`}
+                        className={`fixed top-10 ${isMobile ? "right-20" : "right-30"} inset-0 pointer-events-none flex items-center justify-center`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="absolute pointer-events-auto" style={{ top: 'calc(2rem + 32px)', right: '2rem' }}>
