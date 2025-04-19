@@ -125,9 +125,14 @@ const SavedPosts = () => {
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
             <div className="max-w-6xl mx-auto">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Saved Posts</h1>
-                <div className="flex gap-2 justify-start mb-8 items-center hover:cursor-pointer text-blue-600 dark:text-blue-400"
+                <button 
                     onClick={() => navigate('/')}
-                ><FaArrowLeft /> Back</div>
+                    className="flex items-center gap-2 mb-8 px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700"
+                    aria-label="Go back to homepage"
+                >
+                    <FaArrowLeft className="text-white" />
+                    <span className="font-medium">Back to Home</span>
+                </button>
                 {savedPosts.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-gray-600 dark:text-gray-400 text-lg">

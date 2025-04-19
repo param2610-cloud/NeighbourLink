@@ -253,9 +253,9 @@ const Home: React.FC = () => {
                   }
                 </div>
 
-                <div className="flex items-center">
+                <div className="flex  items-center justify-center ">
                   <h1 className="text-xl font-bold text-blue-800 dark:text-blue-700">Neighbour</h1>
-                  <h1 className="text-xl font-bold text-violet-800 dark:text-violet-700">Link</h1>
+                  <h1 className="text-xl font-bold text-violet-800 dark:text-violet-700 ml-1">Link</h1>
                 </div>
 
                 <div
