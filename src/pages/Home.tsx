@@ -1,21 +1,18 @@
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus } from "react-icons/fa";
+import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
-import { BiSearchAlt } from "react-icons/bi";
-import { MdOutlineWarning } from "react-icons/md";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ImageDisplay } from "../components/AWS/UploadFile";
-import { motion } from "framer-motion";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
-import { Search, Hand, Megaphone, Users, Flame, MapPin } from "lucide-react";
-import QuickActionsButton from "./QuickAction";
+import QuickActionsButton from "./components/QuickAction";
+import Feed from "./components/Feed";
 
 
 type FilterType = "all" | "need" | "offer";
@@ -48,8 +45,8 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [radius, setRadius] = useState(3);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [hasEmergencyAlerts, setHasEmergencyAlerts] = useState(false);
-  const [emergencyAlerts, setEmergencyAlerts] = useState<Post[]>([]);
+  const [, setHasEmergencyAlerts] = useState(false);
+  const [, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
   const [userDetails, setUserDetails] = useState<any>(null);
@@ -247,50 +244,42 @@ const Home: React.FC = () => {
   };
 
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
+  // const containerVariants = {
+  //   hidden: { opacity: 0 },
+  //   show: {
+  //     opacity: 1,
+  //     transition: {
+  //       staggerChildren: 0.1
+  //     }
+  //   }
+  // };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300
-      }
-    }
-  };
+  // const itemVariants = {
+  //   hidden: { y: 20, opacity: 0 },
+  //   show: {
+  //     y: 0,
+  //     opacity: 1,
+  //     transition: {
+  //       type: "spring",
+  //       stiffness: 300
+  //     }
+  //   }
+  // };
 
-  const alertVariants = {
-    hidden: { x: -300, opacity: 0 },
-    show: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        damping: 25,
-        stiffness: 100
-      }
-    }
-  };
+  // const alertVariants = {
+  //   hidden: { x: -300, opacity: 0 },
+  //   show: {
+  //     x: 0,
+  //     opacity: 1,
+  //     transition: {
+  //       type: "spring",
+  //       damping: 25,
+  //       stiffness: 100
+  //     }
+  //   }
+  // };
 
-  const actions = [
-    { label: 'Search', icon: Search, onClick: () => alert('Search') },
-    { label: 'Request Resource', icon: Hand, onClick: () => alert('Request Resource') },
-    { label: 'Offer Resource', icon: Hand, onClick: () => alert('Offer Resource') },
-    { label: 'Self Promotion', icon: Megaphone, onClick: () => alert('Self Promotion') },
-    { label: 'Emergency Posts', icon: Flame, onClick: () => alert('Emergency Posts') },
-    { label: 'Local Volunteers', icon: Users, onClick: () => alert('Local Volunteers') },
-    { label: 'Local', icon: MapPin, onClick: () => alert('Local') },
-  ];
+
 
   return (
     <>
@@ -368,140 +357,10 @@ const Home: React.FC = () => {
 
               </div>
 
-              {/* Emergency Alerts Banner */}
-              {hasEmergencyAlerts && (
-                <motion.div
-                  initial="hidden"
-                  animate="show"
-                  variants={alertVariants}
-                  className="bg-red-100 dark:bg-red-900 p-4 shadow-inner"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 0.5, repeat: 3, repeatDelay: 2 }}
-                      >
-                        <MdOutlineWarning className="text-xl text-red-600 dark:text-red-400 mr-2" />
-                      </motion.div>
-                      <h3 className="font-bold text-red-600 dark:text-red-400">Emergency Alerts</h3>
-                    </div>
-                    <button
-                      onClick={() => setHasEmergencyAlerts(false)}
-                      className="text-red-600 dark:text-red-400"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-
-                  <motion.div variants={containerVariants} initial="hidden" animate="show">
-                    {emergencyAlerts.map(alert => (
-                      <motion.div
-                        key={alert.id}
-                        variants={itemVariants}
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-white dark:bg-gray-800 rounded-md p-3 mb-2 shadow-sm cursor-pointer"
-                        onClick={() => navigate(`/post/${alert.id}`)}
-                      >
-                        <div className="flex items-center">
-                          <div className="mr-3 text-2xl">{getCategoryIcon(alert.category)}</div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900 dark:text-white">{alert.title}</h4>
-                            <p className="text-sm text-red-600 dark:text-red-400">
-                              Emergency • {alert.distance ? `${alert.distance.toFixed(1)} km away` : "Distance unknown"}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </motion.div>
-              )}
-
               {/* Quick Actions Grid */}
               <div className="flex justify-center items-center">
 
-                {/* <div className="px-4 py-3 xl:px-0 xl:w-[600px]">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">Quick Actions</h3>
-                  <motion.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="show"
-                    className="grid grid-cols-2 gap-3"
-                  >
-                    <motion.button
-                      variants={itemVariants}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate("/resource/need")}
-                      className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                    >
-                      <motion.div
-                        initial={{ y: 0 }}
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                        className="text-2xl mb-2"
-                      >
-                        ⬇️
-                      </motion.div>
-                      <span className="font-medium">Post Request</span>
-                    </motion.button>
 
-                    <motion.button
-                      variants={itemVariants}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate("/resource/offer")}
-                      className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                    >
-                      <motion.div
-                        initial={{ y: 0 }}
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                        className="text-2xl mb-2"
-                      >
-                        ⬆️
-                      </motion.div>
-                      <span className="font-medium">Post Offer</span>
-                    </motion.button>
-
-                    <motion.button
-                      variants={itemVariants}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate("/search")}
-                      className="bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                    >
-                      <motion.div
-                        initial={{ y: 0 }}
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                        className="text-2xl mb-2"
-                      >
-                        <BiSearchAlt />
-                      </motion.div>
-                      <span className="font-medium">Search</span>
-                    </motion.button>
-
-                    <motion.button
-                      variants={itemVariants}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate("/emergency/posts")}
-                      className="bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-100 p-4 rounded-lg shadow-sm flex flex-col items-center justify-center"
-                    >
-                      <motion.div
-                        initial={{ y: 0 }}
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
-                        className="text-2xl mb-2"
-                      >
-                        <MdOutlineWarning />
-                      </motion.div>
-                      <span className="font-medium">Emergency</span>
-                    </motion.button>
-                  </motion.div>
-                </div> */}
                 {/* <div className="overflow-x-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <div className="flex space-x-4 px-4">
                     {actions.map((action, index) => (
@@ -525,21 +384,21 @@ const Home: React.FC = () => {
               {/* Feed Section */}
               <div className="fixed w-full flex-1 px-4 py-4 bg-white dark:bg-gray-800 h-18">
 
-              <div className="fixed bg-white dark:bg-gray-800 flex items-center justify-between mb-7">
-                {/* <h3 className="text-lg font-semibold text-gray-800 dark:text-white"></h3> */}
-                <div className="flex items-center space-x-2">
-                  <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
-                  <select
-                    value={selectedFilter}
-                    onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
-                    className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="need">Needs</option>
-                    <option value="offer">Offers</option>
-                  </select>
+                <div className="fixed bg-white dark:bg-gray-800 flex items-center justify-between mb-7">
+                  {/* <h3 className="text-lg font-semibold text-gray-800 dark:text-white"></h3> */}
+                  <div className="flex items-center space-x-2">
+                    <label className="text-gray-700 dark:text-gray-400">Filter by:</label>
+                    <select
+                      value={selectedFilter}
+                      onChange={(e) => setSelectedFilter(e.target.value as FilterType)}
+                      className="px-3 py-1 dark:bg-gray-600 dark:text-white border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="all">All</option>
+                      <option value="need">Needs</option>
+                      <option value="offer">Offers</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
               </div>
               <div className="flex-1 px-4 py-4 ">
 
@@ -547,117 +406,12 @@ const Home: React.FC = () => {
                   <div className="flex justify-center py-10">
                     <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
                   </div>
-                ) : filteredPosts.length > 0 ? (
-                  <div className="space-y-4 mt-18 flex flex-col items-center">
-                    {filteredPosts.map(post => (
-                      <div
-                        key={post.id}
-                        onClick={() => navigate(`/post/${post.id}`)}
-                        className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 w-full sm:w-[500px] cursor-pointer"
-                      >
-                        <div className="flex justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div className="text-xl">{getCategoryIcon(post.category)}</div>
-                            <span className={`text-xs px-2 py-1 rounded-full ${post.postType === "need"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                              : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              }`}>
-                              {post.postType === "need" ? "Need" : "Offer"}
-                            </span>
-                          </div>
-
-                          {post.urgencyLevel > 1 && (
-                            <span className={`text-xs px-2 py-1 rounded-full ${post.urgencyLevel === 2
-                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                              }`}>
-                              {post.urgencyLevel === 2 ? "Urgent" : "Emergency"}
-                            </span>
-                          )}
-                          {
-                            // auth.currentUser?.uid === post.userId && (
-                            //   <div className="flex justify-center items-center gap-2">
-                            //     <div className="text-blue-600 dark:text-blue-400 hover:cursor-pointer">
-                            //       <FaRegEdit />
-                            //     </div>
-                            //     <div className="text-red-600 dark:text-red-400 hover:cursor-pointer" onClick={() => setIsDeleteModalOpen(true)}>
-                            //       <MdDeleteForever size={20} />
-                            //       {/* Delete */}
-                            //     </div>
-                            //   </div>
-                            // )
-                          }
-                          {/* <PostCardDelete
-                      isOpen={isDeleteModalOpen}
-                      onClose={() => setIsDeleteModalOpen(false)}
-                      itemId={post.id}
-                      itemType="post"
-                      onDelete={() => setUpdated((prev) => !prev)}
-                    /> */}
-                        </div>
-
-                        <h4 className="font-medium text-gray-900 dark:text-white mt-2">{post.title}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
-                          {post.description}
-                        </p>
-
-                        {post?.photoUrls?.length > 0 && (
-                          <div className="mt-3 flex space-x-2 overflow-x-auto">
-                            {post.photoUrls.slice(0, 1).map((url, idx) => (
-                              <div key={idx} className="h-20 w-20 flex-shrink-0 rounded-md overflow-hidden">
-                                <ImageDisplay objectKey={url} />
-                              </div>
-                            ))}
-                            {post.photoUrls.length > 1 && (
-                              <div className="h-20 w-20 flex-shrink-0 bg-gray-100 dark:bg-gray-700 rounded-md flex items-center justify-center text-gray-500 dark:text-gray-400">
-                                +{post.photoUrls.length - 1}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center">
-                            {!post.isAnonymous && (
-                              <div className="w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-full mr-2">
-                                {post.userPhoto && (
-                                  <ImageDisplay objectKey={post.userPhoto} />
-                                )}
-                              </div>
-                            )}
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
-                              {post?.isAnonymous ? "Anonymous" : post?.userName || "User"}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center space-x-3">
-                            {post?.distance && (
-                              <span className="text-xs text-gray-600 dark:text-gray-400">
-                                {parseFloat(post.distance.toFixed(1)) !== 0 ? `${post.distance.toFixed(1)} km` : ''}
-                              </span>
-                            )}
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
-                              {post.createdAt && formatTimeSince(post.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 ) : (
-                  <div className="text-center py-10 text-gray-500 dark:text-gray-400">
-                    No posts found in your area
-                  </div>
+                  <Feed />
                 )}
               </div>
 
               {/* Floating Action Button */}
-              {/* <button
-                onClick={() => navigate("/resource/need")}
-                className="fixed bottom-20 right-5 bg-indigo-600 text-white p-4 rounded-full shadow-lg"
-              >
-                <FaPlus />
-              </button> */}
               <FloatingActionMenu />
 
               <Bottombar />
@@ -740,6 +494,9 @@ export const FloatingActionMenu: React.FC = () => {
           ))}
         </div>
       </div>
+
+
+
 
 
       {/* Plus button */}
