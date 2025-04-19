@@ -1,22 +1,107 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { db } from "../../../firebase";
 import { useNavigate } from "react-router-dom";
 import { useStateContext } from "@/contexts/StateContext";
 import { FaArrowRight, FaUserCircle, FaMapMarkerAlt } from "react-icons/fa";
 import { Switch } from "@/components/ui/switch";
+import { checkIfUserRegisteredInVolunteer } from "@/utils/communities/CheckIfRegisterd";
+import { calculateDistance } from "@/utils/utils";
 import { getOrCreateConversationWithUser } from "@/services/messagingService";
+
+// Define the filter type
+interface FilterState {
+  search: string;
+  showLocalOnly: boolean;
+}
 
 const VolunteerList = () => {
   const [volunteers, setVolunteers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const { user } = useStateContext();
-
-  const [filter, setFilter] = useState({
+  const [filter, setFilter] = useState<FilterState>({
     search: "",
     showLocalOnly: false,
   });
+  const navigate = useNavigate();
+  const { user } = useStateContext();
+
+  const isRegistered = checkIfUserRegisteredInVolunteer();
+
+  const getCurrentUser = async () => {
+    const q = query(collection(db, "Users"), where("email", "==", user?.email));
+    const currentUser = (await getDocs(q)).docs.map((doc) => doc.data())[0];
+    return currentUser;
+  };
+
+  const [isActiveVolunteer, setIsActiveVolunteer] = useState(false);
+
+  const changeActiveVolunteer = async (checked: boolean) => {
+    const q = query(
+      collection(db, "volunteer"),
+      where("email", "==", user?.email)
+    );
+    const snapshot = await getDocs(q);
+    const volunteerDoc = snapshot.docs[0];
+    const docRef = doc(db, "volunteer", volunteerDoc.id);
+    await updateDoc(docRef, {
+      isActiveVolunteer: checked,
+    });
+  };
+
+  useEffect(() => {
+    async function run() {
+      const isRegis = await isRegistered;
+      if (isRegis) {
+        const q = query(
+          collection(db, "volunteer"),
+          where("email", "==", user?.email)
+        );
+        const volunteerDoc = (await getDocs(q)).docs[0];
+        if (volunteerDoc) {
+          setIsActiveVolunteer(volunteerDoc.data().isActiveVolunteer);
+        } else {
+          setIsActiveVolunteer(false);
+        }
+      } else {
+        setIsActiveVolunteer(false);
+      }
+    }
+
+    run();
+  }, []);
+
+  const handleActiveChange = async (checked: boolean) => {
+    setIsActiveVolunteer(checked);
+
+    const isRegis = await isRegistered;
+
+    if (!isRegis && !checked) return false;
+
+    if (!isRegis) {
+      const currentUser = await getCurrentUser();
+      const volunteerData = {
+        email: user?.email,
+        photoURL: user?.photoURL,
+        firstName: currentUser?.firstName,
+        lastName: currentUser?.lastName,
+        address: currentUser?.address,
+        location: currentUser?.location,
+        isActiveVolunteer: true,
+        userId: user?.uid,
+      };
+      await addDoc(collection(db, "volunteer"), volunteerData);
+    } else {
+      changeActiveVolunteer(checked);
+    }
+  };
 
   useEffect(() => {
     const fetchVolunteers = async () => {
@@ -26,8 +111,33 @@ const VolunteerList = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        
-        setVolunteers(volunteersData);
+
+        const currentUser = await getCurrentUser();
+        const currentUserLocation = currentUser?.location;
+
+        const vol2 = volunteersData.filter((_) => {
+          const e = _ as {
+            id: string;
+            email: string;
+            location: { latitude: number; longitude: number };
+            isActiveVolunteer: boolean;
+          };
+          const { latitude, longitude } = e.location;
+          const distance = calculateDistance(
+            currentUserLocation.latitude,
+            currentUserLocation.longitude,
+            latitude,
+            longitude
+          );
+
+          return (
+            e.isActiveVolunteer &&
+            distance <= currentUser.preferredRadius &&
+            e.email !== user?.email
+          );
+        });
+
+        setVolunteers(vol2);
       } catch (error) {
         console.error("Error fetching volunteers:", error);
       } finally {
@@ -39,63 +149,55 @@ const VolunteerList = () => {
   }, []);
 
   const filteredVolunteers = volunteers.filter((volunteer) => {
-    
     if (volunteer.email === user?.email) return false;
-    
-    
+
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
       const name = `${volunteer.firstName} ${volunteer.lastName}`.toLowerCase();
-      const address = volunteer.address?.toLowerCase() || '';
-      
+      const address = volunteer.address?.toLowerCase() || "";
+
       if (!name.includes(searchLower) && !address.includes(searchLower)) {
         return false;
       }
     }
-    
-    
-    
+
     return true;
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter((prev) => ({ ...prev, search: e.target.value }));
+    setFilter((prev: FilterState) => ({ ...prev, search: e.target.value }));
   };
 
   const handleSwitchChange = (checked: boolean) => {
-    setFilter((prev) => ({ ...prev, showLocalOnly: checked }));
+    setFilter((prev: FilterState) => ({ ...prev, showLocalOnly: checked }));
   };
 
   const handleContactVolunteer = async (volunteer: any) => {
     if (!user?.uid || !volunteer.id) return;
-    
+
     try {
-      
       setLoading(true);
       const userQuery = query(
-              collection(db, "Users"),
-              where("email", "==", volunteer.email)
-            );
-            const userSnapshot = await getDocs(userQuery);
-            
-            if (userSnapshot.empty) {
-              console.error("User not found for email:", volunteer.email);
-              return;
-            }
-            
-            
-            const volunteerProviderId = userSnapshot.docs[0].id;
-      
+        collection(db, "Users"),
+        where("email", "==", volunteer.email)
+      );
+      const userSnapshot = await getDocs(userQuery);
+
+      if (userSnapshot.empty) {
+        console.error("User not found for email:", volunteer.email);
+        return;
+      }
+
+      const volunteerProviderId = userSnapshot.docs[0].id;
+
       const conversationId = await getOrCreateConversationWithUser(
         user.uid,
         volunteerProviderId
       );
-      
-      
+
       if (conversationId) {
         console.log("Navigating to conversation:", conversationId);
-        
-        
+
         navigate(`/messages/${conversationId}`);
       } else {
         throw new Error("Failed to create conversation");
@@ -122,65 +224,70 @@ const VolunteerList = () => {
 
   if (volunteers.length === 0)
     return (
-      <div className="p-10 text-center bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-        <div className="flex justify-center mb-4">
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full">
-            <FaUserCircle className="w-12 h-12 text-blue-500 dark:text-blue-300" />
-          </div>
+      <>
+        <div className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          Are you willing to Volunteer
         </div>
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-          No volunteers found
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-          Be the first to register as a volunteer! Your help could make a big difference in your community.
-        </p>
-        <button
-          onClick={() => navigate("/volunteer-register")}
-          className="mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium shadow-md transition-all transform hover:-translate-y-0.5"
-        >
-          Register as Volunteer
-        </button>
-      </div>
+        <div className="flex items-center gap-2 p-3">
+          <label
+            htmlFor="isActive"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Not Active
+          </label>
+          <Switch
+            id="isActive"
+            checked={isActiveVolunteer}
+            onCheckedChange={handleActiveChange}
+          />
+          <label
+            htmlFor="isActive"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+          >
+            Active
+          </label>
+        </div>
+        <div className="p-10 text-center bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
+          <div className="flex justify-center mb-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full">
+              <FaUserCircle className="w-12 h-12 text-blue-500 dark:text-blue-300" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+            No volunteers found
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            Be the first to register as a volunteer! Your help could make a big
+            difference in your community.
+          </p>
+        </div>
+      </>
     );
 
   return (
     <>
-      <form className="flex flex-col md:flex-row gap-4 mb-6 items-end">
-        <div className="flex flex-col flex-1">
-          <label
-            htmlFor="search-filter"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Search Volunteers
-          </label>
-          <input
-            id="search-filter"
-            placeholder="Search by name or address..."
-            value={filter.search}
-            onChange={handleSearchChange}
-            className="mt-1 px-2 py-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <label
-            htmlFor="local-switch"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            All Volunteers
-          </label>
-          <Switch
-            id="local-switch"
-            checked={filter.showLocalOnly}
-            onCheckedChange={handleSwitchChange}
-          />
-          <label
-            htmlFor="local-switch"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Local Only
-          </label>
-        </div>
-      </form>
+      <div className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Are you willing to Volunteer
+      </div>
+      <div className="flex items-center gap-2 p-3">
+        <label
+          htmlFor="isActive"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Not Active
+        </label>
+        <Switch
+          id="isActive"
+          checked={isActiveVolunteer}
+          onCheckedChange={handleActiveChange}
+        />
+        <label
+          htmlFor="isActive"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Active
+        </label>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
         {filteredVolunteers.length > 0 ? (
           filteredVolunteers.map((volunteer) => (
@@ -197,8 +304,8 @@ const VolunteerList = () => {
                 <div className="flex items-center space-x-3 relative">
                   <div className="bg-white dark:bg-gray-200 p-1 rounded-full shadow-md">
                     {volunteer.photoURL ? (
-                      <img 
-                        src={volunteer.photoURL} 
+                      <img
+                        src={volunteer.photoURL}
                         alt={`${volunteer.firstName} ${volunteer.lastName}`}
                         className="w-12 h-12 rounded-full object-cover"
                       />
@@ -226,11 +333,13 @@ const VolunteerList = () => {
                   </h3>
                   <div className="space-y-2">
                     <p className="text-gray-700 dark:text-gray-300 text-sm">
-                      <span className="font-medium">Email:</span> {volunteer.email}
+                      <span className="font-medium">Email:</span>{" "}
+                      {volunteer.email}
                     </p>
                     {volunteer.phone && (
                       <p className="text-gray-700 dark:text-gray-300 text-sm">
-                        <span className="font-medium">Phone:</span> {volunteer.phone}
+                        <span className="font-medium">Phone:</span>{" "}
+                        {volunteer.phone}
                       </p>
                     )}
                   </div>
@@ -272,7 +381,8 @@ const VolunteerList = () => {
               No volunteers match your search
             </h3>
             <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-              Try adjusting your search criteria or invite others to join as volunteers.
+              Try adjusting your search criteria or invite others to join as
+              volunteers.
             </p>
             <button
               onClick={() =>

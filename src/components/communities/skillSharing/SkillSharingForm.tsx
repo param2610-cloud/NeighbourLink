@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { db } from "../../../firebase";
 import { collection, addDoc, doc, getDoc } from "firebase/firestore";
-import { Dialog } from "@headlessui/react";
 import { toast } from "react-toastify";
 import { useStateContext } from "@/contexts/StateContext";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +29,7 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
   useEffect(() => {
     isRegisterd.then((isRegisterd) => {
       if (isRegisterd) {
-        navigate("/skill-share");
+        navigate("/skillHome");
       }
     });
   }, [isRegisterd, navigate]);
@@ -81,6 +80,7 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
             email,
             photoURL,
             isActive: true,
+            userId: user.uid,
             skills: formData.skills
               .trim()
               .split(",")
@@ -99,7 +99,7 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
             skills: "",
           });
 
-          navigate("/skill-share");
+          navigate("/skillHome");
         }
       } else {
         console.log("No such document!");
