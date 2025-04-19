@@ -49,8 +49,7 @@ const AuthRouter: React.FC = () => {
           path="/skills-pop" 
           element={
             <SkillSharingForm 
-              isOpen={true} 
-              onClose={() => console.log('Form closed')}
+              isOpen={true}
             />
           } 
         />
