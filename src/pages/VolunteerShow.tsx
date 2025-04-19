@@ -4,11 +4,11 @@ import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { BsLightningChargeFill } from "react-icons/bs";
-import { FaHandshake } from "react-icons/fa";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import VolunteerList from "../components/communities/volunteer/VolunteerList";
+import { HandHeart } from "lucide-react";
 
 const VolunteerShow: React.FC = () => {
   const [userDetails, setUserDetails] = useState<any>(null);
@@ -100,7 +100,7 @@ const VolunteerShow: React.FC = () => {
                     |
                   </span>
                   <div className="flex items-center">
-                    <FaHandshake className="mr-1 dark:text-yellow-300 text-orange-600" />
+                    <HandHeart  className="mr-1 dark:text-yellow-300 text-orange-600" />
                     <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
                       Volunteers
                     </h2>
