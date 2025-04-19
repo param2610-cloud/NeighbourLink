@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Bell, Users, BookOpen, Calendar, MessageSquare, Cog } from 'lucide-react';
+import { Search, Bell, Users, BookOpen, Calendar, MessageSquare, Shapes } from 'lucide-react';
 import { useMobileContext } from '@/contexts/MobileContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -118,20 +118,13 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) =>
     return (
         <div className={`fixed top-17.5 ${isMobile ? "right-5" : "right-20"} z-50`}>
             {/* Main button */}
-            <div className="absolute right-16 text-indigo-700 dark:text-white py-1 px-5 rounded-lg shadow-lg transition-all duration-300 transform origin-right" 
-                 style={{
-                    opacity: isOpen ? 0 : 1,
-                    scale: isOpen ? '1' : '0.95',
-                    visibility: isOpen ? 'hidden' : 'visible',
-                 }}>
-                Quick Actions
-            </div>
+            
             <button
-                className={`dark:bg-indigo-600 bg-white p-4 rounded-full shadow-lg transition-transform duration-300 hover:nl-floating-menu-hover hover:shadow-2xl ${isOpen ? 'transform rotate-180' : ''}`}
+                className={`border p-4 rounded-full shadow-lg transition-transform duration-300 hover:nl-floating-menu-hover hover:shadow-2xl ${isOpen ? 'transform rotate-180' : ''}`}
                 onClick={toggleMenu}
                 aria-label="Quick Actions"
             >
-                <Cog size={22} className="dark:text-white text-indigo-600" />
+                <Shapes  size={22} className="dark:text-white text-indigo-600" />
             </button>
 
             {/* Modal overlay */}
