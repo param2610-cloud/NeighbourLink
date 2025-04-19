@@ -1,21 +1,17 @@
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaPlus } from "react-icons/fa";
+import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
 import { IoMdNotifications } from "react-icons/io";
-import { BiSearchAlt } from "react-icons/bi";
-import { MdOutlineWarning } from "react-icons/md";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ImageDisplay } from "../components/AWS/UploadFile";
-import { motion } from "framer-motion";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
-import { Search, Hand, Megaphone, Users, Flame, MapPin } from "lucide-react";
-import QuickActionsButton from "./QuickAction";
+import QuickActionsButton from "./components/QuickAction";
 
 
 type FilterType = "all" | "need" | "offer";
@@ -48,8 +44,8 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [radius, setRadius] = useState(3);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [hasEmergencyAlerts, setHasEmergencyAlerts] = useState(false);
-  const [emergencyAlerts, setEmergencyAlerts] = useState<Post[]>([]);
+  const [, setHasEmergencyAlerts] = useState(false);
+  const [, setEmergencyAlerts] = useState<Post[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>("all");
   const [userDetails, setUserDetails] = useState<any>(null);
@@ -247,50 +243,42 @@ const Home: React.FC = () => {
   };
 
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
+  // const containerVariants = {
+  //   hidden: { opacity: 0 },
+  //   show: {
+  //     opacity: 1,
+  //     transition: {
+  //       staggerChildren: 0.1
+  //     }
+  //   }
+  // };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300
-      }
-    }
-  };
+  // const itemVariants = {
+  //   hidden: { y: 20, opacity: 0 },
+  //   show: {
+  //     y: 0,
+  //     opacity: 1,
+  //     transition: {
+  //       type: "spring",
+  //       stiffness: 300
+  //     }
+  //   }
+  // };
 
-  const alertVariants = {
-    hidden: { x: -300, opacity: 0 },
-    show: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        damping: 25,
-        stiffness: 100
-      }
-    }
-  };
+  // const alertVariants = {
+  //   hidden: { x: -300, opacity: 0 },
+  //   show: {
+  //     x: 0,
+  //     opacity: 1,
+  //     transition: {
+  //       type: "spring",
+  //       damping: 25,
+  //       stiffness: 100
+  //     }
+  //   }
+  // };
 
-  const actions = [
-    { label: 'Search', icon: Search, onClick: () => alert('Search') },
-    { label: 'Request Resource', icon: Hand, onClick: () => alert('Request Resource') },
-    { label: 'Offer Resource', icon: Hand, onClick: () => alert('Offer Resource') },
-    { label: 'Self Promotion', icon: Megaphone, onClick: () => alert('Self Promotion') },
-    { label: 'Emergency Posts', icon: Flame, onClick: () => alert('Emergency Posts') },
-    { label: 'Local Volunteers', icon: Users, onClick: () => alert('Local Volunteers') },
-    { label: 'Local', icon: MapPin, onClick: () => alert('Local') },
-  ];
+
 
   return (
     <>
@@ -369,7 +357,7 @@ const Home: React.FC = () => {
               </div>
 
               {/* Emergency Alerts Banner */}
-              {hasEmergencyAlerts && (
+              {/* {hasEmergencyAlerts && (
                 <motion.div
                   initial="hidden"
                   animate="show"
@@ -416,7 +404,7 @@ const Home: React.FC = () => {
                     ))}
                   </motion.div>
                 </motion.div>
-              )}
+              )} */}
 
               {/* Quick Actions Grid */}
               <div className="flex justify-center items-center">
