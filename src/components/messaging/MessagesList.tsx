@@ -86,31 +86,22 @@ const MessagesList = () => {
     return otherUserId ? userProfiles[otherUserId] : null;
   };
 
-  const getConversationTitle = (conversation: Conversation) => {
-    const otherUser = getOtherParticipant(conversation);
-
-    // If there's a post title, use it
-    if (conversation.postTitle) {
-      return `Re: ${conversation.postTitle}`;
-    }
-
-    // For direct conversations, show the other person's name
-    if (otherUser) {
-      // Check different possible name fields
-      if (otherUser.displayName && otherUser.displayName.trim()) {
-        return otherUser.displayName;
-      }
-      
-      if (otherUser.firstName || otherUser.lastName) {
-        return `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim();
-      }
-      
-      if (otherUser.email) {
-        return otherUser.email.split('@')[0]; // Use email prefix
-      }
+  const getRecipientName = (otherUser: any) => {
+    if (!otherUser) return 'Unknown User';
+    
+    if (otherUser.firstName || otherUser.lastName) {
+      return `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim();
     }
     
-    return 'Conversation'; // Default fallback
+    if (otherUser.displayName && otherUser.displayName.trim()) {
+      return otherUser.displayName;
+    }
+    
+    if (otherUser.email) {
+      return otherUser.email.split('@')[0]; // Use email prefix
+    }
+    
+    return 'Unknown User';
   };
 
   const formatTimestamp = (timestamp: any) => {
@@ -118,11 +109,44 @@ const MessagesList = () => {
 
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      
+      // For today's messages, just show the time
+      const today = new Date();
+      if (date.toDateString() === today.toDateString()) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      
+      // For yesterday's messages, show "Yesterday"
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (date.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+      }
+      
+      // For older messages, show relative time
       return formatDistanceToNow(date, { addSuffix: true });
     } catch (e) {
       console.error('Error formatting timestamp:', e);
       return '';
     }
+  };
+
+  const getMessagePreview = (conversation: Conversation) => {
+    if (!conversation.lastMessage) {
+      return 'Start a conversation';
+    }
+    
+    const isOwnMessage = conversation.lastMessage.senderId === currentUserId;
+    const prefix = isOwnMessage ? 'You: ' : '';
+    const text = conversation.lastMessage.text || '';
+    
+    // If there's no text but might be media
+    if (!text.trim()) {
+      return isOwnMessage ? 'You sent an attachment' : 'Sent you an attachment';
+    }
+    
+    // Truncate text if needed
+    return text.length > 30 ? `${prefix}${text.substring(0, 27)}...` : `${prefix}${text}`;
   };
 
   const navigateToChat = (conversationId: string) => {
@@ -228,29 +252,33 @@ const MessagesList = () => {
               {conversations.map((conversation) => {
                 const otherUser = getOtherParticipant(conversation);
                 const unreadCount = conversation.unreadCount?.[currentUserId || ''] || 0;
-
+                const recipientName = getRecipientName(otherUser);
+                
                 return (
                   <div
                     key={conversation.id}
-                    className="border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className={`border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                      unreadCount > 0 ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''
+                    }`}
                     onClick={() => conversation.id && navigateToChat(conversation.id)}
                   >
                     <div className="flex p-4">
-                      {/* User/post image */}
+                      {/* Recipient profile picture */}
                       <div className="h-12 w-12 rounded-full overflow-hidden mr-4 bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                        {conversation.postImageUrl ? (
-                          <div className="h-full w-full">
-                            <ImageDisplay objectKey={conversation.postImageUrl} />
-                          </div>
+                        {otherUser?.photo ? (
+                          <ImageDisplay 
+                            objectKey={otherUser.photo} 
+                            className="h-full w-full object-cover"
+                          />
                         ) : otherUser?.photoURL ? (
                           <img
                             src={otherUser.photoURL}
-                            alt={otherUser.displayName || 'User'}
+                            alt={recipientName}
                             className="h-full w-full object-cover"
                           />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-200">
-                            {(otherUser?.displayName || 'U').charAt(0).toUpperCase()}
+                            {recipientName.charAt(0).toUpperCase()}
                           </div>
                         )}
                       </div>
@@ -258,28 +286,42 @@ const MessagesList = () => {
                       {/* Message preview */}
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline">
-                          <h3 className="font-medium text-gray-900 dark:text-white truncate">
-                            {getConversationTitle(conversation)}
+                          <h3 className={`font-medium truncate ${
+                            unreadCount > 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {recipientName}
                           </h3>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 flex-shrink-0">
                             {formatTimestamp(conversation.lastMessage?.timestamp || conversation.updatedAt)}
                           </span>
                         </div>
 
                         <div className="flex items-center justify-between mt-1">
-                          <p className={`text-sm truncate ${unreadCount > 0
+                          <p className={`text-sm truncate ${
+                            unreadCount > 0
                               ? 'text-gray-900 dark:text-white font-medium'
                               : 'text-gray-500 dark:text-gray-400'
-                            }`}>
-                            {conversation.lastMessage?.text || 'No messages yet'}
+                          }`}>
+                            {getMessagePreview(conversation)}
                           </p>
 
                           {unreadCount > 0 && (
-                            <span className="bg-indigo-600 text-white text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1">
+                            <span className="bg-indigo-600 text-white text-xs rounded-full h-5 min-w-[20px] flex items-center justify-center px-1 ml-2">
                               {unreadCount}
                             </span>
                           )}
                         </div>
+                        
+                        {/* Optional: Show post reference if available */}
+                        {conversation.postTitle && (
+                          <div className="mt-1">
+                            <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
+                              Re: {conversation.postTitle.length > 20 
+                                ? conversation.postTitle.substring(0, 17) + '...' 
+                                : conversation.postTitle}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

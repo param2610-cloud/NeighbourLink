@@ -271,3 +271,83 @@ export async function notifyNearbyUsersAboutResource(
     console.error("Error notifying nearby users:", error);
   }
 }
+
+/**
+ * Sends notifications to users within a specified radius from a location about a new event.
+ * @param eventId - The ID of the created event
+ * @param eventTitle - The title of the event
+ * @param eventDescription - The description of the event
+ * @param location - The location where the event will take place
+ * @param eventDate - The date of the event
+ * @param radius - The radius in kilometers to find users within
+ * @param currentUserId - The ID of the user creating the event (to avoid self-notification)
+ */
+export async function notifyNearbyUsersAboutEvent(
+  eventId: string,
+  eventTitle: string, 
+  eventDescription: string,
+  location: { latitude: number, longitude: number },
+  eventDate: string,
+  radius: number = 10,
+  currentUserId: string
+): Promise<void> {
+  try {
+    // Query all users from Firestore
+    const usersRef = collection(firestoreDB, "users");
+    const usersSnapshot = await getDocs(usersRef);
+    const nearbyUsers: string[] = [];
+
+    // Filter users by distance
+    usersSnapshot.forEach((doc) => {
+      const userData = doc.data();
+      const userId = doc.id;
+      
+      // Skip current user
+      if (userId === currentUserId) return;
+      
+      // Check if user has location data
+      if (userData.location && userData.location.latitude && userData.location.longitude) {
+        const userLat = parseFloat(userData.location.latitude);
+        const userLng = parseFloat(userData.location.longitude);
+        
+        const distance = calculateDistance(
+          location.latitude, 
+          location.longitude, 
+          userLat, 
+          userLng
+        );
+        
+        // If user is within the radius, add them to the list
+        if (distance <= radius) {
+          nearbyUsers.push(userId);
+        }
+      }
+    });
+
+    console.log(`Found ${nearbyUsers.length} users within ${radius}km radius for event notification`);
+    
+    if (nearbyUsers.length > 0) {
+      // Format event date for display
+      const formattedDate = new Date(eventDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      // Prepare the notification
+      const notification = {
+        title: `New Event: ${eventTitle}`,
+        description: `${formattedDate}: ${eventDescription.substring(0, 100)}${eventDescription.length > 100 ? '...' : ''}`,
+        receipt: nearbyUsers,
+        action_url: `/event/${eventId}` // URL to the event details page
+      };
+      
+      // Send the notification
+      addNotification(notification);
+      console.log("Event notification sent to nearby users");
+    }
+  } catch (error) {
+    console.error("Error notifying nearby users about event:", error);
+  }
+}

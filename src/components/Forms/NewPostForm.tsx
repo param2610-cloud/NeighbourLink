@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { uploadFileToS3 } from '@/utils/aws/aws';
-import {  notifyNearbyUsersAboutResource } from '@/utils/notification/NotificationHook';
-
+import { notifyNearbyUsersAboutResource, notifyNearbyUsersAboutEvent } from '@/utils/notification/NotificationHook';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,7 +32,7 @@ import {
   X
 } from 'lucide-react';
 
-import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import MapContainer, { useOlaMaps } from '../MapContainer';
 import { ImageDisplay } from '../AWS/UploadFile';
 import { db } from '@/firebase';
@@ -249,7 +248,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       // No need to fetch if we already have the data from props
       import('@/firebase').then(({ db }) => {
         import('firebase/firestore').then(({ doc, getDoc }) => {
-          const userRef = doc(db, 'users', currentUser.uid);
+          const userRef = doc(db, 'Users', currentUser.uid);
           getDoc(userRef).then((docSnap) => {
             if (docSnap.exists()) {
               const data = docSnap.data() as UserProfile;
@@ -591,6 +590,27 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     }, 3500);
   };
 
+  // Add this helper function to fetch user profile data
+  const fetchUserProfileData = async (userId: string): Promise<UserProfile | null> => {
+    try {
+      console.log("Fetching user profile data on demand for location");
+      const userDocRef = doc(db, 'Users', userId); // Note: Using 'Users' collection instead of 'users'
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const data = userDocSnap.data() as UserProfile;
+        console.log("Fetched user profile for location:", data);
+        return data;
+      } else {
+        console.error("User document not found");
+        return null;
+      }
+    } catch (err) {
+      console.error("Error fetching user profile data:", err);
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     console.log("Starting form submission process");
     
@@ -628,6 +648,25 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
       let postData: Record<string, any> = { ...commonData };
       let locationData = null;
+      
+      // Ensure we have user profile data if useProfileLocation is true
+      let profileDataForLocation = userProfile;
+      
+      // Fetch user profile data if needed
+      if (!profileDataForLocation && currentUser.uid) {
+        const needToFetchProfile = 
+          (formState.postType === 'resource' && resourceForm.useProfileLocation) ||
+          (formState.postType === 'event' && eventForm.useProfileLocation) ||
+          (formState.postType === 'promotion' && promotionForm.useProfileLocation) ||
+          (formState.postType === 'update' && updateForm.useProfileLocation);
+          
+        if (needToFetchProfile) {
+          console.log("Profile data needed but not available, fetching now...");
+          profileDataForLocation = await fetchUserProfileData(currentUser.uid);
+          // Update state for future use
+          setUserProfile(profileDataForLocation);
+        }
+      }
 
       // Handle location data based on useProfileLocation toggle
       console.log(`Processing ${formState.postType} form data with location handling`);
@@ -635,11 +674,11 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
         case 'resource':
           console.log("Resource form data:", resourceForm);
           // Ensure we have valid location data
-          locationData = resourceForm.useProfileLocation && userProfile?.location 
+          locationData = resourceForm.useProfileLocation && profileDataForLocation?.location 
             ? {
-                latitude: parseFloat(userProfile.location.latitude),
-                longitude: parseFloat(userProfile.location.longitude),
-                address: userProfile.address || "User location"
+                latitude: parseFloat(profileDataForLocation.location.latitude),
+                longitude: parseFloat(profileDataForLocation.location.longitude),
+                address: profileDataForLocation.address || "User location"
               }
             : resourceForm.location;
           
@@ -660,11 +699,11 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
         case 'event':
           console.log("Event form data:", eventForm);
-          locationData = eventForm.useProfileLocation && userProfile?.location 
+          locationData = eventForm.useProfileLocation && profileDataForLocation?.location 
             ? {
-                latitude: parseFloat(userProfile.location.latitude),
-                longitude: parseFloat(userProfile.location.longitude),
-                address: userProfile.address || "Event location"
+                latitude: parseFloat(profileDataForLocation.location.latitude),
+                longitude: parseFloat(profileDataForLocation.location.longitude),
+                address: profileDataForLocation.address || "Event location"
               }
             : eventForm.location;
           
@@ -684,11 +723,11 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
         case 'promotion':
           console.log("Promotion form data:", promotionForm);
-          locationData = promotionForm.useProfileLocation && userProfile?.location 
+          locationData = promotionForm.useProfileLocation && profileDataForLocation?.location 
             ? {
-                latitude: parseFloat(userProfile.location.latitude),
-                longitude: parseFloat(userProfile.location.longitude),
-                address: userProfile.address || "Promotion location"
+                latitude: parseFloat(profileDataForLocation.location.latitude),
+                longitude: parseFloat(profileDataForLocation.location.longitude),
+                address: profileDataForLocation.address || "Promotion location"
               }
             : promotionForm.location;
           
@@ -709,11 +748,11 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
         case 'update':
           console.log("Update form data:", updateForm);
-          locationData = updateForm.useProfileLocation && userProfile?.location 
+          locationData = updateForm.useProfileLocation && profileDataForLocation?.location 
             ? {
-                latitude: parseFloat(userProfile.location.latitude),
-                longitude: parseFloat(userProfile.location.longitude),
-                address: userProfile.address || "Update location"
+                latitude: parseFloat(profileDataForLocation.location.latitude),
+                longitude: parseFloat(profileDataForLocation.location.longitude),
+                address: profileDataForLocation.address || "Update location"
               }
             : updateForm.location;
           
@@ -774,6 +813,30 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
         );
         
         console.log("Notifications sent for high urgency resource");
+      }
+
+      // Send notifications for event posts
+      if (formState.postType === 'event') {
+        console.log("Event created. Sending notifications to nearby users.");
+        
+        // Get the location data
+        const eventLocation = {
+          latitude: postData.location.latitude,
+          longitude: postData.location.longitude
+        };
+        
+        // Notify nearby users (within 10km) about the new event
+        await notifyNearbyUsersAboutEvent(
+          docRef.id,
+          eventForm.title,
+          eventForm.description,
+          eventLocation,
+          eventForm.timingInfo.date,
+          10, // 10km radius
+          currentUser.uid // Current user ID to avoid self-notification
+        );
+        
+        console.log("Notifications sent for new event");
       }
 
       // If this is a reply (has a parentId), update the parent document to include this as a child
