@@ -63,9 +63,10 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
 
 interface QuickActionsButtonProps {
     openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void;
+    setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) => {
+const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal, setIsSidebarOpen }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { isMobile } = useMobileContext();
@@ -121,7 +122,7 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal }) =>
             
             <button
                 className={`border p-4 rounded-full shadow-lg transition-transform duration-300 hover:nl-floating-menu-hover hover:shadow-2xl ${isOpen ? 'transform rotate-180' : ''}`}
-                onClick={toggleMenu}
+                onClick={()=>{toggleMenu();setIsSidebarOpen(false)}}
                 aria-label="Quick Actions"
             >
                 <Shapes  size={22} className="dark:text-white text-indigo-600" />

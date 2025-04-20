@@ -3,7 +3,6 @@ import { collection, deleteDoc, doc, getDocs, orderBy, query, where, Timestamp }
 import React, { useEffect, useState } from 'react';
 import { ResourceCard, PromotionCard, EventCard, UpdateCard, Resource, Promotion, Event, Update } from './components/Feed';
 import { FeedItem } from './components/Feed';
-import { FloatingActionMenu } from './Home';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -123,9 +122,7 @@ const AuthPosts: React.FC = () => {
         }
     }
 
-    const openModal = (type?: 'resource' | 'promotion' | 'event' | 'update') => {
-        console.log('Opening modal for type:', type);
-    };
+
 
     const handleDeleteItem = async (id: string, type: FeedItem['type']) => {
         console.debug('🗑️ Attempting to delete item:', { id, type });
@@ -439,7 +436,7 @@ const AuthPosts: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <FloatingActionMenu openModal={openModal} />
+                    {/* <FloatingActionMenu openModal={openModal} setIsSidebarOpen={set}/> */}
                 </div>
 
                 {/* Bottom Navigation */}
