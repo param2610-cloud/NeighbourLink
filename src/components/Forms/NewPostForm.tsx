@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { uploadFileToS3 } from '@/utils/aws/aws';
-import {  notifyNearbyUsersAboutResource } from '@/utils/notification/NotificationHook';
-
+import { notifyNearbyUsersAboutResource, notifyNearbyUsersAboutEvent } from '@/utils/notification/NotificationHook';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -774,6 +773,30 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
         );
         
         console.log("Notifications sent for high urgency resource");
+      }
+
+      // Send notifications for event posts
+      if (formState.postType === 'event') {
+        console.log("Event created. Sending notifications to nearby users.");
+        
+        // Get the location data
+        const eventLocation = {
+          latitude: postData.location.latitude,
+          longitude: postData.location.longitude
+        };
+        
+        // Notify nearby users (within 10km) about the new event
+        await notifyNearbyUsersAboutEvent(
+          docRef.id,
+          eventForm.title,
+          eventForm.description,
+          eventLocation,
+          eventForm.timingInfo.date,
+          10, // 10km radius
+          currentUser.uid // Current user ID to avoid self-notification
+        );
+        
+        console.log("Notifications sent for new event");
       }
 
       // If this is a reply (has a parentId), update the parent document to include this as a child

@@ -9,31 +9,39 @@ import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import SkillList from "../components/communities/skillSharing/SkillList";
 import { useMobileContext } from "@/contexts/MobileContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SkillHome: React.FC = () => {
   const [, setUserDetails] = useState<any>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
   useEffect(() => {
     const fetchUserData = async () => {
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          const docRef = doc(db, "Users", user.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setUserDetails(docSnap.data());
-            setLoading(false);
+      try {
+        auth.onAuthStateChanged(async (user) => {
+          if (user) {
+            const docRef = doc(db, "Users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              setUserDetails(docSnap.data());
+              setLoading(false);
+            } else {
+              navigate("/login");
+              console.log("No such document!");
+            }
           } else {
             navigate("/login");
-            console.log("No such document!");
           }
-        } else {
-          navigate("/login");
-        }
-      });
+        });
+      } catch (err) {
+        setError("Failed to load user data. Please try again.");
+        setLoading(false);
+        console.error("Error fetching user data:", err);
+      }
     };
 
     fetchUserData();
@@ -53,6 +61,167 @@ const SkillHome: React.FC = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Responsive Sidebar */}
+        <div
+          className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } md:translate-x-0 transition-transform duration-300 z-100`}
+        >
+          <Sidebar
+            handleLogout={handleLogout}
+            isSidebarOpen={isSidebarOpen}
+          />
+        </div>
+
+        {/* Overlay to close sidebar when clicking outside (only on mobile) */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-transparent z-30 md:hidden"
+            onClick={toggleSidebar}
+          />
+        )}
+
+        {/* Main Content Area */}
+        <div className="md:ml-64">
+          {/* Enhanced Top Navigation with animated gradient */}
+          <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
+            <div className="flex items-center justify-between p-4">
+              <div
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={toggleSidebar}
+              >
+                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+              </div>
+
+              <div className="flex items-center ">
+                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
+                  Neighbour
+                </h1>
+                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
+                  Link
+                </h1>
+                <span className="mx-2 text-blue-500 dark:text-gray-400">
+                  |
+                </span>
+                <div className="flex items-center">
+                  <FaHandshake className="mr-1 dark:text-yellow-300 text-orange-600" />
+                  <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
+                    Skill Sharing
+                  </h2>
+                </div>
+              </div>
+
+              <div className="opacity-0 w-8 h-8">
+                {/* Empty div for layout balance */}
+              </div>
+            </div>
+          </div>
+
+          {/* Loading content */}
+          <div className="container w-full mt-16 mx-auto px-4 py-8">
+            <div className="mb-8 text-center space-y-3">
+              <div className="h-8 w-48 mx-auto">
+                <Skeleton className="h-full w-full" />
+              </div>
+              <div className="h-4 w-32 mx-auto">
+                <Skeleton className="h-full w-full" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, index) => (
+                <div key={index} className="space-y-3">
+                  <Skeleton className="h-[200px] w-full rounded-xl" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[80%]" />
+                    <Skeleton className="h-4 w-[60%]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom Navigation */}
+          {isMobile && <Bottombar />}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Responsive Sidebar */}
+        <div
+          className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } md:translate-x-0 transition-transform duration-300 z-100`}
+        >
+          <Sidebar
+            handleLogout={handleLogout}
+            isSidebarOpen={isSidebarOpen}
+          />
+        </div>
+
+        {/* Overlay to close sidebar when clicking outside (only on mobile) */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-transparent z-30 md:hidden"
+            onClick={toggleSidebar}
+          />
+        )}
+
+        {/* Main Content Area */}
+        <div className="md:ml-64">
+          {/* Enhanced Top Navigation with animated gradient */}
+          <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
+            <div className="flex items-center justify-between p-4">
+              <div
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={toggleSidebar}
+              >
+                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+              </div>
+
+              <div className="flex items-center ">
+                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
+                  Neighbour
+                </h1>
+                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
+                  Link
+                </h1>
+                <span className="mx-2 text-blue-500 dark:text-gray-400">
+                  |
+                </span>
+                <div className="flex items-center">
+                  <FaHandshake className="mr-1 dark:text-yellow-300 text-orange-600" />
+                  <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
+                    Skill Sharing
+                  </h2>
+                </div>
+              </div>
+
+              <div className="opacity-0 w-8 h-8">
+                {/* Empty div for layout balance */}
+              </div>
+            </div>
+          </div>
+
+          {/* Error content */}
+          <div className="container mx-auto px-4 py-8">
+            <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative" role="alert">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline"> {error}</span>
+            </div>
+          </div>
+
+          {/* Bottom Navigation */}
+          {isMobile && <Bottombar />}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
