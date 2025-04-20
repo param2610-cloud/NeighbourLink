@@ -6,6 +6,31 @@ import { FaArrowAltCircleLeft } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
+// Sample Credential Card Component
+const SampleCredentialCard = ({ 
+  email, 
+  password, 
+  onUseCredentials 
+}: { 
+  email: string; 
+  password: string; 
+  onUseCredentials: (email: string, password: string) => void 
+}) => {
+  return (
+    <div className="bg-white/80 p-4 rounded-lg shadow-md mb-2">
+      <h4 className="text-sm font-semibold text-gray-700">Demo Credentials</h4>
+      <div className="text-xs text-gray-600">Email: {email}</div>
+      <div className="text-xs text-gray-600">Password: {password}</div>
+      <button 
+        onClick={() => onUseCredentials(email, password)}
+        className="mt-2 w-full px-2 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+      >
+        Use These Credentials
+      </button>
+    </div>
+  );
+};
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +40,6 @@ function Login() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // await setupFCMToken(user.user.uid)
       console.log("User logged in Successfully");
       navigate('/')
       toast.success("User logged in Successfully", {
@@ -29,6 +53,11 @@ function Login() {
         });
       }
     }
+  };
+
+  const populateCredentials = (email: string, password: string) => {
+    setEmail(email);
+    setPassword(password);
   };
 
   return (
@@ -45,50 +74,74 @@ function Login() {
         >
           <FaArrowAltCircleLeft size={25} /> Back to Home
         </button>
-        <form onSubmit={handleSubmit} className="w-full max-w-md p-8 bg-white/60 shadow-md rounded ">
-          <motion.div
-          initial={{scale:0}}
-          animate={{ scale:1 }}
-          transition={{ duration:0.5 }}
-          >
-            
-            <h3 className="text-2xl font-bold mb-4 text-center motion-preset-pop">Login / Sign In</h3>
+        <div className="w-full max-w-md">
+          {/* Sample Credentials Section */}
+          <div className="mb-4 px-2">
+            <motion.div
+              initial={{scale: 0}}
+              animate={{scale: 1}}
+              transition={{duration: 0.3}}
+            >
+              <div className="flex gap-2">
+                <SampleCredentialCard 
+                  email="rijupanja81@gmail.com" 
+                  password="password" 
+                  onUseCredentials={populateCredentials} 
+                />
+                <SampleCredentialCard 
+                  email="shramana@gmail.com" 
+                  password="password" 
+                  onUseCredentials={populateCredentials} 
+                />
+              </div>
+            </motion.div>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="w-full p-8 bg-white/60 shadow-md rounded ">
+            <motion.div
+            initial={{scale:0}}
+            animate={{ scale:1 }}
+            transition={{ duration:0.5 }}
+            >
+              
+              <h3 className="text-2xl font-bold mb-4 text-center motion-preset-pop">Login / Sign In</h3>
 
-            <div className="mb-3 motion-preset-slide-right">
-              <label className="block text-sm font-medium text-gray-900">Email address</label>
-              <input
-                type="email"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+              <div className="mb-3 motion-preset-slide-right">
+                <label className="block text-sm font-medium text-gray-900">Email address</label>
+                <input
+                  type="email"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="mb-3 motion-preset-slide-right">
-              <label className="block text-sm font-medium text-gray-900">Password</label>
-              <input
-                type="password"
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+              <div className="mb-3 motion-preset-slide-right">
+                <label className="block text-sm font-medium text-gray-900">Password</label>
+                <input
+                  type="password"
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
 
-            <div className="mt-6 motion-preset-slide-up">
-              <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Submit
-              </button>
-            </div>
-            <p className="mt-4 text-lg text-center text-white">
-              New user ? <a href="/register" className="text-indigo-700 hover:text-indigo-500">Register Here</a>
-            </p>
-          </motion.div>
+              <div className="mt-6 motion-preset-slide-up">
+                <button type="submit" className="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                  Submit
+                </button>
+              </div>
+              <p className="mt-4 text-lg text-center text-white">
+                New user ? <a href="/register" className="text-indigo-700 hover:text-indigo-500">Register Here</a>
+              </p>
+            </motion.div>
 
-        </form>
+          </form>
+        </div>
       </div>
     </>
   );
