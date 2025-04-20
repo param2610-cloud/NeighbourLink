@@ -241,7 +241,7 @@ NeighbourLink is a hyperlocal platform connecting neighbors to share resources (
 ## 7. User Instructions
 
 ### 7.1 Getting Started
-1. **Download and Install**
+1. **Access the Website**
    - Access via web browser at https://main.d3raf20hzd0dfa.amplifyapp.com/
 
 2. **Create Your Account**
@@ -281,7 +281,7 @@ NeighbourLink is a hyperlocal platform connecting neighbors to share resources (
 
 #### Communication
 1. **Messaging**
-   - Tap on a post to express interest.
+   - Tap on a post to communicate with the Owner.
    - Use the in-app messaging to discuss details.
    - Share additional photos if needed.
    - Arrange meeting through the secure chat.
@@ -290,7 +290,6 @@ NeighbourLink is a hyperlocal platform connecting neighbors to share resources (
    - Use "Suggest Meeting Point" feature in chat.
    - Select from safe public locations or suggest custom spot.
    - Confirm meeting time and location.
-   - Get directions when needed.
 
 #### Community Engagement
 1. **Local Events**
@@ -306,32 +305,19 @@ NeighbourLink is a hyperlocal platform connecting neighbors to share resources (
    - Track status of your reports.
 
 3. **Business Promotion**
-   - Create business profile through Settings.
-   - Verify business credentials.
-   - Post special offers for neighbors.
-   - Respond to inquiries through business chat.
+   - Post bussiness offers for neighbours for promotion and reach. 
 
 #### Skill Exchange
-1. **Offering Skills**
    - Update profile with skills and expertise.
-   - Set availability and terms.
+   - Set availability.
    - Respond to skill requests.
-   - Build reputation through reviews.
-
-2. **Finding Skills**
-   - Search by skill type in Skills tab.
-   - View profiles and reviews of skilled neighbors.
+   - View skilled neighbors.
    - Request assistance with specific projects.
-   - Arrange details through messaging.
+   - Arrange details through direct contact.
 
 #### Volunteering
-1. **Become a Volunteer**
-   - Register through Volunteer tab.
-   - Select areas of interest.
    - Set availability and radius.
    - Receive alerts for relevant needs.
-
-2. **Request Volunteer Help**
    - Create request specifying need for volunteer.
    - Describe assistance needed.
    - System matches with available volunteers.
@@ -344,22 +330,20 @@ NeighbourLink is a hyperlocal platform connecting neighbors to share resources (
    - Choose between push, email, or both.
 
 2. **Privacy Controls**
-   - Manage profile visibility.
    - Control location precision.
    - Set anonymous mode for sensitive requests.
 
 3. **Language Preferences**
    - Select interface language.
    - Set translation preferences for communications.
-   - Add secondary languages if multilingual.
 
 ## 8. Risks & Mitigation
 | **Risk** | **Mitigation** |
 |----------|----------------|
-| Low adoption in neighborhoods. | Partner with local NGOs and community leaders for grassroots promotion. |
+| Partner with local NGOs and community leaders for grassroots promotion. |
 | Safety during exchanges. | Integrate **safe pickup zones** (e.g., local police stations) and in-app safety features. |
 | Spam/fake requests. | Require phone verification for posting and implement community reporting system. |
-| Privacy concerns. | Clear privacy policies, granular controls for users, and regular data handling audits. |
+| Clear privacy policies, granular controls for users, and regular data handling audits. |
 | Language barriers. | Robust translation features and culturally sensitive localization. |
 | Digital divide. | Simple UI/UX with accessibility features and offline capabilities where possible. |
 | Resource coordination failures. | Clear communication protocols and backup contact methods for critical exchanges. |
