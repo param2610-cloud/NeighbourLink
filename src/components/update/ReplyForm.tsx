@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { db, auth } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { FaImage, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { uploadFileToS3 } from '@/utils/aws/aws';
 import { ImageDisplay } from '@/components/AWS/UploadFile';
+import { addNotification } from '@/utils/notification/NotificationHook';
 
 interface ReplyFormProps {
     parentId: string;
@@ -60,6 +61,36 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
             await updateDoc(doc(db, 'updates', parentId), {
                 childUpdates: arrayUnion(replyRef.id)
             });
+            
+            // Get the parent update details to find the author
+            const parentUpdateRef = doc(db, 'updates', parentId);
+            const parentUpdateSnap = await getDoc(parentUpdateRef);
+            
+            if (parentUpdateSnap.exists()) {
+                const parentUpdateData = parentUpdateSnap.data();
+                const parentAuthorId = parentUpdateData.userId;
+                
+                // Only send notification if parent author is different from current user
+                if (parentAuthorId && parentAuthorId !== currentUser.uid) {
+                    // Get current user details for the notification
+                    const currentUserRef = doc(db, 'Users', currentUser.uid);
+                    const currentUserSnap = await getDoc(currentUserRef);
+                    let senderName = 'Someone';
+                    
+                    if (currentUserSnap.exists()) {
+                        const userData = currentUserSnap.data();
+                        senderName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Someone';
+                    }
+                    
+                    // Create notification for the parent update author
+                    addNotification({
+                        title: 'New Reply to Your Update',
+                        description: `${senderName} replied to your update${parentUpdateData.title ? `: ${parentUpdateData.title}` : ''}`,
+                        receipt: [parentAuthorId],
+                        action_url: `/update/${parentId}`
+                    });
+                }
+            }
             
             toast.success('Reply submitted successfully', { position: 'top-center' });
             setDescription('');

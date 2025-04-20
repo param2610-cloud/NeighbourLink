@@ -159,35 +159,6 @@ const MapContainer = ({
     return address;
   };
 
-  const requestLocationPermission = () => {
-    setShowPermissionBanner(false);
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setPermissionStatus("granted");
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation({ latitude, longitude });
-
-          // If map is already initialized, center it to the user's location
-          if (window.map) {
-            window.map.flyTo({
-              center: [longitude, latitude],
-              zoom: 15,
-              essential: true,
-            });
-          }
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          setPermissionStatus("denied");
-          setShowPermissionBanner(true);
-          if (onPermissionDenied) onPermissionDenied();
-        }
-      );
-    }
-  };
-
   useEffect(() => {
     if (mapContainerRef.current) {
       let myMap = olaMaps.init({
@@ -294,13 +265,7 @@ const MapContainer = ({
     <div className="w-full h-full relative">
       {showPermissionBanner && (
         <div className="absolute top-0 left-0 right-0 z-50 bg-yellow-500 text-white p-2 text-sm text-center">
-          Location access is denied.
-          <button
-            onClick={requestLocationPermission}
-            className="ml-2 underline font-medium hover:text-yellow-100"
-          >
-            Grant access
-          </button>
+          Location access is denied. Please enable location in your browser settings.
         </div>
       )}
 

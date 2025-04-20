@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { checkIfUserRegisteredInSkillSharing } from "@/utils/communities/CheckIfRegisterd";
 import { useStateContext } from "@/contexts/StateContext";
 import { FaArrowRight, FaUserCircle, FaLightbulb } from "react-icons/fa";
-import { MdOutlineWavingHand } from "react-icons/md";
+import { MdOutlineWavingHand, MdVerified } from "react-icons/md";
 import { Switch } from "@/components/ui/switch";
 import { calculateDistance } from "@/utils/utils";
 import { getOrCreateConversationWithUser } from "@/services/messagingService";
@@ -42,13 +42,14 @@ const SkillList = () => {
           lat: currentUser?.location?.latitude,
           lng: currentUser?.location?.longitude,
         };
-
+        
         const preferredRadius = currentUser?.location?.preferredRadius || 6;
-
+        
         const skillsData2 = skillsData.map(async (e) => {
           const q = query(
             collection(db, "Users"),
             where("email", "==", (e as { id: string; email: string }).email)
+            
           );
           const querySnapshot = await getDocs(q);
           const data = querySnapshot.docs.map((doc) => doc.data())[0];
@@ -234,8 +235,9 @@ const SkillList = () => {
                     <FaUserCircle className="text-3xl text-blue-600 dark:text-blue-700" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold">
-                      {skill.firstName} {skill.lastName}
+                    <h2 className="text-lg font-semibold flex justify-start items-center space-between gap-2">
+                      {skill.firstName} {skill.lastName} {skill.isVerified && <MdVerified className="text-green-600"/>}
+                      {/* {skill.firstName} {skill.lastName}   <MdVerified className="text-green-600"/> */}
                     </h2>
                     <p className="text-blue-100 dark:text-blue-200 text-sm flex items-center">
                       <MdOutlineWavingHand className="mr-1 text-yellow-300" />
