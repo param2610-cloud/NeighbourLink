@@ -341,7 +341,7 @@ function ProfileCard() {
       <div
         className={`fixed inset-y-0 left-0 w-64 transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 transition-transform duration-300 z-40`}
+        } md:translate-x-0 transition-transform duration-300 z-100`}
       >
         <Sidebar handleLogout={handleLogout} isSidebarOpen={isSidebarOpen} />
       </div>

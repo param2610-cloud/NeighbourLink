@@ -154,8 +154,7 @@ const MessagesList = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen">
         <div className="p-4 border-b ">
           <div className="h-8 w-48 mb-4">
         <Skeleton className="h-full w-full" />
@@ -173,7 +172,6 @@ const MessagesList = () => {
           ))}
         </div>
       </div>
-    );
   }
 
   return (
@@ -182,7 +180,7 @@ const MessagesList = () => {
       <div
         className={`fixed inset-y-0 left-0 w-64 transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 transition-transform duration-300 z-40`}
+        } md:translate-x-0 transition-transform duration-300 z-100`}
       >
         <Sidebar
           handleLogout={handleLogout}
