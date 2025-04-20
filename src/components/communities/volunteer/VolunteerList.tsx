@@ -22,12 +22,29 @@ import { Slider } from "@/components/ui/slider";
 interface FilterState {
   search: string;
   showLocalOnly: boolean;
-  distance: number; 
+  distance: number;
+}
+
+interface Volunteer {
+  id: string;
+  userId: string;
+  email: string;
+  photoURL?: string;
+  firstName: string;
+  lastName: string;
+  address?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  isActiveVolunteer: boolean;
+  isVerified?: boolean;
+  phone?: string;
 }
 
 const VolunteerList = () => {
-  const [volunteers, setVolunteers] = useState<any[]>([]);
-  const [allVolunteers, setAllVolunteers] = useState<any[]>([]); // Store all fetched volunteers
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [allVolunteers, setAllVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterState>({
     search: "",
@@ -36,7 +53,10 @@ const VolunteerList = () => {
   });
   const navigate = useNavigate();
   const { user } = useStateContext();
-  const [currentUserLocation, setCurrentUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [currentUserLocation, setCurrentUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const isRegistered = checkIfUserRegisteredInVolunteer();
 
@@ -112,20 +132,54 @@ const VolunteerList = () => {
     const fetchVolunteers = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "volunteer"));
-        const volunteersData = querySnapshot.docs.map((doc) => ({
+        let volunteersData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-        }));
+        })) as Volunteer[];
+
+        // Fetch verification status for each volunteer
+        const volunteersWithVerification = await Promise.all(
+          volunteersData.map(async (volunteer) => {
+            if (volunteer.userId) {
+              try {
+                const userSnapshot = await getDocs(
+                  query(
+                    collection(db, "Users"),
+                    where("uid", "==", volunteer.userId)
+                  )
+                );
+
+                if (!userSnapshot.empty) {
+                  const userData = userSnapshot.docs[0].data();
+                  return {
+                    ...volunteer,
+                    isVerified: userData.isVerified || false,
+                  };
+                }
+              } catch (err) {
+                console.error(
+                  `Error fetching user data for volunteer ${volunteer.id}:`,
+                  err
+                );
+              }
+            }
+            return { ...volunteer, isVerified: false };
+          })
+        );
 
         const currentUser = await getCurrentUser();
         const currentUserLocation = currentUser?.location;
         setCurrentUserLocation(currentUserLocation);
 
-        // Store all volunteers
-        setAllVolunteers(volunteersData);
+        // Store all volunteers with verification info
+        setAllVolunteers(volunteersWithVerification);
 
         // Filter volunteers based on distance and other criteria
-        filterVolunteers(volunteersData, currentUserLocation, filter.distance);
+        filterVolunteers(
+          volunteersWithVerification,
+          currentUserLocation,
+          filter.distance
+        );
       } catch (error) {
         console.error("Error fetching volunteers:", error);
       } finally {
@@ -137,15 +191,19 @@ const VolunteerList = () => {
   }, []);
 
   // Function to filter volunteers based on distance
-  const filterVolunteers = (volunteers: any[], userLocation: any, maxDistance: number) => {
+  const filterVolunteers = (
+    volunteers: Volunteer[],
+    userLocation: any,
+    maxDistance: number
+  ) => {
     if (!userLocation) return setVolunteers([]);
 
     const filtered = volunteers.filter((volunteer) => {
       const { latitude, longitude } = volunteer.location || {};
-      
+
       // Skip if volunteer has no location data
       if (!latitude || !longitude) return false;
-      
+
       // Calculate distance
       const distance = calculateDistance(
         userLocation.latitude,
@@ -173,7 +231,7 @@ const VolunteerList = () => {
 
   // Handle distance change
   const handleDistanceChange = (value: number[]) => {
-    setFilter(prev => ({ ...prev, distance: value[0] }));
+    setFilter((prev) => ({ ...prev, distance: value[0] }));
   };
 
   const filteredVolunteers = volunteers.filter((volunteer) => {
@@ -192,7 +250,7 @@ const VolunteerList = () => {
     return true;
   });
 
-  const handleContactVolunteer = async (volunteer: any) => {
+  const handleContactVolunteer = async (volunteer: Volunteer) => {
     if (!user?.uid || !volunteer.id) return;
 
     try {
@@ -308,8 +366,8 @@ const VolunteerList = () => {
             No volunteers found within {filter.distance} km
           </h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            Try increasing the distance or be the first to register as a volunteer! Your help could make a big
-            difference in your community.
+            Try increasing the distance or be the first to register as a
+            volunteer! Your help could make a big difference in your community.
           </p>
         </div>
       </>
@@ -345,8 +403,13 @@ const VolunteerList = () => {
                     )}
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold">
+                    <h2 className="text-lg font-semibold flex items-center">
                       {volunteer.firstName} {volunteer.lastName}
+                      {volunteer.isVerified && (
+                        <span className="ml-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full flex items-center">
+                          ✓
+                        </span>
+                      )}
                     </h2>
                     <p className="text-green-100 dark:text-green-200 text-sm flex items-center">
                       <FaMapMarkerAlt className="mr-1" />

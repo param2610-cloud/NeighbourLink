@@ -170,13 +170,13 @@ function ProfileCard() {
       ) {
         const userRef = doc(db, "Users", auth.currentUser!.uid);
         await updateDoc(userRef, {
-          isTrusted: true,
+          isVerified: true,
           verifiedAt: new Date(),
         });
 
         setUserDetails({
           ...userDetails,
-          isTrusted: true,
+          isVerified: true,
           verifiedAt: new Date(),
         });
 
@@ -413,7 +413,7 @@ function ProfileCard() {
             {userDetails ? (
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
                 <div className="relative h-40 bg-gradient-to-r from-indigo-100 to-indigo-50 dark:from-gray-700 dark:to-gray-600">
-                  {userDetails.isTrusted && (
+                  {userDetails.isVerified && (
                     <div className="absolute top-4 right-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full text-sm font-medium flex items-center shadow-sm">
                       <AiOutlineCheckCircle className="mr-1" />
                       Trusted Neighbor
@@ -477,7 +477,7 @@ function ProfileCard() {
                       </p>
                     </div>
                     <div className="flex space-x-3">
-                      {!userDetails.isTrusted && (
+                      {!userDetails.isVerified && (
                         <button
                           onClick={() => setIsVerifyModalOpen(true)}
                           className="px-5 py-2.5 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-gray-700 rounded-lg border border-green-100 dark:border-gray-600 hover:bg-green-100 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center"
