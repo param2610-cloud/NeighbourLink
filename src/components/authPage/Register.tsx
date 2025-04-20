@@ -1,7 +1,7 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { auth, db } from "../../firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt, FaExclamationTriangle } from "react-icons/fa";
 import { uploadFileToS3 } from "@/utils/aws/aws";
@@ -34,6 +34,7 @@ function Register() {
   const [locationSelected, setLocationSelected] = useState<boolean>(false);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
   const [defaultCenter, setDefaultCenter] = useState<[number, number]>(KOLKATA_COORDINATES);
+  const [fetchingLocation, setFetchingLocation] = useState<boolean>(false);
   const mapRef = useRef<any>(null);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
@@ -135,7 +136,8 @@ function Register() {
           console.log(error);
         }
 
-        await setDoc(doc(db, "Users", user.uid), {
+        // Create the user document in Firestore
+        const userData = {
           email: user.email,
           firstName: fname,
           lastName: lname,
@@ -157,15 +159,27 @@ function Register() {
           rating: 0,
           completedExchanges: 0,
           savedPosts: [],
-        });
+        };
+        
+        // Set the document and wait for confirmation
+        await setDoc(doc(db, "Users", user.uid), userData);
+        
+        // Verify the document was created by getting a snapshot (optional but adds certainty)
+        const docRef = doc(db, "Users", user.uid);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          toast.success("Registration successful!", {
+            position: "top-center",
+          });
 
-        toast.success("Registration successful!", {
-          position: "top-center",
-        });
-
-        setTimeout(() => {
-          navigate("/");
-        }, 2000);
+          // Only navigate once document creation is confirmed
+          setTimeout(() => {
+            navigate("/");
+          }, 2000);
+        } else {
+          throw new Error("Failed to create user profile. Please try again.");
+        }
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -200,6 +214,9 @@ function Register() {
   };
 
   const fetchCurrentLocation = () => {
+    if (fetchingLocation) return;
+    
+    setFetchingLocation(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -213,7 +230,7 @@ function Register() {
           // Update the map center without affecting form state
           if (mapRef.current?.map) {
             mapRef.current.map.flyTo({
-              center: [parseFloat(longitude), parseFloat(latitude)],
+              center: [parseFloat(longitude), parseFloat(latitude)], 
               zoom: 13
             });
           }
@@ -221,11 +238,13 @@ function Register() {
           toast.success("Location fetched successfully!", {
             position: "bottom-center",
           });
+          setFetchingLocation(false);
         },
         (error) => {
           console.error("Error getting location:", error);
           setLocationPermission('denied');
           setDefaultCenter(KOLKATA_COORDINATES);
+          setFetchingLocation(false);
           if (error.code === 1) {
             toast.error("Location access denied. You can manually select your location on the map.", {
               position: "bottom-center",
@@ -242,6 +261,7 @@ function Register() {
       toast.error("Geolocation is not supported by your browser.", {
         position: "bottom-center",
       });
+      setFetchingLocation(false);
     }
   };
 
@@ -453,17 +473,7 @@ function Register() {
                       <div className="mb-4 p-3 bg-yellow-400/20 border border-yellow-500 rounded-md text-white flex items-start">
                         <FaExclamationTriangle className="text-yellow-400 mt-1 mr-2 flex-shrink-0" />
                         <p className="text-sm">
-                          Location access is denied. You can manually select your location on the map below or 
-                          <button 
-                            onClick={() => {
-                              fetchCurrentLocation();
-                              checkLocationPermission();
-                            }}
-                            className="ml-1 underline font-medium hover:text-yellow-300"
-                          >
-                            grant permission
-                          </button>
-                          .
+                          Location access is denied. You can manually select your location on the map below.
                         </p>
                       </div>
                     )}
@@ -472,9 +482,10 @@ function Register() {
                       <input
                         type="text"
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        readOnly
+                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-md text-white focus:outline-none cursor-not-allowed"
                       />
+                      <p className="text-xs text-white/70 mt-1">Address is automatically determined from your location selection on the map.</p>
                     </div>
                     <div className="mb-4">
                       <label className="block text-white text-sm font-medium mb-2">
@@ -505,10 +516,14 @@ function Register() {
                         <button
                           type="button"
                           onClick={fetchCurrentLocation}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 rounded-md text-white text-sm flex items-center justify-center transition-colors"
+                          disabled={fetchingLocation}
+                          className={`px-4 py-2 ${fetchingLocation 
+                            ? "bg-white/5 cursor-not-allowed" 
+                            : "bg-white/10 hover:bg-white/20"} 
+                            border border-white/30 rounded-md text-white text-sm flex items-center justify-center transition-colors`}
                         >
                           <FaMapMarkerAlt className="mr-2" />
-                          Get Current Location
+                          {fetchingLocation ? "Getting Location..." : "Get Current Location"}
                         </button>
                         {locationSelected && (
                           <button
