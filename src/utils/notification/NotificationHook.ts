@@ -86,10 +86,12 @@ function listenToUserNotifications(userId: string): void {
   });
 }
 
-export function useRealtimeNotification(userId: string): { notification: null | NotificationData } {
-  const [notification, setNotification] = useState<null | NotificationData>(null);
+export function useRealtimeNotification(userId: string): { notification: null | (NotificationData & { id: string }) } {
+  const [notification, setNotification] = useState<null | (NotificationData & { id: string })>(null);
 
   useEffect(() => {
+    if (!userId) return;
+    
     const notificationsRef = ref(db, "notifications");
   
     let shown: string[] = JSON.parse(
@@ -103,25 +105,24 @@ export function useRealtimeNotification(userId: string): { notification: null | 
       Object.entries(data).forEach(([id, notif]: [string, any]) => {
         const alreadyShown = shown.includes(id);
   
-        console.log(id, shown);
-  
         if (
           Array.isArray(notif.receipt) &&
           notif.receipt.includes(userId) &&
           !alreadyShown
         ) {
           setNotification({
+            id,
             title: notif.title,
             description: notif.description,
-            action_url: notif.action_url ,
+            action_url: notif.action_url,
             receipt: notif.receipt,
           });
         }
       });
     });
-  }, []);
+  }, [userId]);
 
-  return {notification};
+  return { notification };
 }
 
 export interface NotificationItem {
