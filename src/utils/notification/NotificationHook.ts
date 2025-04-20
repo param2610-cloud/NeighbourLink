@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ref, onValue, push, set, get } from "firebase/database";
 import { realtimeDB as db, db as firestoreDB } from "@/firebase";
 import { useStateContext } from "@/contexts/StateContext";
@@ -84,6 +84,44 @@ function listenToUserNotifications(userId: string): void {
       }
     });
   });
+}
+
+export function useRealtimeNotification(userId: string): { notification: null | NotificationData } {
+  const [notification, setNotification] = useState<null | NotificationData>(null);
+
+  useEffect(() => {
+    const notificationsRef = ref(db, "notifications");
+  
+    let shown: string[] = JSON.parse(
+      localStorage.getItem("shown_notifications") || "[]"
+    );
+  
+    onValue(notificationsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+  
+      Object.entries(data).forEach(([id, notif]: [string, any]) => {
+        const alreadyShown = shown.includes(id);
+  
+        console.log(id, shown);
+  
+        if (
+          Array.isArray(notif.receipt) &&
+          notif.receipt.includes(userId) &&
+          !alreadyShown
+        ) {
+          setNotification({
+            title: notif.title,
+            description: notif.description,
+            action_url: notif.action_url ,
+            receipt: notif.receipt,
+          });
+        }
+      });
+    });
+  }, []);
+
+  return {notification};
 }
 
 export interface NotificationItem {
@@ -183,7 +221,7 @@ export async function notifyNearbyUsersAboutResource(
 ): Promise<void> {
   try {
     // Query all users from Firestore
-    const usersRef = collection(firestoreDB, "users");
+    const usersRef = collection(firestoreDB, "Users");
     const usersSnapshot = await getDocs(usersRef);
     const nearbyUsers: string[] = [];
 
