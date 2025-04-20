@@ -7,6 +7,7 @@ import { MoreVertical, MapPin, Calendar } from 'lucide-react';
 import { useStateContext } from '@/contexts/StateContext'; // Update this import to use StateContext
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MdVerified } from 'react-icons/md';
 
 export interface BaseItem {
     id?: string;
@@ -108,7 +109,7 @@ export const fetchEvents = async (): Promise<Event[]> => {
 export const fetchUpdates = async (): Promise<Update[]> => {
     const updatesRef = collection(db, "updates");
     const q = query(
-        updatesRef, 
+        updatesRef,
         orderBy("createdAt", "desc")
     );
     const querySnapshot = await getDocs(q);
@@ -140,6 +141,7 @@ interface UserInfo {
     lastName: string;
     photo?: string;
     address?: string;
+    isVerified: boolean;
 }
 
 // Add user info component
@@ -155,6 +157,7 @@ const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
                 if (userDoc.exists()) {
                     const userData = userDoc.data() as UserInfo;
                     setUserInfo(userData);
+                    // console.log(userData.isVerified)
                 }
             } catch (error) {
                 console.error("Error fetching user info:", error);
@@ -198,8 +201,12 @@ const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
                 )}
             </div>
             <div>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-200">
+                <p className="text-xs flex justify-start items-center gap-1 font-medium text-gray-900 dark:text-gray-200">
                     {userInfo.firstName} {userInfo.lastName}
+                    {
+                        userInfo.isVerified &&
+                        <span className='flex justify-center items-center text-green-500'><MdVerified size={15} /></span>
+                    }
                 </p>
                 {userInfo.address && (
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 flex items-center">
@@ -297,7 +304,7 @@ export const Feed: React.FC = () => {
                                 return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
                             case 'update':
                                 return (
-                                    <div 
+                                    <div
                                         key={item.id}
                                         className=""
                                     >
@@ -405,7 +412,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                             <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 overflow-hidden rounded-md shadow-lg py-1 ">
                                 <button
                                     className="block w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-                                    onClick={()=> navigate(`/resource/${resource.id}`)}
+                                    onClick={() => navigate(`/resource/${resource.id}`)}
                                 >
                                     View Details
                                 </button>
@@ -425,7 +432,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                         )}
                     </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-2">
                     <div className='flex w-full justify-between'>
                         <span className={`inline-block px-2 py-1 text-xs font-semibold ${resource.urgency == "high" ? "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200" : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"} rounded-full`}>
@@ -440,7 +447,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                         }
                     </div>
                 </div>
-                
+
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{resource.title || 'Resource'}</h3>
                 <p className="text-xs font-light text-gray-600 dark:text-gray-300 mt-1">{resource.description}</p>
                 <div className="flex items-center mt-3 text-[10px] text-gray-500 dark:text-gray-400">
@@ -477,7 +484,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
         }
     };
     console.log('Promotion:', promotion,);
-    
+
 
     useEffect(() => {
         document.addEventListener('mousedown', handleClickOutside);
@@ -567,13 +574,13 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                         )}
                     </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-2">
                     <span className="inline-block px-2 py-1 text-xs font-semibold bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
                         Promotion
                     </span>
                 </div>
-                
+
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">
                     {promotion?.title || 'Promotion'}
                 </h3>
@@ -656,7 +663,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
         try {
             setIsRSVPing(true);
             const eventRef = doc(db, "events", event.id || "");
-            
+
             if (isRSVPed) {
                 // Remove user from responders
                 await updateDoc(eventRef, {
@@ -679,7 +686,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
     };
 
     return (
-        <div 
+        <div
             className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-l-4 border-green-500 overflow-hidden mb-4"
         >
             {event.images && event.images.length > 0 && (
@@ -756,13 +763,13 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                         )}
                     </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-2">
                     <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
                         Event: {event.eventType}
                     </span>
                 </div>
-                
+
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{event.title || 'Event'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{event.description}</p>
                 <div className="mt-3 text-[10px]">
@@ -788,17 +795,16 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                         <Calendar size={12} className="mr-1" />
                         <span>Posted: {new Date(event.createdAt).toLocaleDateString()}</span>
                     </div>
-                    
+
                     {/* RSVP Button */}
                     <div className="mt-3">
-                        <button 
+                        <button
                             onClick={handleRSVP}
                             disabled={isRSVPing}
-                            className={`px-4 py-2 text-xs font-medium rounded-md transition-colors ${
-                                isRSVPed 
-                                    ? 'bg-green-600 text-white hover:bg-green-700' 
+                            className={`px-4 py-2 text-xs font-medium rounded-md transition-colors ${isRSVPed
+                                    ? 'bg-green-600 text-white hover:bg-green-700'
                                     : 'bg-blue-500 text-white hover:bg-blue-600'
-                            } ${isRSVPing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                } ${isRSVPing ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                             {isRSVPing ? 'Processing...' : isRSVPed ? 'Attending ✓' : 'RSVP'}
                         </button>
@@ -922,13 +928,13 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                         )}
                     </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-2">
                     <span className="inline-block px-2 py-1 text-xs font-semibold bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full">
                         Update
                     </span>
                 </div>
-                
+
                 <h3 className="text-md font-semibold text-gray-900 dark:text-white">{update?.title || 'Update'}</h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">{update.description}</p>
                 <div className="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
@@ -937,7 +943,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                         <Calendar size={12} className="mr-1" />
                         <span>Posted: {new Date(update.createdAt).toLocaleDateString()}</span>
                     </div>
-                    
+
                     {/* Show reply count if available */}
                     {update.childUpdates && update.childUpdates.length > 0 && (
                         <div className="mt-1 text-blue-500 dark:text-blue-400">
