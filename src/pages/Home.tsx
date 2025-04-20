@@ -292,7 +292,7 @@ const Home: React.FC = () => {
                   ))}
                 </div>
               </div> */}
-              <QuickActionsButton openModal={openModal} />
+              <QuickActionsButton openModal={openModal} setIsSidebarOpen={setIsSidebarOpen} />
 
             </div>
 
@@ -336,7 +336,7 @@ const Home: React.FC = () => {
             </div>
 
             {/* Floating Action Button */}
-            <FloatingActionMenu openModal={openModal} />
+            <FloatingActionMenu openModal={openModal} setIsSidebarOpen={setIsSidebarOpen}/>
 
             <NewPostForm
               isOpen={isModalOpen}
@@ -384,7 +384,10 @@ const Home: React.FC = () => {
 
 export default Home;
 
-export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void }> = ({ openModal }) => {
+export const FloatingActionMenu: React.FC<{ 
+  openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void;
+  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}> = ({ openModal, setIsSidebarOpen }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { isMobile } = useMobileContext()
 
@@ -424,7 +427,7 @@ export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'eve
                 minWidth: '120px',
                 minHeight: '140px',
               }}
-              onClick={() => openModal(option.id as 'resource' | 'event' | 'promotion' | 'update')}
+              onClick={() => {openModal(option.id as 'resource' | 'event' | 'promotion' | 'update'); toggleMenu()}}
               aria-label={`Go to ${option.label} form`}
             >
               <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-blue-600 to-teal-500 flex items-center justify-center mb-3 shadow-md">
@@ -440,7 +443,7 @@ export const FloatingActionMenu: React.FC<{ openModal: (type?: 'resource' | 'eve
 
       <button
         className={`fixed ${isMobile ? "bottom-20 right-5" : "bottom-8 right-8"} h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300`}
-        onClick={toggleMenu}
+        onClick={()=>{setIsSidebarOpen(false); toggleMenu()}}
         aria-label="Open menu"
       >
         <Plus size={28} className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : 'rotate-0'}`} />
