@@ -11,6 +11,7 @@ import {
 } from "@/utils/notification/NotificationHook";
 import { InfoIcon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { useMobileContext } from "@/contexts/MobileContext";
 // import SkillList from "../components/communities/skillSharing/SkillList";
 
 const NotificationPage: React.FC = () => {
@@ -19,6 +20,7 @@ const NotificationPage: React.FC = () => {
   const [notification, setNotification] = useState<NotificationItem[]>([]);
   const { user } = useStateContext();
   const [loading, setLoading] = useState(true);
+  const { isMobile } = useMobileContext();
 
   useEffect(() => {
     async function fetchData() {
@@ -53,9 +55,8 @@ const NotificationPage: React.FC = () => {
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Responsive Sidebar - with Skill Sharing active */}
         <div
-          className={`fixed inset-y-0 left-0 w-64 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0 transition-transform duration-300 z-40`}
+          className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } md:translate-x-0 transition-transform duration-300 z-100`}
         >
           <Sidebar handleLogout={handleLogout} isSidebarOpen={isSidebarOpen} />
         </div>
@@ -102,15 +103,15 @@ const NotificationPage: React.FC = () => {
           {loading && (
             <div className="flex flex-col gap-4 px-4">
               {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="w-10 h-10">
-                <Skeleton className="h-10 w-10 rounded-full" />
+                <div key={i} className="flex items-center gap-4">
+                  <div className="w-10 h-10">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
+                  </div>
                 </div>
-                <div className="space-y-2 flex-1">
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
-                </div>
-              </div>
               ))}
             </div>
           )}
@@ -145,7 +146,12 @@ const NotificationPage: React.FC = () => {
           </div>
 
           {/* Bottom Navigation */}
-          <Bottombar />
+          {
+            isMobile && (
+
+              <Bottombar />
+            )
+          }
         </div>
       </div>
     </>
