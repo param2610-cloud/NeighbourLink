@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useStateContext } from '@/contexts/StateContext';
@@ -9,6 +9,9 @@ import { getPreSignedUrl } from '@/utils/aws/aws';
 import Bottombar from '@/components/authPage/structures/Bottombar';
 import EventDetailsPanel from '@/components/events/EventDetailsPanel';
 import { Skeleton } from '@/components/ui/skeleton';
+import { GiHamburgerMenu } from "react-icons/gi";
+import Sidebar from "../components/authPage/structures/Sidebar";
+import { useMobileContext } from '@/contexts/MobileContext';
 
 interface Event {
   id: string;
@@ -47,10 +50,29 @@ const EventsPage = () => {
   const [radius, setRadius] = useState(5);
   const { user } = useStateContext();
   const navigate = useNavigate();
+  const {isMobile} = useMobileContext()
 
   // States for the event details panel
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false);
+
+  // State for the sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  async function handleLogout() {
+    try {
+      await auth.signOut();
+      window.location.href = "/login";
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error logging out:", error.message);
+      }
+    }
+  }
 
   // Get user's profile and location data
   useEffect(() => {
@@ -261,130 +283,189 @@ const EventsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 pb-20">
-      <div className="flex flex-row h-screen">
-        <div className={`flex-1 overflow-auto ${isDetailsPanelOpen ? 'hidden md:block' : 'block'}`}>
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex items-center mb-6">
-              <button onClick={() => navigate(-1)} className="mr-4 p-2 rounded-full bg-gray-800">
-                <FaArrowLeft className="text-gray-300" />
-              </button>
-              <h1 className="text-2xl font-bold text-white">Community Events</h1>
+    <div className="flex flex-col min-h-screen bg-gray-900">
+      {/* Responsive Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 w-64 transform ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 transition-transform duration-300 z-100`}
+      >
+        <Sidebar
+          handleLogout={handleLogout}
+          isSidebarOpen={isSidebarOpen}
+        />
+      </div>
+
+      {/* Overlay to close sidebar when clicking outside (only on mobile) */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-transparent z-30 md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      {/* Main Content Area */}
+      <div className="md:ml-64">
+        {/* Enhanced Top Navigation */}
+        <div className="sticky top-0 z-10 bg-gray-800 shadow-md">
+          <div className="flex items-center justify-between p-4">
+            <div
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={toggleSidebar}
+            >
+              <GiHamburgerMenu className="text-2xl text-gray-300" />
             </div>
 
-            {loading ? (
-              <div className="space-y-6">
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4 text-white">
-                    <span className="border-b-2 border-green-500 pb-1">My Events</span>
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {[1, 2].map((i) => (
-                      <div key={i} className=" rounded-lg p-4">
-                        <Skeleton className="h-48 w-full mb-4" />
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-full mb-4" />
-                        <div className="flex gap-2 mb-4">
-                          <Skeleton className="h-6 w-24" />
-                          <Skeleton className="h-6 w-24" />
-                        </div>
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-1/2" />
-                      </div>
-                    ))}
-                  </div>
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-indigo-600">
+                Neighbour
+              </h1>
+              <h1 className="text-xl font-bold text-blue-600">
+              Link
+              </h1>
+              <span className="mx-2 text-blue-500">
+                |
+              </span>
+              <h2 className="text-xl font-bold text-green-600">
+                Events
+              </h2>
+            </div>
+
+            <div className="opacity-0 w-8 h-8">
+              {/* Empty div for layout balance */}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 pb-24">
+          <div className="flex flex-row h-screen">
+            <div className={`flex-1 overflow-auto ${isDetailsPanelOpen ? 'hidden md:block' : 'block'}`}>
+              <div className="container mx-auto px-4 py-8">
+                <div className="flex items-center mb-6">
+                  <button onClick={() => navigate(-1)} className="mr-4 p-2 rounded-full bg-gray-800">
+                    <FaArrowLeft className="text-gray-300" />
+                  </button>
+                  <h1 className="text-2xl font-bold text-white">Community Events</h1>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold mb-4 text-white">
-                    <span className="border-b-2 border-green-500 pb-1">Events Near You</span>
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {[1, 2].map((i) => (
-                      <div key={i} className=" rounded-lg p-4">
-                        <Skeleton className="h-48 w-full mb-4" />
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                        <Skeleton className="h-4 w-full mb-4" />
-                        <div className="flex gap-2 mb-4">
-                          <Skeleton className="h-6 w-24" />
-                          <Skeleton className="h-6 w-24" />
-                        </div>
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-1/2" />
+
+                {loading ? (
+                  <div className="space-y-6">
+                    <div className="mb-8">
+                      <h2 className="text-xl font-semibold mb-4 text-white">
+                        <span className="border-b-2 border-green-500 pb-1">My Events</span>
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                        {[1, 2].map((i) => (
+                          <div key={i} className=" rounded-lg p-4">
+                            <Skeleton className="h-48 w-full mb-4" />
+                            <Skeleton className="h-6 w-3/4 mb-2" />
+                            <Skeleton className="h-4 w-full mb-4" />
+                            <div className="flex gap-2 mb-4">
+                              <Skeleton className="h-6 w-24" />
+                              <Skeleton className="h-6 w-24" />
+                            </div>
+                            <Skeleton className="h-4 w-full mb-2" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-semibold mb-4 text-white">
+                        <span className="border-b-2 border-green-500 pb-1">Events Near You</span>
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                        {[1, 2].map((i) => (
+                          <div key={i} className=" rounded-lg p-4">
+                            <Skeleton className="h-48 w-full mb-4" />
+                            <Skeleton className="h-6 w-3/4 mb-2" />
+                            <Skeleton className="h-4 w-full mb-4" />
+                            <div className="flex gap-2 mb-4">
+                              <Skeleton className="h-6 w-24" />
+                              <Skeleton className="h-6 w-24" />
+                            </div>
+                            <Skeleton className="h-4 w-full mb-2" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* My Events Section */}
+                    <div className="mb-8">
+                      <h2 className="text-xl font-semibold mb-4 text-white">
+                        <span className="border-b-2 border-green-500 pb-1">My Events</span>
+                      </h2>
+
+                      {myEvents.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                          {myEvents.map((event) => renderEventCard(event, true))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 bg-gray-800 rounded-lg shadow">
+                          <p className="text-gray-400">You haven't RSVP'd to any events yet.</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nearby Events Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold text-white">
+                          <span className="border-b-2 border-green-500 pb-1">Events Near You</span>
+                        </h2>
+
+                        <select
+                          value={radius}
+                          onChange={(e) => setRadius(Number(e.target.value))}
+                          className="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm text-white"
+                        >
+                          <option value={1}>1 km</option>
+                          <option value={3}>3 km</option>
+                          <option value={5}>5 km</option>
+                          <option value={10}>10 km</option>
+                        </select>
+                      </div>
+
+                      {nearbyEvents.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                          {nearbyEvents.map((event) => renderEventCard(event, false))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 bg-gray-800 rounded-lg shadow">
+                          <p className="text-gray-400">No events found nearby.</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            ) : (
-              <>
-                {/* My Events Section */}
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4 text-white">
-                    <span className="border-b-2 border-green-500 pb-1">My Events</span>
-                  </h2>
+            </div>
 
-                  {myEvents.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                      {myEvents.map((event) => renderEventCard(event, true))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-gray-800 rounded-lg shadow">
-                      <p className="text-gray-400">You haven't RSVP'd to any events yet.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Nearby Events Section */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-white">
-                      <span className="border-b-2 border-green-500 pb-1">Events Near You</span>
-                    </h2>
-
-                    <select
-                      value={radius}
-                      onChange={(e) => setRadius(Number(e.target.value))}
-                      className="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 text-sm text-white"
-                    >
-                      <option value={1}>1 km</option>
-                      <option value={3}>3 km</option>
-                      <option value={5}>5 km</option>
-                      <option value={10}>10 km</option>
-                    </select>
-                  </div>
-
-                  {nearbyEvents.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                      {nearbyEvents.map((event) => renderEventCard(event, false))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 bg-gray-800 rounded-lg shadow">
-                      <p className="text-gray-400">No events found nearby.</p>
-                    </div>
-                  )}
-                </div>
-              </>
+            {/* Event Details Panel */}
+            {selectedEvent && (
+              <EventDetailsPanel
+                event={selectedEvent}
+                isOpen={isDetailsPanelOpen}
+                onClose={() => {
+                  setIsDetailsPanelOpen(false);
+                  // Add a small delay before clearing the selected event
+                  // to allow for smooth exit animation
+                  setTimeout(() => setSelectedEvent(null), 300);
+                }}
+              />
             )}
           </div>
         </div>
 
-        {/* Event Details Panel */}
-        {selectedEvent && (
-          <EventDetailsPanel
-            event={selectedEvent}
-            isOpen={isDetailsPanelOpen}
-            onClose={() => {
-              setIsDetailsPanelOpen(false);
-              // Add a small delay before clearing the selected event
-              // to allow for smooth exit animation
-              setTimeout(() => setSelectedEvent(null), 300);
-            }}
-          />
-        )}
+        {/* Bottom Navigation */}
+        {
+          isMobile && 
+        <Bottombar />
+        }
       </div>
-
-      {/* Bottom Navigation */}
-      <Bottombar />
     </div>
   );
 };

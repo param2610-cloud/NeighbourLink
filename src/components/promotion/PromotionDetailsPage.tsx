@@ -107,8 +107,8 @@ const PromotionDetailsPage = () => {
                             const userData = userDoc.data();
                             console.log('User data loaded:', userData);
                             setProviderInfo({
-                                displayName: userData.displayName || 'Anonymous',
-                                photoURL: userData.photoURL || '',
+                                displayName: `${userData.firstName.trim()} ${userData.lastName.trim()}` || 'Anonymous',
+                                photoURL: userData.photo || '',
                                 email: userData.email || '',
                                 verified: userData.isVerified || false
                             });
@@ -543,14 +543,12 @@ const PromotionDetailsPage = () => {
                         <div className="flex items-center">
                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
                                 {providerInfo.photoURL ? (
-                                    <img 
-                                        src={providerInfo.photoURL} 
-                                        alt={providerInfo.displayName} 
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            e.currentTarget.src = "/assets/pictures/blue-circle-with-white-user_78370-4707.avif";
-                                        }}
-                                    />
+                                   <ImageDisplay
+                                   objectKey={providerInfo.photoURL}
+                                      className="w-full h-full object-cover"
+                                      
+
+                                   />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-300">
                                         <span>{providerInfo.displayName?.charAt(0).toUpperCase()}</span>

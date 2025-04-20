@@ -209,6 +209,15 @@ function Register() {
           setLon(longitude);
           setLocationPermission('granted');
           setDefaultCenter([parseFloat(latitude), parseFloat(longitude)]);
+          
+          // Update the map center without affecting form state
+          if (mapRef.current?.map) {
+            mapRef.current.map.flyTo({
+              center: [parseFloat(longitude), parseFloat(latitude)],
+              zoom: 13
+            });
+          }
+          
           toast.success("Location fetched successfully!", {
             position: "bottom-center",
           });
@@ -255,7 +264,7 @@ function Register() {
   };
 
   return (
-    <div className="w-screen h-screen relative overflow-hidden">
+    <div className="w-screen h-screen relative overflow-auto">
       <img
         src="/assets/social_circle.avif"
         className="h-full w-full object-cover"

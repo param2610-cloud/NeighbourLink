@@ -288,6 +288,7 @@ export const Feed: React.FC = () => {
                                         key={item.id}
                                     >
                                         <ResourceCard resource={item as Resource} onDelete={handleDeleteItem} />
+
                                     </div>
                                 );
                             case 'promotion':

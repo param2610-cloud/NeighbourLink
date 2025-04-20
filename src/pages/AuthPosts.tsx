@@ -7,6 +7,10 @@ import { FloatingActionMenu } from './Home';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
+import { GiHamburgerMenu } from "react-icons/gi";
+import Sidebar from "../components/authPage/structures/Sidebar";
+import Bottombar from "@/components/authPage/structures/Bottombar";
+import { useMobileContext } from '@/contexts/MobileContext';
 
 // Reuse the convertDoc function from your Feed component
 const convertDoc = <T extends FeedItem>(doc: any, type: FeedItem['type']): T => {
@@ -94,9 +98,6 @@ const fetchAllUserFeedItems = async (userId: string): Promise<FeedItem[]> => {
     }
 };
 
-// Reuse your existing Card components from Feed
-
-
 const AuthPosts: React.FC = () => {
     console.debug('🔄 Rendering AuthPosts component');
     const user = auth.currentUser;
@@ -104,9 +105,25 @@ const AuthPosts: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { isMobile } = useMobileContext()
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
+
+    async function handleLogout() {
+        try {
+            await auth.signOut();
+            window.location.href = "/login";
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error("Error logging out:", error.message);
+            }
+        }
+    }
 
     const openModal = (type?: 'resource' | 'promotion' | 'event' | 'update') => {
-        // Handle modal opening logic here
         console.log('Opening modal for type:', type);
     };
 
@@ -170,7 +187,7 @@ const AuthPosts: React.FC = () => {
             <div className="container w-full mt-16 mx-auto px-4 py-8">
                 <div className="mb-8 text-center space-y-3">
                     <div className="h-8 w-48 mx-auto">
-                        <Skeleton  className="h-full w-full" />
+                        <Skeleton className="h-full w-full" />
                     </div>
                     <div className="h-4 w-32 mx-auto">
                         <Skeleton className="h-full w-full" />
@@ -201,57 +218,116 @@ const AuthPosts: React.FC = () => {
     }
 
     return (
-        <div className="container w-full py-2 mx-auto px-4 bg-transparent">
-            <button 
-                onClick={() => navigate(-1)}
-                className="flex items-center gap-2 mb-8 px-4 py-2 text-blue-500"
-                aria-label="Go back"
+        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+            {/* Responsive Sidebar */}
+            <div
+                className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    } md:translate-x-0 transition-transform duration-300 z-100`}
             >
-                <FaArrowLeft className="text-blue-500" />
-                <span className="font-medium">Back</span>
-            </button>
-            
-            <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                    My Posts
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    {feedItems.length} posts created
-                </p>
+                <Sidebar
+                    handleLogout={handleLogout}
+                    isSidebarOpen={isSidebarOpen}
+                />
             </div>
 
-            <div className="space-y-4">
-                {feedItems.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500 dark:text-gray-400">
-                            You haven't created any posts yet.
+            {/* Overlay to close sidebar when clicking outside (only on mobile) */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-transparent z-30 md:hidden"
+                    onClick={toggleSidebar}
+                />
+            )}
+
+            {/* Main Content Area */}
+            <div className="md:ml-64">
+                {/* Top Navigation */}
+                <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
+                    <div className="flex items-center justify-between p-4">
+                        <div
+                            className="flex items-center space-x-2 cursor-pointer"
+                            onClick={toggleSidebar}
+                        >
+                            <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+                        </div>
+
+                        <div className="flex items-center">
+                            <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
+                                Neighbour
+                            </h1>
+                            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
+                                Link
+                            </h1>
+                            <span className="mx-2 text-blue-500 dark:text-gray-400">
+                                |
+                            </span>
+                            <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
+                                My Posts
+                            </h2>
+                        </div>
+
+                        <div className="opacity-0 w-8 h-8">
+                            {/* Empty div for layout balance */}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 px-4 py-6 pb-24">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="flex items-center gap-2 mb-8 px-4 py-2 text-blue-500"
+                        aria-label="Go back"
+                    >
+                        <FaArrowLeft className="text-blue-500" />
+                        <span className="font-medium">Back</span>
+                    </button>
+
+                    <div className="mb-8 text-center">
+                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+                            My Posts
+                        </h1>
+                        <p className="text-gray-600 dark:text-gray-400 mt-2">
+                            {feedItems.length} posts created
                         </p>
                     </div>
-                ) : (
-                    <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-                        {/* <div className=''> */}
 
-                            {
-                                feedItems.map((item) => {
-                                    switch (item.type) {
-                                        case 'resource':
-                                            return <ResourceCard key={item.id} resource={item as Resource} onDelete={handleDeleteItem} />;
-                                        case 'promotion':
-                                            return <PromotionCard key={item.id} promotion={item as Promotion} onDelete={handleDeleteItem} />;
-                                        case 'event':
-                                            return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
-                                        case 'update':
-                                            return <UpdateCard key={item.id} update={item as Update} onDelete={handleDeleteItem} />;
-                                        default:
-                                    }
-                                })
-                            }
-                        {/* </div> */}
+                    <div className="space-y-4">
+                        {feedItems.length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-gray-500 dark:text-gray-400">
+                                    You haven't created any posts yet.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                                {
+                                    feedItems.map((item) => {
+                                        switch (item.type) {
+                                            case 'resource':
+                                                return <ResourceCard key={item.id} resource={item as Resource} onDelete={handleDeleteItem} />;
+                                            case 'promotion':
+                                                return <PromotionCard key={item.id} promotion={item as Promotion} onDelete={handleDeleteItem} />;
+                                            case 'event':
+                                                return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
+                                            case 'update':
+                                                return <UpdateCard key={item.id} update={item as Update} onDelete={handleDeleteItem} />;
+                                            default:
+                                                return null;
+                                        }
+                                    })
+                                }
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
-            <FloatingActionMenu openModal={openModal} />
+                    <FloatingActionMenu openModal={openModal} />
+                </div>
 
+                {/* Bottom Navigation */}
+                {
+                    isMobile &&
+                    <Bottombar />
+                }
+            </div>
         </div>
     );
 };
