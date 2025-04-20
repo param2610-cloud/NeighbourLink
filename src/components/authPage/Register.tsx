@@ -1,7 +1,7 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useEffect, useState, useRef } from "react";
 import { auth, db } from "../../firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt, FaExclamationTriangle } from "react-icons/fa";
 import { uploadFileToS3 } from "@/utils/aws/aws";
@@ -136,7 +136,8 @@ function Register() {
           console.log(error);
         }
 
-        await setDoc(doc(db, "Users", user.uid), {
+        // Create the user document in Firestore
+        const userData = {
           email: user.email,
           firstName: fname,
           lastName: lname,
@@ -158,15 +159,27 @@ function Register() {
           rating: 0,
           completedExchanges: 0,
           savedPosts: [],
-        });
+        };
+        
+        // Set the document and wait for confirmation
+        await setDoc(doc(db, "Users", user.uid), userData);
+        
+        // Verify the document was created by getting a snapshot (optional but adds certainty)
+        const docRef = doc(db, "Users", user.uid);
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          toast.success("Registration successful!", {
+            position: "top-center",
+          });
 
-        toast.success("Registration successful!", {
-          position: "top-center",
-        });
-
-        setTimeout(() => {
-          navigate("/");
-        }, 2000);
+          // Only navigate once document creation is confirmed
+          setTimeout(() => {
+            navigate("/");
+          }, 2000);
+        } else {
+          throw new Error("Failed to create user profile. Please try again.");
+        }
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
