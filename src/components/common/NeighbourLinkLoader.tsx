@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
 
 type LoadingProps = {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'; // Added larger size options
   duration?: number; // Animation cycle duration in ms
 };
 
 export default function NeighbourLinkLoader({ 
-  size = 'md',
+  size = 'lg', // Changed default to 'lg'
   duration = 2000
 }: LoadingProps) {
   const [progress, setProgress] = useState(0);
   
-  // Size classes mapping
+  // Size classes mapping - added larger sizes
   const sizeClasses = {
     sm: 'w-16 h-16',
     md: 'w-24 h-24',
-    lg: 'w-32 h-32'
+    lg: 'w-32 h-32',
+    xl: 'w-48 h-48',
+    '2xl': 'w-64 h-64'
   };
   
   // Animation effect
@@ -149,12 +151,6 @@ export default function NeighbourLinkLoader({
       {/* Loading Text with Dynamic Progress */}
       <div className="mt-4 font-medium text-center">
         <div className="text-gray-200">Connecting neighbours</div>
-        {/* <div className="h-1 w-16 mt-2 rounded-full bg-gray-700 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-blue-400 via-teal-400 to-pink-500 rounded-full"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div> */}
       </div>
     </div>
   );

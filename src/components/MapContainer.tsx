@@ -95,7 +95,7 @@ const MapContainer = ({
   center = KOLKATA_COORDINATES, // Default to Kolkata
   zoom = 15,
   scrollWheelZoom = true,
-  ref = () => {},
+  ref = () => { },
   isSelectable = false,
   maximumSelection = 1,
   onPermissionDenied,
@@ -222,20 +222,22 @@ const MapContainer = ({
       if (showCurrentLocation) {
         geolocate.on("geolocate", (event: any) => {
           const { latitude, longitude } = event.coords;
-          if (!currentAddress) setCurrentLocation({ latitude, longitude });
-          geoLocationToAddress(latitude, longitude).then((address) => {
-            setCurrentAddress(address);
-          });
-          olaMaps
-            .addMarker({ offset: [0, -5], anchor: "bottom" })
-            .setLngLat([longitude, latitude])
-            .addTo(myMap);
+          if (selectedLocations.length === 0) {
+            setCurrentLocation({ latitude, longitude });
+            geoLocationToAddress(latitude, longitude).then((address) => {
+              setCurrentAddress(address);
+            });
+            olaMaps
+              .addMarker({ offset: [0, -5], anchor: "bottom" })
+              .setLngLat([longitude, latitude])
+              .addTo(myMap);
+          }
         });
 
         // Handle error events
         geolocate.on("error", (e: any) => {
           console.log("Geolocation error:", e);
-          
+
           setPermissionStatus("denied");
           setShowPermissionBanner(true);
           if (onPermissionDenied) onPermissionDenied();

@@ -16,22 +16,27 @@ import { Switch } from "@/components/ui/switch";
 import { checkIfUserRegisteredInVolunteer } from "@/utils/communities/CheckIfRegisterd";
 import { calculateDistance } from "@/utils/utils";
 import { getOrCreateConversationWithUser } from "@/services/messagingService";
+import { Slider } from "@/components/ui/slider";
 
 // Define the filter type
 interface FilterState {
   search: string;
   showLocalOnly: boolean;
+  distance: number; 
 }
 
 const VolunteerList = () => {
   const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [allVolunteers, setAllVolunteers] = useState<any[]>([]); // Store all fetched volunteers
   const [loading, setLoading] = useState(true);
-  const [filter, ] = useState<FilterState>({
+  const [filter, setFilter] = useState<FilterState>({
     search: "",
     showLocalOnly: false,
+    distance: 5, // Default to 5km
   });
   const navigate = useNavigate();
   const { user } = useStateContext();
+  const [currentUserLocation, setCurrentUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
 
   const isRegistered = checkIfUserRegisteredInVolunteer();
 
@@ -114,30 +119,13 @@ const VolunteerList = () => {
 
         const currentUser = await getCurrentUser();
         const currentUserLocation = currentUser?.location;
+        setCurrentUserLocation(currentUserLocation);
 
-        const vol2 = volunteersData.filter((_) => {
-          const e = _ as {
-            id: string;
-            email: string;
-            location: { latitude: number; longitude: number };
-            isActiveVolunteer: boolean;
-          };
-          const { latitude, longitude } = e.location;
-          const distance = calculateDistance(
-            currentUserLocation.latitude,
-            currentUserLocation.longitude,
-            latitude,
-            longitude
-          );
+        // Store all volunteers
+        setAllVolunteers(volunteersData);
 
-          return (
-            e.isActiveVolunteer &&
-            distance <= currentUser.preferredRadius &&
-            e.email !== user?.email
-          );
-        });
-
-        setVolunteers(vol2);
+        // Filter volunteers based on distance and other criteria
+        filterVolunteers(volunteersData, currentUserLocation, filter.distance);
       } catch (error) {
         console.error("Error fetching volunteers:", error);
       } finally {
@@ -147,6 +135,46 @@ const VolunteerList = () => {
 
     fetchVolunteers();
   }, []);
+
+  // Function to filter volunteers based on distance
+  const filterVolunteers = (volunteers: any[], userLocation: any, maxDistance: number) => {
+    if (!userLocation) return setVolunteers([]);
+
+    const filtered = volunteers.filter((volunteer) => {
+      const { latitude, longitude } = volunteer.location || {};
+      
+      // Skip if volunteer has no location data
+      if (!latitude || !longitude) return false;
+      
+      // Calculate distance
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        latitude,
+        longitude
+      );
+
+      return (
+        volunteer.isActiveVolunteer &&
+        distance <= maxDistance &&
+        volunteer.email !== user?.email
+      );
+    });
+
+    setVolunteers(filtered);
+  };
+
+  // Re-filter when distance changes
+  useEffect(() => {
+    if (currentUserLocation && allVolunteers.length > 0) {
+      filterVolunteers(allVolunteers, currentUserLocation, filter.distance);
+    }
+  }, [filter.distance, currentUserLocation, allVolunteers]);
+
+  // Handle distance change
+  const handleDistanceChange = (value: number[]) => {
+    setFilter(prev => ({ ...prev, distance: value[0] }));
+  };
 
   const filteredVolunteers = volunteers.filter((volunteer) => {
     if (volunteer.email === user?.email) return false;
@@ -163,8 +191,6 @@ const VolunteerList = () => {
 
     return true;
   });
-
-
 
   const handleContactVolunteer = async (volunteer: any) => {
     if (!user?.uid || !volunteer.id) return;
@@ -216,49 +242,8 @@ const VolunteerList = () => {
       </div>
     );
 
-  if (volunteers.length === 0)
-    return (
-      <>
-        <div className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Are you willing to Volunteer
-        </div>
-        <div className="flex items-center gap-2 p-3">
-          <label
-            htmlFor="isActive"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Not Active
-          </label>
-          <Switch
-            id="isActive"
-            checked={isActiveVolunteer}
-            onCheckedChange={handleActiveChange}
-          />
-          <label
-            htmlFor="isActive"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Active
-          </label>
-        </div>
-        <div className="p-10 text-center bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full">
-              <FaUserCircle className="w-12 h-12 text-blue-500 dark:text-blue-300" />
-            </div>
-          </div>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-            No volunteers found
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            Be the first to register as a volunteer! Your help could make a big
-            difference in your community.
-          </p>
-        </div>
-      </>
-    );
-
-  return (
+  // Volunteer toggle section - extracted as a reusable fragment
+  const volunteerToggleSection = (
     <>
       <div className="block text-sm font-medium text-gray-700 dark:text-gray-300">
         Are you willing to Volunteer
@@ -282,6 +267,58 @@ const VolunteerList = () => {
           Active
         </label>
       </div>
+    </>
+  );
+
+  // Distance filter section - extracted as a reusable fragment
+  const distanceFilterSection = (
+    <div className="px-4 py-3 bg-white rounded-lg shadow-sm dark:bg-gray-800 mb-4 border border-gray-100 dark:border-gray-700">
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Distance: {filter.distance} km
+        </label>
+        <Slider
+          value={[filter.distance]}
+          onValueChange={handleDistanceChange}
+          max={20}
+          min={1}
+          step={1}
+          className="w-full"
+        />
+      </div>
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+        <span>1 km</span>
+        <span>20 km</span>
+      </div>
+    </div>
+  );
+
+  if (volunteers.length === 0)
+    return (
+      <>
+        {volunteerToggleSection}
+        {distanceFilterSection}
+        <div className="p-10 text-center bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
+          <div className="flex justify-center mb-4">
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-full">
+              <FaUserCircle className="w-12 h-12 text-blue-500 dark:text-blue-300" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+            No volunteers found within {filter.distance} km
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            Try increasing the distance or be the first to register as a volunteer! Your help could make a big
+            difference in your community.
+          </p>
+        </div>
+      </>
+    );
+
+  return (
+    <>
+      {volunteerToggleSection}
+      {distanceFilterSection}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
         {filteredVolunteers.length > 0 ? (
           filteredVolunteers.map((volunteer) => (

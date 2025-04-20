@@ -117,7 +117,7 @@ const PostDetailsPage = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const postRef = doc(db, 'posts', id!);
+                const postRef = doc(db, 'resources', id!);
                 const postSnap = await getDoc(postRef);
 
                 if (postSnap.exists()) {
