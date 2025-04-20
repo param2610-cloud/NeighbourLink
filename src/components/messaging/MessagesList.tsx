@@ -130,70 +130,24 @@ const MessagesList = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Responsive Sidebar */}
-        <div
-          className={`fixed inset-y-0 left-0 w-64 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0 transition-transform duration-300 z-40`}
-        >
-          <Sidebar
-            handleLogout={handleLogout}
-            isSidebarOpen={isSidebarOpen}
-          />
+    <div className="flex flex-col h-screen">
+        <div className="p-4 border-b ">
+          <div className="h-8 w-48 mb-4">
+        <Skeleton className="h-full w-full" />
+          </div>
         </div>
-        
-        <div className="md:ml-64">
-          <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
-            <div className="flex items-center justify-between p-4">
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={toggleSidebar}
-              >
-                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
-              </div>
-
-              <div className="flex items-center">
-                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
-                  Neighbour
-                </h1>
-                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                Link
-                </h1>
-                <span className="mx-2 text-blue-500 dark:text-gray-400">
-                  |
-                </span>
-                <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
-                  Messages
-                </h2>
-              </div>
-
-              <div className="opacity-0 w-8 h-8">
-                {/* Empty div for layout balance */}
-              </div>
-            </div>
+        <div className="flex-1 p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
           </div>
-          
-          <div className="flex-1 p-4 space-y-4 pb-24">
-            <div className="h-8 w-48 mb-4">
-              <Skeleton className="h-full w-full" />
-            </div>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center space-x-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-[250px]" />
-                  <Skeleton className="h-4 w-[200px]" />
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {isMobile && <Bottombar />}
+        </div>
+          ))}
         </div>
       </div>
-    );
   }
 
   return (
@@ -202,7 +156,7 @@ const MessagesList = () => {
       <div
         className={`fixed inset-y-0 left-0 w-64 transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 transition-transform duration-300 z-40`}
+        } md:translate-x-0 transition-transform duration-300 z-100`}
       >
         <Sidebar
           handleLogout={handleLogout}
