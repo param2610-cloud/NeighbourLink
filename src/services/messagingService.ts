@@ -1,3 +1,4 @@
+import { addNotification } from '@/utils/notification/NotificationHook';
 import { db } from '../firebase';
 import { 
   collection, 
@@ -158,6 +159,13 @@ export const sendMessage = async (
     if (userId !== senderId) {
       unreadCount[userId] = (unreadCount[userId] || 0) + 1;
     }
+  });
+
+  addNotification({
+    title: 'New Message',
+    description: text,
+    receipt: participants.filter(userId => userId !== senderId),
+    action_url: `/messages/${conversationId}`,
   });
   
   await updateDoc(conversationRef, {
