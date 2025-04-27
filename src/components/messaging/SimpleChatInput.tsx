@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { sendChatMessage } from '../../services/simpleChatService';
 import { IoMdSend, IoMdImage, IoMdAttach, IoMdClose, IoMdDocument, IoMdFilm } from 'react-icons/io';
 
-import { createUniqueFileName, uploadFileToS3 } from '@/utils/aws/aws';
+import { createUniqueFileName } from '@/utils/aws/aws';
 import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
 

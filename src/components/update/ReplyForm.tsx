@@ -4,7 +4,6 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, getDoc
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { FaImage, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { uploadFileToS3 } from '@/utils/aws/aws';
 import { addNotification } from '@/utils/notification/NotificationHook';
 import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
