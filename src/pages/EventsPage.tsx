@@ -5,13 +5,13 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useStateContext } from '@/contexts/StateContext';
 import { calculateDistance } from '@/utils/utils';
-import { getPreSignedUrl } from '@/utils/aws/aws';
 import Bottombar from '@/components/authPage/structures/Bottombar';
 import EventDetailsPanel from '@/components/events/EventDetailsPanel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import { useMobileContext } from '@/contexts/MobileContext';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Event {
   id: string;
@@ -132,7 +132,7 @@ const EventsPage = () => {
           // Process images if they exist
           if (eventData.images && Array.isArray(eventData.images)) {
             for (let i = 0; i < eventData.images.length; i++) {
-              const processedUrl = await getPreSignedUrl(eventData.images[i]);
+              const processedUrl = eventData.images[i];
               eventData.images[i] = processedUrl;
             }
           }
@@ -226,9 +226,8 @@ const EventsPage = () => {
       >
         {event.images && event.images.length > 0 && (
           <div className="relative w-full h-48 bg-gray-700">
-            <img
-              src={event.images[0]}
-              alt={event.title}
+            <ImageDisplay
+              publicId={event.images[0]}
               className="w-full h-full object-cover"
             />
             <div className="absolute top-2 right-2 bg-green-900 text-green-200 text-xs font-semibold px-2 py-1 rounded">

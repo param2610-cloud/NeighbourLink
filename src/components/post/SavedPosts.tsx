@@ -6,8 +6,8 @@ import { AiOutlineLoading3Quarters, AiFillHeart } from 'react-icons/ai';
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaArrowLeft } from 'react-icons/fa';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Timestamp } from 'firebase/firestore';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { toast } from 'react-toastify';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Post {
     id: string;
@@ -147,7 +147,7 @@ const SavedPosts = () => {
                                     <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
                                         {post.photoUrls?.length > 0 ? (
                                             <ImageDisplay
-                                                objectKey={post.photoUrls[0]}
+                                                publicId={post.photoUrls[0]}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (

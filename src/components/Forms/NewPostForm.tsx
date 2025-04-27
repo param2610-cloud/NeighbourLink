@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { uploadFileToS3 } from '@/utils/aws/aws';
 import { notifyNearbyUsersAboutResource, notifyNearbyUsersAboutEvent } from '@/utils/notification/NotificationHook';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,9 +33,11 @@ import {
 
 import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 import MapContainer, { useOlaMaps } from '../MapContainer';
-import { ImageDisplay } from '../AWS/UploadFile';
+
 import { db } from '@/firebase';
 import { useStateContext } from '@/contexts/StateContext';
+import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Location {
   latitude: number;
@@ -344,7 +345,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
         const fileName = `${Date.now()}-${file.name}`;
-        return await uploadFileToS3(file, fileName);
+        return await uploadFileToCloudinary(file, fileName);
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
@@ -371,7 +372,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
     try {
       const fileName = `${Date.now()}-${file.name}`;
-      const videoUrl = await uploadFileToS3(file, fileName);
+      const videoUrl = await uploadFileToCloudinary(file, fileName);
 
       setFormState(prev => ({
         ...prev,
@@ -875,7 +876,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
             <div className="grid grid-cols-2 gap-3 flex-1 overflow-y-auto mb-4">
               {formState.uploadedImages.map((image, index) => (
                 <div key={index} className="relative group rounded-lg overflow-hidden shadow-sm transition-all hover:shadow-md">
-                  <ImageDisplay objectKey={image} className="w-full aspect-square object-cover rounded-md" />
+                  <ImageDisplay publicId={image} className="w-full aspect-square object-cover rounded-md" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                     <button
                       type="button"

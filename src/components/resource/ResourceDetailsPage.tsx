@@ -6,11 +6,12 @@ import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHea
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { FaBook, FaTools, FaUtensils, FaTshirt, FaHome, FaBriefcaseMedical } from 'react-icons/fa';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
+
 import { Timestamp } from 'firebase/firestore';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
 import { toast } from 'react-toastify';
 import MapContainer from '../MapContainer';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Resource {
     id?: string;
@@ -329,7 +330,7 @@ const ResourceDetailsPage = () => {
                     <>
                         <div className="w-full h-full flex items-center justify-center overflow-hidden">
                             <ImageDisplay 
-                                objectKey={getImages()[currentImageIndex]} 
+                                publicId={getImages()[currentImageIndex]} 
                                 className="w-full h-full object-cover"
                             />
                         </div>

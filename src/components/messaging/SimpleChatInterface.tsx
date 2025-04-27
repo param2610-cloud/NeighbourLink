@@ -5,8 +5,9 @@ import { IoMdArrowBack } from 'react-icons/io';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
 import { ChatMessage, getChatMessages, markChatAsRead } from '../../services/simpleChatService';
-import { ImageDisplay } from '../AWS/UploadFile';
+
 import SimpleChatInput from './SimpleChatInput';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface SimpleChatInterfaceProps {
   conversationId: string;
@@ -116,7 +117,7 @@ const SimpleChatInterface: React.FC<SimpleChatInterfaceProps> = ({ conversationI
     if (type === 'image') {
       return (
         <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-          <ImageDisplay objectKey={url} />
+          <ImageDisplay publicId={url} />
         </div>
       );
     } else if (type === 'video') {

@@ -4,11 +4,12 @@ import { auth, db } from "../../firebase";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt, FaExclamationTriangle } from "react-icons/fa";
-import { uploadFileToS3 } from "@/utils/aws/aws";
+// import { uploadFileToS3 } from "@/utils/aws/aws";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMobileContext } from "@/contexts/MobileContext";
 import MapContainer from "@/components/MapContainer";
+import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
 
 const KOLKATA_COORDINATES: [number, number] = [22.5726, 88.3639];
 
@@ -73,11 +74,15 @@ function Register() {
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange =async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setPhoto(file);
       setPhotoPreview(URL.createObjectURL(file));
+      let photoUrl = '';
+      photoUrl = await uploadFileToCloudinary(file, `${file.name}_profile_image`);
+      console.log("Photo URL:", photoUrl);
+      
     }
   };
 
@@ -127,10 +132,12 @@ function Register() {
       const user = userCredential.user;
 
       if (user) {
-        let photoURL = "";
+        let photoUrl = {};
         try {
           if (photo) {
-            photoURL = await uploadFileToS3(photo, `${user.uid}_profile_image`);
+            photoUrl = await uploadFileToCloudinary(photo, `${user.uid}_profile_image`);
+            // photoURL = await uploadFileToS3(photo, `${user.uid}_profile_image`);
+
           }
         } catch (error) {
           console.log(error);
@@ -141,7 +148,7 @@ function Register() {
           email: user.email,
           firstName: fname,
           lastName: lname,
-          photo: photoURL,
+          photo: photoUrl,
           phoneNumber: phone,
           address: address,
           location: {

@@ -1,4 +1,4 @@
-import { getPreSignedUrl } from "@/utils/aws/aws";
+// import { getPreSignedUrl } from "@/utils/aws/aws";
 import { useEffect, useState } from "react";
 import { GrResources } from "react-icons/gr";
 
@@ -17,6 +17,7 @@ import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import GoogleTranslate from "@/components/GoogleTranslation";
+import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 
 interface SidebarProps {
   handleLogout: () => void;
@@ -52,10 +53,8 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
 
     const fetchProfilePhoto = async () => {
       if (userDetails?.photo) {
-        let photoUrl = await getPreSignedUrl(userDetails.photo);
-        if (photoUrl) {
-          setProfilePhoto(photoUrl);
-        }
+        setProfilePhoto(userDetails?.photo);
+        
       }
     };
     fetchProfilePhoto();
@@ -120,7 +119,16 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
         <div className="p-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <img
+              {
+                profilePhoto && (
+                  <ImageDisplay
+                    publicId={profilePhoto}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-indigo-600 dark:border-indigo-400"
+                  />
+                )
+
+              }
+              {/* <img
                 src={
                   profilePhoto
                     ? profilePhoto
@@ -128,7 +136,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
                 }
                 alt="Profile"
                 className="w-10 h-10 rounded-full object-cover border-2 border-indigo-600 dark:border-indigo-400"
-              />
+              /> */}
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></div>
             </div>
             <div className="flex flex-col">

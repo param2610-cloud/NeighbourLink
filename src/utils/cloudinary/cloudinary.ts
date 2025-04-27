@@ -38,14 +38,28 @@ export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
   console.log("File deletion requested:", publicId);
 };
 
-export const getCloudinaryUrl = (publicId: string, options = {}): string => {
-  if (!publicId) return '';
+interface CloudinaryOptions {
+  resource_type?: string;
+  transformations?: string;
+}
+
+export const getCloudinaryUrl = (publicId: string, options: CloudinaryOptions = {}) => {
+  const cloudName = 'dqd7ywrxm';
+  const resourceType = options.resource_type || 'image';
+  const transformations = options.transformations || '';
   
-  const transforms = new URLSearchParams(options as Record<string, string>).toString();
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${transforms ? transforms + '/' : ''}${publicId}`;
+  // URL encode the publicId to handle spaces and special characters
+  const encodedId = encodeURIComponent(publicId);
+  
+  // Add .jpg extension for image resources if not already present
+  const extension = resourceType === 'image' && !encodedId.endsWith('.jpg') ? '.jpg' : '';
+  
+  return `https://res.cloudinary.com/${cloudName}/${resourceType}/upload/${transformations}${encodedId}${extension}`;
 };
 
 export const createUniqueFileName = (originalName: string): string => {
-  const extension = originalName.split('.').pop() || '';
-  return `${uuidv4()}.${extension}`;
+  console.log("Creating unique file name for:", originalName);
+  
+  // const extension = originalName.split('.').pop() || '';
+  return `${uuidv4()}`;
 };

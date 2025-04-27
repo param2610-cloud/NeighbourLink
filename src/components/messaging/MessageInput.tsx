@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import { sendMessage } from '../../services/messagingService';
 import { IoMdSend, IoMdImage, IoMdAttach } from 'react-icons/io';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
-import { createUniqueFileName, uploadFileToS3 } from '@/utils/aws/aws';
+import { createUniqueFileName } from '@/utils/aws/aws';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
+import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
 // import { sendChatMessageNotification } from '../../services/notificationService';
 // import { auth } from '../../firebase';
 
@@ -78,7 +79,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
         const file = files[i];
         const fileName = createUniqueFileName(file.name);
         
-        await uploadFileToS3(
+        await uploadFileToCloudinary(
           file,
           fileName,
           );
@@ -138,7 +139,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           {uploadedFiles.map((file, index) => (
             <div key={index} className="relative group">
               <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded overflow-hidden">
-                <ImageDisplay objectKey={file} className="w-full h-full object-cover" />
+                <ImageDisplay publicId={file} className="w-full h-full object-cover" />
               </div>
               <button
                 className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"

@@ -6,7 +6,6 @@ import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHea
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from 'react-icons/fa';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { Timestamp } from 'firebase/firestore';
 import LocationViewer from '@/utils/ola/LocationViewer';
 import FallbackMap from '@/components/maps/FallbackMap';
@@ -16,6 +15,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
 // import { sendResponseNotification } from '@/services/notificationService';
 import { toast } from 'react-toastify';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Post {
     id?: string;
@@ -319,7 +319,7 @@ const PostDetailsPage = () => {
                 {post.photoUrls && post.photoUrls.length > 0 ? (
                     <>
                         <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                            <ImageDisplay objectKey={post.photoUrls[currentImageIndex]} />
+                            <ImageDisplay publicId={post.photoUrls[currentImageIndex]} />
                         </div>
 
                         {/* Image navigation dots */}

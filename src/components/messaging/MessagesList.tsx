@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../../firebase'; // Import db directly
 import { Conversation, getUserConversations } from '../../services/messagingService';
 import { formatDistanceToNow } from 'date-fns';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { FaArrowLeft } from 'react-icons/fa';
 import { GiHamburgerMenu } from "react-icons/gi";
 import Bottombar from '../authPage/structures/Bottombar';
 import { Skeleton } from '../ui/skeleton';
 import Sidebar from '../authPage/structures/Sidebar';
 import { useMobileContext } from '@/contexts/MobileContext';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 const MessagesList = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -267,7 +267,7 @@ const MessagesList = () => {
                       <div className="h-12 w-12 rounded-full overflow-hidden mr-4 bg-gray-200 dark:bg-gray-700 flex-shrink-0">
                         {otherUser?.photo ? (
                           <ImageDisplay 
-                            objectKey={otherUser.photo} 
+                            publicId={otherUser.photo} 
                             className="h-full w-full object-cover"
                           />
                         ) : otherUser?.photoURL ? (

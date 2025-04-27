@@ -84,6 +84,8 @@ export async function getSignedImageUrl(objectKey:string) {
   }
 }
 export const createUniqueFileName = (originalName: string): string => {
-  const extension = originalName.split('.').pop() || '';
-  return `${uuidv4()}.${extension}`;
+  console.log("Original Name:", originalName);
+  
+  // const extension = originalName.split('.').pop() || '';
+  return `${uuidv4()}`;
 };

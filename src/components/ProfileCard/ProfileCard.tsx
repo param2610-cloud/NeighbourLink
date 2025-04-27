@@ -11,17 +11,14 @@ import {
 } from "react-icons/ai";
 import { FaIdCard } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
-import {
-  deleteFileFromS3,
-  getPreSignedUrl,
-  uploadFileToS3,
-} from "@/utils/aws/aws";
 import { useNavigate } from "react-router-dom";
 import Bottombar from "../authPage/structures/Bottombar";
 import { useMobileContext } from "@/contexts/MobileContext";
 import Tesseract from "tesseract.js";
 import axios from "axios";
 import Sidebar from "../authPage/structures/Sidebar";
+import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
+import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 
 function ProfileCard() {
   // State management
@@ -75,10 +72,9 @@ function ProfileCard() {
   const fetchProfilePhoto = useCallback(async () => {
     if (userDetails?.photo) {
       try {
-        const photoUrl = await getPreSignedUrl(userDetails.photo);
-        if (photoUrl) {
-          setProfilePhoto(photoUrl);
-        }
+        
+        setProfilePhoto(photoUrl);
+        
       } catch (error) {
         console.error("Error fetching profile photo:", error);
       }
@@ -280,10 +276,10 @@ function ProfileCard() {
 
       if (photoFile) {
         try {
-          if (userDetails?.photo) {
-            await deleteFileFromS3(userDetails.photo);
-          }
-          photoURL = await uploadFileToS3(
+          // if (userDetails?.photo) {
+          //   await deleteFileFromS3(userDetails.photo);
+          // }
+          photoURL = await uploadFileToCloudinary(
             photoFile,
             `${auth.currentUser.uid}_profile_image`
           );
@@ -422,14 +418,18 @@ function ProfileCard() {
 
                   <div className="absolute -bottom-16 left-6">
                     <div className="relative group">
-                      <img
-                        src={
-                          profilePhoto ||
-                          "/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
-                        }
-                        alt="Profile"
-                        className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105"
-                      />
+                      {
+                        profilePhoto ? (
+                          <ImageDisplay
+                            publicId={
+                              profilePhoto
+                            }
+                            className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105"
+                          />
+                        ):(
+                          <img src="/assets/pictures/blue-circle-with-white-user_78370-4707.avif" className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105" alt="User Circle" />
+                        )
+                      }
                       <label className="absolute bottom-0 right-0 bg-white dark:bg-gray-700 p-2 rounded-full shadow-sm cursor-pointer border border-gray-200 dark:border-gray-600">
                         <input
                           type="file"

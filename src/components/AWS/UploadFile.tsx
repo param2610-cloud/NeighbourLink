@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 const UploadFiletoAWS = () => {
   const [, setPhotoFile] = useState<File | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null >(null);
-  const [objectKey, setObjectKey] = useState<string | null>(null); // Add state for the S3 object key
+  const [objectKey, setObjectKey] = useState<string | null>(null); 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

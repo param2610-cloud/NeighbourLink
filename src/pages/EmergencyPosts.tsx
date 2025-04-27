@@ -4,7 +4,7 @@ import { db } from '@/firebase';
 import { format } from 'date-fns';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { getPreSignedUrl } from '@/utils/aws/aws';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Post {
     id: string;
@@ -105,7 +105,7 @@ const EmergencyPosts = () => {
                     // Process photo URLs
                     if(postData.photoUrls && Array.isArray(postData.photoUrls)){
                         for(let i = 0; i < postData.photoUrls.length; i++) {
-                            const processedUrl = await getPreSignedUrl(postData.photoUrls[i]);
+                            const processedUrl = postData.photoUrls[i];
                             postData.photoUrls[i] = processedUrl;
                         }
                     }
@@ -183,9 +183,8 @@ const EmergencyPosts = () => {
                                 onClick={()=>navigate(`/post/${post.id}`)}
                             >
                                 {post.photoUrls?.length > 0? (
-                                    <img
-                                        src={post.photoUrls[0]}
-                                        alt={post.title}
+                                    <ImageDisplay
+                                        publicId={post.photoUrls[0]}
                                         className="w-full h-48 object-cover transition-opacity duration-300 hover:opacity-90"
                                     />
                                 ):

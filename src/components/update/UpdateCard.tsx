@@ -1,7 +1,7 @@
 import React from 'react';
 import { UpdateWithUserData } from '@/interface/main';
-import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { formatDistanceToNow } from 'date-fns';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface UpdateCardProps {
   update: UpdateWithUserData;
@@ -27,7 +27,7 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update, isReply = false }) => {
       <div className="flex items-center mb-2">
         <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 mr-3">
           {update.userData?.photoURL ? (
-            <ImageDisplay objectKey={update.userData.photoURL} className="h-10 w-10 object-cover" />
+            <ImageDisplay publicId={update.userData.photoURL} className="h-10 w-10 object-cover" />
           ) : (
             <div className="h-10 w-10 flex items-center justify-center bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
               {update.userData?.firstName?.[0] || '?'}
@@ -61,7 +61,7 @@ const UpdateCard: React.FC<UpdateCardProps> = ({ update, isReply = false }) => {
         <div className={`grid ${update.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 mb-3`}>
           {update.images.map((image, index) => (
             <div key={index} className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
-              <ImageDisplay objectKey={image} className="w-full h-48 object-cover" />
+              <ImageDisplay publicId={image} className="w-full h-48 object-cover" />
             </div>
           ))}
         </div>

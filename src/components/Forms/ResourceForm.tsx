@@ -3,11 +3,11 @@ import { db } from "../../firebase";
 import { collection, addDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { IoMdArrowRoundBack } from "react-icons/io";
-import { uploadFileToS3 } from "@/utils/aws/aws";
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils, FaMapMarkerAlt } from "react-icons/fa";
 import { BsThreeDots } from "react-icons/bs";
-import { ImageDisplay } from "../AWS/UploadFile";
 import { useNavigate } from "react-router-dom";
+import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
+import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
 
 interface ResourceFormProps {
   userId: string;
@@ -133,7 +133,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       try {
         
         const uploadPromises = newFiles.map(async (file) => {
-          const url = await uploadFileToS3(file, `${userId}-${Date.now()}-${file.name}`);
+          const url = await uploadFileToCloudinary(file, `${userId}-${Date.now()}-${file.name}`);
           return url;
         });
         
@@ -389,7 +389,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {photoUrls.map((url, index) => (
                   <div key={index} className="relative">
-                    <ImageDisplay objectKey={url} />
+                    <ImageDisplay publicId={url} />
                     <button
                       type="button"
                       onClick={() => removePhoto(index)}
@@ -576,7 +576,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
                   <div className="grid grid-cols-3 gap-2 mt-1">
                     {photoUrls.map((url, index) => (
                       <div key={index} className="h-16 w-16 overflow-hidden rounded-md">
-                        <ImageDisplay objectKey={url} />
+                        <ImageDisplay publicId={url} />
                       </div>
                     ))}
                   </div>

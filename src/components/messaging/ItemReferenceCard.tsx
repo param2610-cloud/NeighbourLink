@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { BsChevronRight } from 'react-icons/bs';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface ItemReferenceCardProps {
   postId: string;
@@ -65,7 +65,7 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
         {displayImage && (
           <div className="w-12 h-12 rounded-md overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 mr-3">
             
-            <ImageDisplay objectKey={displayImage} />
+            <ImageDisplay publicId={displayImage} />
           </div>
         )}
         

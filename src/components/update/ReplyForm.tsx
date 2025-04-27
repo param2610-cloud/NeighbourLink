@@ -5,8 +5,9 @@ import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { FaImage, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { uploadFileToS3 } from '@/utils/aws/aws';
-import { ImageDisplay } from '@/components/AWS/UploadFile';
 import { addNotification } from '@/utils/notification/NotificationHook';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
+import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
 
 interface ReplyFormProps {
     parentId: string;
@@ -125,7 +126,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
                 const fileName = `${Date.now()}-${file.name}`;
                 
                 // Upload the file and get the object key
-                const objectKey = await uploadFileToS3(file, fileName);
+                const objectKey = await uploadFileToCloudinary(file, fileName);
                 
                 // Add the object key to the uploadedImages array
                 setUploadedImages(prev => [...prev, objectKey]);
@@ -184,7 +185,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ parentId, onSuccess, threadDepth 
                     {uploadedImages.map((objectKey, index) => (
                         <div key={index} className="relative group">
                             <ImageDisplay 
-                                objectKey={objectKey}
+                                publicId={objectKey}
                                 className="w-full h-24 object-cover rounded" 
                             />
                             <button

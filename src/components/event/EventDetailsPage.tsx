@@ -7,11 +7,11 @@ import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { BsCalendarEvent } from 'react-icons/bs';
 import { FiClock, FiUsers, FiMail, FiPhone } from 'react-icons/fi';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
 import { Timestamp } from 'firebase/firestore';
 import MapContainer from '../MapContainer';
 import { onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Event {
     id?: string;
@@ -256,7 +256,7 @@ const EventDetailsPage = () => {
                 {event.images && event.images.length > 0 ? (
                     <>
                         <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                            <ImageDisplay objectKey={event.images[currentImageIndex]} />
+                            <ImageDisplay publicId={event.images[currentImageIndex]} />
                         </div>
 
                         {/* Image navigation dots */}

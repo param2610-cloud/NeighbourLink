@@ -8,11 +8,11 @@ import { IoMdArrowBack } from 'react-icons/io';
 import { FiCalendar } from 'react-icons/fi';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { ImageDisplay } from '../../components/AWS/UploadFile';
 import ExchangeCoordination from './ExchangeCoordination';
 import ItemReferenceCard from './ItemReferenceCard';
 import MessageInput from './MessageInput';
 import ExchangeDetails from './ExchangeDetails';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 
 const extractExchangeId = (text: string): string | null => {
@@ -332,7 +332,7 @@ const ChatDetail = () => {
                                 key={i}
                                 className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800"
                               >
-                                <ImageDisplay objectKey={url} />
+                                <ImageDisplay publicId={url} />
                               </div>
                             ))}
                           </div>

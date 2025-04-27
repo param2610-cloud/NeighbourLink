@@ -1,4 +1,4 @@
-import { ImageDisplay } from '@/components/AWS/UploadFile';
+
 import { auth, db } from '@/firebase';
 import { collection, deleteDoc, getDocs, orderBy, query, Timestamp, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState, useRef } from 'react';
@@ -8,6 +8,7 @@ import { useStateContext } from '@/contexts/StateContext'; // Update this import
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MdVerified } from 'react-icons/md';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 export interface BaseItem {
     id?: string;
@@ -193,7 +194,7 @@ const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
         <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
                 {userInfo.photo ? (
-                    <ImageDisplay objectKey={userInfo.photo} />
+                    <ImageDisplay publicId={userInfo.photo} />
                 ) : (
                     <div className="h-full w-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-500 dark:text-blue-300">
                         {userInfo.firstName?.[0]?.toUpperCase() || '?'}
@@ -367,7 +368,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, onDelete }
                             className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full object-cover overflow-hidden">
-                                <ImageDisplay objectKey={image} />
+                                <ImageDisplay publicId={image} />
                             </div>
                         </div>
                     ))}
@@ -483,7 +484,6 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
             setShowMenu(false);
         }
     };
-    console.log('Promotion:', promotion,);
 
 
     useEffect(() => {
@@ -509,7 +509,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, onDelet
                             className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full flex justify-center items-center object-cover overflow-hidden">
-                                <ImageDisplay objectKey={image} />
+                                <ImageDisplay publicId={image} />
                             </div>
                         </div>
                     ))}
@@ -697,7 +697,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                             className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full flex justify-center items-center object-cover overflow-hidden">
-                                <ImageDisplay objectKey={image} />
+                                <ImageDisplay publicId={image} />
                             </div>
                         </div>
                     ))}
@@ -862,7 +862,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                             className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                         >
                             <div className="w-full h-full flex justify-center items-center object-cover overflow-hidden">
-                                <ImageDisplay objectKey={image} />
+                                <ImageDisplay publicId={image} />
                             </div>
                         </div>
                     ))}

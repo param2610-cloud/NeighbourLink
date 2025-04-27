@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react';
 import { sendChatMessage } from '../../services/simpleChatService';
 import { IoMdSend, IoMdImage, IoMdAttach, IoMdClose, IoMdDocument, IoMdFilm } from 'react-icons/io';
-import { ImageDisplay } from '../AWS/UploadFile';
+
 import { createUniqueFileName, uploadFileToS3 } from '@/utils/aws/aws';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
+import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
 
 interface SimpleChatInputProps {
   conversationId: string;
@@ -49,7 +51,7 @@ const SimpleChatInput: React.FC<SimpleChatInputProps> = ({
         const file = files[i];
         const fileName = createUniqueFileName(file.name);
         
-        await uploadFileToS3(file, fileName);
+        await uploadFileToCloudinary(file, fileName);
         
         // Determine file type
         let fileType = 'file';
@@ -109,7 +111,7 @@ const SimpleChatInput: React.FC<SimpleChatInputProps> = ({
             <div key={index} className="relative group">
               <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded overflow-hidden flex items-center justify-center">
                 {file.type === 'image' ? (
-                  <ImageDisplay objectKey={file.url} className="w-full h-full object-cover" />
+                  <ImageDisplay publicId={file.url} className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center justify-center w-full h-full">
                     {getFileIcon(file.type)}

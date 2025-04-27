@@ -6,11 +6,11 @@ import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHea
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { FiPhone, FiMail, FiMapPin, FiClock, FiUser } from 'react-icons/fi';
-import { ImageDisplay, VideoDisplay } from '../../components/AWS/UploadFile';
 import MapContainer from '../MapContainer';
 import { onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
+import { ImageDisplay, VideoDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Promotion {
     id?: string;
@@ -363,7 +363,7 @@ const PromotionDetailsPage = () => {
                     <div className="w-full h-64 md:h-96 relative">
                         {media.mediaItems[currentImageIndex].type === 'video' ? (
                             <VideoDisplay
-                                objectKey={media.mediaItems[currentImageIndex].url}
+                                publicId={media.mediaItems[currentImageIndex].url}
                                 className="w-full h-full object-cover"
                                 autoPlay={true}
                                 loop={true}
@@ -373,7 +373,7 @@ const PromotionDetailsPage = () => {
                             />
                         ) : (
                             <ImageDisplay 
-                                objectKey={media.mediaItems[currentImageIndex].url} 
+                                publicId={media.mediaItems[currentImageIndex].url} 
                                 className="w-full h-full object-cover"
                             />
                         )}
@@ -437,7 +437,7 @@ const PromotionDetailsPage = () => {
                                     {item.type === 'video' ? (
                                         <div className="relative w-full h-full">
                                             <VideoDisplay 
-                                                objectKey={item.url} 
+                                                publicId={item.url} 
                                                 className="w-full h-full object-cover"
                                                 controls={false}
                                             />
@@ -449,7 +449,7 @@ const PromotionDetailsPage = () => {
                                         </div>
                                     ) : (
                                         <ImageDisplay 
-                                            objectKey={item.url} 
+                                        publicId={item.url} 
                                             className="w-full h-full object-cover"
                                         />
                                     )}
@@ -544,7 +544,7 @@ const PromotionDetailsPage = () => {
                             <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
                                 {providerInfo.photoURL ? (
                                    <ImageDisplay
-                                   objectKey={providerInfo.photoURL}
+                                   publicId={providerInfo.photoURL}
                                       className="w-full h-full object-cover"
                                       
 

@@ -6,8 +6,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { FaArrowLeft, FaImage, FaTimes } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
 import { toast } from 'react-toastify';
-import { uploadFileToS3 } from '@/utils/aws/aws';
-import { ImageDisplay } from '@/components/AWS/UploadFile';
+import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 const NewUpdateForm: React.FC = () => {
     const [title, setTitle] = useState('');
@@ -108,7 +108,7 @@ const NewUpdateForm: React.FC = () => {
         try {
             const uploadPromises = selectedImages.map(async (file) => {
                 const fileName = `${Date.now()}-${file.name}`;
-                return await uploadFileToS3(file, fileName);
+                return await uploadFileToCloudinary(file, fileName);
             });
             
             const uploadedUrls = await Promise.all(uploadPromises);
@@ -196,7 +196,7 @@ const NewUpdateForm: React.FC = () => {
                                 {uploadedImages.map((objectKey, index) => (
                                     <div key={index} className="relative">
                                         <ImageDisplay 
-                                            objectKey={objectKey}
+                                            publicId={objectKey}
                                             className="w-full h-32 object-cover rounded" 
                                         />
                                         {/* No remove button for already uploaded images */}

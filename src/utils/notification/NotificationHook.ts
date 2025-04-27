@@ -65,7 +65,6 @@ function listenToUserNotifications(userId: string): void {
     Object.entries(data).forEach(([id, notif]: [string, any]) => {
       const alreadyShown = shown.includes(id);
 
-      console.log(id, shown);
 
       if (
         Array.isArray(notif.receipt) &&
