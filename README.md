@@ -32,6 +32,77 @@ NeighbourLink is a hyperlocal platform connecting neighbors to share resources (
 - Event-based temporary communities.
 - Connecting local police stations and NGO's.
 
+### 1.4 Business Scope
+
+#### 1.4.1 Core Business Opportunity
+NeighbourLink builds a distinct community-driven digital marketplace that bridges residents and local businesses in ways that classic platforms do not. By prioritizing proximity-based relationships within a 1-15 km range, the site allows businesses to reach exactly the right customers that count most - those directly within physical proximity.
+
+#### 1.4.2 Business Promotion Features
+
+##### 1. Hyperlocal Marketing System
+- **Targeted Visibility:** Businesses are able to craft promotion posts viewed by users in their specified area (1-15 km)
+- **Media-Rich Presentations:** Multi-image and video support to represent products or services effectively
+- **Duration Control:** Businesses can specify specific time frames for promotions (for example, 7 days, 30 days) to coincide with business cycles
+
+##### 2. Creation of Business Profiles
+- **Verified Business Credentials:** "Verified Business" badges build consumer trust
+- **Complete Contact Management:** Organized presentation of business name, contact details, and email
+- **Location Integration:** Map-based business discovery with accurate location services
+
+##### 3. Direct Consumer Engagement
+- **Secure Business Chat:** End-to-end encrypted messaging between businesses and prospective customers
+- **Privacy-Preserving Communication:** No phone number exposure while still having direct contact
+- **Media Sharing:** Ability to share more product/service information in conversations
+
+##### 4. Analytics & Performance Metrics
+- **Promotion Tracking:** Businesses are able to track saved/shared counts
+- **Visibility Analytics:** Data on promotion reach among neighborhood demographics
+
+#### 1.4.3 Monetization Strategy
+The platform follows a multi-level business model:
+
+##### Freemium Structure:
+- Free basic business listings within 5km radius
+- Promotional reach in extended radius (5-15km) attracts charges
+- Premium placement features for increased visibility
+
+##### Duration-Based Pricing:
+- Short-term promotions (less than 7 days) at discounted rates
+- Extended promotional periods with higher pricing
+- Featured promotion features for maximum visibility
+
+##### Value-Added Services:
+- Advanced media display features (multiple images, videos)
+- Business verification services
+- Analytics and reporting tools
+
+#### 1.4.4 Additional Commercial Opportunities
+
+##### Local Event Monetization
+- **Event Sponsorship:** Companies sponsor community events for greater exposure
+- **Ticketed Events:** Support for paid community events with built-in payment processing
+- **Event-Promotion Packages:** Integrated promotional and event hosting features
+
+##### Skill Exchange Marketplace
+- **Service Provider Listings:** Local experts promote specialized skills
+- **Commission Structure:** Platform share on successful service transactions
+- **Featured Skill Promotion:** Greater exposure for premium skill providers
+
+##### Community-Commercial Integration
+- **Reputation-Based Promotion:** Greater exposure for businesses with high community participation
+- **Cross-Promotion Opportunities:** Between commercial offerings and resource sharing
+- **Collaborative Marketing:** Complementary local businesses coming together for joint promotions
+
+#### 1.4.5 Competitive Business Advantage
+NeighbourLink generates one-of-a-kind business value by:
+- **Trust-First Approach:** Verification systems generate a more qualified audience for businesses
+- **Genuine Local Focus:** Authentic hyperlocal reach in contrast to broad-based platforms
+- **Community Context:** Businesses interact with consumers within a community-focused context
+- **Emergency Response Integration:** Business visibility at times of urgent neighborhood needs
+- **Multi-Language Support:** Engage with diverse neighborhood demographics through translation support
+
+The business scope effectively balances commercial interests with community needs, creating sustainable revenue opportunities while maintaining the platform's core neighborhood assistance mission.
+
 ## 2. Overall Description
 
 ### 2.1 User Needs
