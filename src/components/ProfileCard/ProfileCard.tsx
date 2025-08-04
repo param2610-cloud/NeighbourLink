@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { auth, db } from "../../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
+import CreateBusiness from "@/components/bussiness/createBusiness";
 import {
   AiOutlineUser,
   AiOutlineMail,
@@ -41,6 +42,7 @@ function ProfileCard() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState<string>("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
@@ -491,6 +493,40 @@ function ProfileCard() {
                       >
                         Edit Profile
                       </button>
+                      <button
+                        onClick={() => setIsBusinessModalOpen(true)}
+                        id="create-business-btn"
+                        className="relative px-5 py-2.5 text-sm font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-gray-700 rounded-lg border border-yellow-200 dark:border-gray-600 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-all duration-200 shadow-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-yellow-400 group"
+                        style={{ transition: 'transform 0.2s' }}
+                      >
+                        <span className="inline-block align-middle mr-2">
+                          <svg className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        </span>
+                        Create Business
+                        <span className="absolute left-1/2 top-1/2 w-0 h-0 bg-yellow-300 opacity-30 rounded-full group-active:animate-ripple" style={{transform: 'translate(-50%, -50%)'}}></span>
+                      </button>
+
+                      {/* Business Creation Modal */}
+                      {isBusinessModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                          <div className="relative w-full max-w-2xl mx-auto">
+                            <div className="absolute top-2 right-2 z-10">
+                              <button
+                                onClick={() => setIsBusinessModalOpen(false)}
+                                className="p-2 rounded-full bg-white dark:bg-gray-800 shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                aria-label="Close business modal"
+                              >
+                                <svg className="w-6 h-6 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-0 animate-fade-in">
+                              <CreateBusiness />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="px-5 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-gray-700 rounded-lg border border-red-100 dark:border-gray-600 hover:bg-red-100 dark:hover:bg-gray-600 transition-colors duration-200"
