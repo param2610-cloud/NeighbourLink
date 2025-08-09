@@ -100,7 +100,8 @@ export default defineConfig({
   },
   server:{
     host: process.env.VITE_IP,
-    port:5174
+    port:5174,
     // host: '192.168.0.193'
+    open: true,
   }
 })
