@@ -142,6 +142,7 @@ export interface BusinessCollection {
     description?: string;
     price?: number;
     duration?: string;
+    imageUrl?: string[];
   }[];
 
   products: {
@@ -150,6 +151,7 @@ export interface BusinessCollection {
     description?: string;
     price?: number;
     stock?: number; 
+    imageUrl?: string[];
   }[];
 
   faq?: {

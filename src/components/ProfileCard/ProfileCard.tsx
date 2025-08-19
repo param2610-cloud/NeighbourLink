@@ -20,7 +20,7 @@ import {
 } from "react-icons/ai";
 import { FaIdCard, FaStore } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Bottombar from "../authPage/structures/Bottombar";
 import { useMobileContext } from "@/contexts/MobileContext";
 import Tesseract from "tesseract.js";
@@ -54,6 +54,8 @@ function ProfileCard() {
   const [hasExistingBusiness, setHasExistingBusiness] = useState(false);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
+  const [searchParams] = useSearchParams();
+  const activeTab = searchParams.get("activetab"); 
 
   // API key from environment variable
   const API_KEY = import.meta.env.VITE_GEMINI_APIKEY || "";
@@ -209,6 +211,7 @@ function ProfileCard() {
   useEffect(() => {
     if (userDetails) {
       fetchProfilePhoto();
+      activeTab === "business" && setIsBusinessModalOpen(true);
     }
   }, [userDetails, fetchProfilePhoto]);
 
@@ -252,6 +255,7 @@ function ProfileCard() {
         );
         const businessSnapshot = await getDocs(businessQuery);
         setHasExistingBusiness(!businessSnapshot.empty);
+        
       } catch (error) {
         console.error("Error checking existing business:", error);
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, SetStateAction } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   doc,
@@ -40,6 +40,7 @@ import Bottombar from "@/components/authPage/structures/Bottombar";
 import { useMobileContext } from "@/contexts/MobileContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
+import { uploadFileToCloudinary, createUniqueFileName, deleteFromCloudinary } from "@/utils/cloudinary/cloudinary";
 
 interface Review {
   id: string;
@@ -85,6 +86,7 @@ interface BusinessCollection {
     description?: string;
     price?: number;
     duration?: string;
+    imageUrl?: string[];
   }[];
 
   products: {
@@ -93,6 +95,7 @@ interface BusinessCollection {
     description?: string;
     price?: number;
     stock?: number;
+    imageUrl?: string[];
   }[];
 
   faq?: {
@@ -115,426 +118,6 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({
           }`}
         />
       ))}
-    </div>
-  );
-};
-
-// Business Details Modal Component
-const BusinessDetailsModal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  businessData: BusinessCollection;
-  incompleteFields: string[];
-  setBusinessData: React.Dispatch<SetStateAction<BusinessCollection | null>>;
-}> = ({ isOpen, onClose, businessData, incompleteFields, setBusinessData }) => {
-  const [formData, setFormData] = useState({
-    businessName: businessData.businessName || "",
-    businessBio: businessData.businessBio || "",
-    phone: businessData.contact?.phone || "",
-    address: businessData.location?.address || "",
-    deliverySupport: businessData.deliverySupport || false,
-    accountDetails: businessData.paymentSupport?.accountDetails || "",
-    services: businessData.services || [],
-    products: businessData.products || [],
-  });
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("basic");
-
-  const addService = () => {
-    setFormData((prev) => ({
-      ...prev,
-      services: [
-        ...prev.services,
-        { id: Date.now().toString(), name: "", description: "", price: 0 },
-      ],
-    }));
-  };
-
-  const removeService = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      services: prev.services.filter((service) => service.id !== id),
-    }));
-  };
-
-  const updateService = (id: string, field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      services: prev.services.map((service) =>
-        service.id === id ? { ...service, [field]: value } : service
-      ),
-    }));
-  };
-
-  const addProduct = () => {
-    setFormData((prev) => ({
-      ...prev,
-      products: [
-        ...prev.products,
-        { id: Date.now().toString(), name: "", description: "", price: 0, stock: 0 },
-      ],
-    }));
-  };
-
-  const removeProduct = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      products: prev.products.filter((product) => product.id !== id),
-    }));
-  };
-
-  const updateProduct = (id: string, field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      products: prev.products.map((product) =>
-        product.id === id ? { ...product, [field]: value } : product
-      ),
-    }));
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const updatedData: Partial<BusinessCollection> = {
-        businessName: formData.businessName,
-        businessBio: formData.businessBio,
-        contact: {
-          ...businessData.contact,
-          phone: formData.phone,
-        },
-        location: {
-          ...businessData.location,
-          address: formData.address,
-        },
-        deliverySupport: formData.deliverySupport,
-        paymentSupport: {
-          ...businessData.paymentSupport,
-          accountDetails: formData.accountDetails,
-        },
-        services: formData.services,
-        products: formData.products,
-      };
-
-      const businessDocRef = doc(db, "business", businessData.id);
-      await updateDoc(businessDocRef, updatedData);
-      
-      const updatedBusinessData = {
-        ...businessData,
-        ...updatedData
-      };
-      
-      setBusinessData(updatedBusinessData);
-      onClose();
-    } catch (error) {
-      console.error("Error saving business data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const tabs = [
-    { id: "basic", label: "Basic Info", icon: FileText },
-    { id: "contact", label: "Contact", icon: Phone },
-    { id: "services", label: "Services", icon: Briefcase },
-    { id: "products", label: "Products", icon: ShoppingBag },
-  ];
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 backdrop-filter backdrop-blur-sm bg-opacity-30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <Edit className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-              Complete Business Profile
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
-          {activeTab === "basic" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Business Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.businessName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, businessName: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your business name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Business Description
-                </label>
-                <textarea
-                  value={formData.businessBio}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, businessBio: e.target.value }))
-                  }
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Describe your business and what you offer"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Business Address
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, address: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your business address"
-                />
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="delivery"
-                  checked={formData.deliverySupport}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, deliverySupport: e.target.checked }))
-                  }
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="delivery"
-                  className="ml-2 text-sm text-gray-700 dark:text-gray-300"
-                >
-                  Offer delivery services
-                </label>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "contact" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="Enter your phone number"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Payment Account Details (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.accountDetails}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, accountDetails: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="UPI ID, Bank details, etc."
-                />
-              </div>
-            </div>
-          )}
-
-          {activeTab === "services" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-                  Services
-                </h3>
-                <button
-                  onClick={addService}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Service
-                </button>
-              </div>
-              {formData.services.map((service, index) => (
-                <div key={service.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Service {index + 1}
-                    </span>
-                    <button
-                      onClick={() => removeService(service.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Service name"
-                      value={service.name}
-                      onChange={(e) => updateService(service.id, "name", e.target.value)}
-                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Price"
-                      value={service.price || ""}
-                      onChange={(e) => updateService(service.id, "price", parseFloat(e.target.value) || 0)}
-                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                  <textarea
-                    placeholder="Service description"
-                    value={service.description || ""}
-                    onChange={(e) => updateService(service.id, "description", e.target.value)}
-                    rows={2}
-                    className="w-full mt-3 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              ))}
-              {formData.services.length === 0 && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Briefcase className="w-12 h-12 mx-auto mb-2" />
-                  <p>No services added yet. Click "Add Service" to get started.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === "products" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
-                  Products
-                </h3>
-                <button
-                  onClick={addProduct}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Product
-                </button>
-              </div>
-              {formData.products.map((product, index) => (
-                <div key={product.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Product {index + 1}
-                    </span>
-                    <button
-                      onClick={() => removeProduct(product.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Product name"
-                      value={product.name}
-                      onChange={(e) => updateProduct(product.id, "name", e.target.value)}
-                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Price"
-                      value={product.price || ""}
-                      onChange={(e) => updateProduct(product.id, "price", parseFloat(e.target.value) || 0)}
-                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Stock"
-                      value={product.stock || ""}
-                      onChange={(e) => updateProduct(product.id, "stock", parseInt(e.target.value) || 0)}
-                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                    />
-                  </div>
-                  <textarea
-                    placeholder="Product description"
-                    value={product.description || ""}
-                    onChange={(e) => updateProduct(product.id, "description", e.target.value)}
-                    rows={2}
-                    className="w-full mt-3 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                  />
-                </div>
-              ))}
-              {formData.products.length === 0 && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <ShoppingBag className="w-12 h-12 mx-auto mb-2" />
-                  <p>No products added yet. Click "Add Product" to get started.</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {incompleteFields.length > 0 && (
-              <span>Missing: {incompleteFields.join(", ")}</span>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              {loading ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -587,9 +170,31 @@ const NeighbourLinkBusiness: React.FC = () => {
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
   const [showGalleryDrawer, setShowGalleryDrawer] = useState(false);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
-  const [showBusinessDetailsModal, setShowBusinessDetailsModal] = useState(false);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
+
+  const fileInputProfile = useRef<HTMLInputElement>(null);
+  const fileInputCover = useRef<HTMLInputElement>(null);
+  const fileInputGallery = useRef<HTMLInputElement>(null);
+
+  const [editingBasic, setEditingBasic] = useState(false);
+  const [tempBasic, setTempBasic] = useState({
+    businessName: '',
+    businessBio: '',
+    address: '',
+    latitude: 0,
+    longitude: 0,
+    deliverySupport: false
+  });
+
+  const [editingContact, setEditingContact] = useState(false);
+  const [tempContact, setTempContact] = useState({ phone: '', accountDetails: '' });
+
+  const [editingService, setEditingService] = useState<string | null>(null);
+  const [tempService, setTempService] = useState<BusinessCollection['services'][0] | null>(null);
+
+  const [editingProduct, setEditingProduct] = useState<string | null>(null);
+  const [tempProduct, setTempProduct] = useState<BusinessCollection['products'][0] | null>(null);
 
   // Sample reviews data - replace with actual reviews from Firebase
   const reviews: Review[] = [
@@ -645,13 +250,9 @@ const NeighbourLinkBusiness: React.FC = () => {
                   ...businessDoc.data(),
                 } as BusinessCollection;
                 setBusinessData(business);
-
-                // Check if profile is complete
-                const incomplete = checkIncompleteFields(business);
-                setIncompleteFields(incomplete);
               } else {
                 // No business found, redirect to create business
-                navigate("/business/create");
+                navigate("/profileCard?activetab=business");
               }
 
               setLoading(false);
@@ -671,6 +272,24 @@ const NeighbourLinkBusiness: React.FC = () => {
 
     fetchUserAndBusinessData();
   }, [navigate]);
+
+  useEffect(() => {
+    if (businessData) {
+      setTempBasic({
+        businessName: businessData.businessName,
+        businessBio: businessData.businessBio,
+        address: businessData.location.address,
+        latitude: businessData.location.latitude,
+        longitude: businessData.location.longitude,
+        deliverySupport: businessData.deliverySupport,
+      });
+      setTempContact({
+        phone: businessData.contact.phone,
+        accountDetails: businessData.paymentSupport?.accountDetails || '',
+      });
+      setIncompleteFields(checkIncompleteFields(businessData));
+    }
+  }, [businessData]);
 
   const checkIncompleteFields = (business: BusinessCollection): string[] => {
     const incomplete: string[] = [];
@@ -695,15 +314,12 @@ const NeighbourLinkBusiness: React.FC = () => {
 
   const handleNewAnnouncement = () => {
     if (!isProfileComplete()) {
-      setShowBusinessDetailsModal(true);
+      // For now, alert, but can improve to highlight incomplete sections
+      alert("Please complete your profile first");
       return;
     }
     console.log("New announcement clicked");
     // Navigate to announcement creation page
-  };
-
-  const handleEditBusinessProfile = () => {
-    setShowBusinessDetailsModal(true);
   };
 
   async function handleLogout() {
@@ -716,8 +332,6 @@ const NeighbourLinkBusiness: React.FC = () => {
       }
     }
   }
-
- 
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -745,7 +359,7 @@ const NeighbourLinkBusiness: React.FC = () => {
 
   const handlePromoteItem = (itemId: string, type: "product" | "service") => {
     if (!isProfileComplete()) {
-      setShowBusinessDetailsModal(true);
+      alert("Please complete your profile first");
       return;
     }
     console.log(`Promote ${type} ${itemId} clicked`);
@@ -763,691 +377,1302 @@ const NeighbourLinkBusiness: React.FC = () => {
   const isServicesProductsIncomplete = () =>
     !businessData?.services?.length && !businessData?.products?.length;
 
+  const handleChangeProfile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !businessData) return;
+    const file = e.target.files[0];
+    setLoading(true);
+    try {
+      const publicId = await uploadFileToCloudinary(file, createUniqueFileName(file.name));
+      if (businessData.businessProfileImage) {
+        await deleteFromCloudinary(businessData.businessProfileImage);
+      }
+      await updateDoc(doc(db, "business", businessData.id), { businessProfileImage: publicId });
+      const newData = { ...businessData, businessProfileImage: publicId };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+    } catch (error) {
+      console.error("Error uploading profile image:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !businessData) return;
+    const file = e.target.files[0];
+    setLoading(true);
+    try {
+      const publicId = await uploadFileToCloudinary(file, createUniqueFileName(file.name));
+      if (businessData.coverImage) {
+        await deleteFromCloudinary(businessData.coverImage);
+      }
+      await updateDoc(doc(db, "business", businessData.id), { coverImage: publicId });
+      const newData = { ...businessData, coverImage: publicId };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+    } catch (error) {
+      console.error("Error uploading cover image:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddGallery = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !businessData) return;
+    setLoading(true);
+    try {
+      const files = Array.from(e.target.files);
+      const publicIds = await Promise.all(files.map((file) => uploadFileToCloudinary(file, createUniqueFileName(file.name))));
+      const newGallery = [...businessData.gallery, ...publicIds];
+      await updateDoc(doc(db, "business", businessData.id), { gallery: newGallery });
+      setBusinessData({ ...businessData, gallery: newGallery });
+    } catch (error) {
+      console.error("Error adding gallery images:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveGallery = async (publicId: string) => {
+    if (!businessData) return;
+    setLoading(true);
+    try {
+      await deleteFromCloudinary(publicId);
+      const newGallery = businessData.gallery.filter((g) => g !== publicId);
+      await updateDoc(doc(db, "business", businessData.id), { gallery: newGallery });
+      setBusinessData({ ...businessData, gallery: newGallery });
+    } catch (error) {
+      console.error("Error removing gallery image:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveBasic = async () => {
+    if (!businessData) return;
+    setLoading(true);
+    try {
+      const updatedData: Partial<BusinessCollection> = {
+        businessName: tempBasic.businessName,
+        businessBio: tempBasic.businessBio,
+        location: {
+          address: tempBasic.address,
+          latitude: tempBasic.latitude,
+          longitude: tempBasic.longitude,
+        },
+        deliverySupport: tempBasic.deliverySupport,
+      };
+      await updateDoc(doc(db, "business", businessData.id), updatedData);
+      const newData = { ...businessData, ...updatedData };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+      setEditingBasic(false);
+    } catch (error) {
+      console.error("Error saving basic info:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelBasic = () => {
+    if (businessData) {
+      setTempBasic({
+        businessName: businessData.businessName,
+        businessBio: businessData.businessBio,
+        address: businessData.location.address,
+        latitude: businessData.location.latitude,
+        longitude: businessData.location.longitude,
+        deliverySupport: businessData.deliverySupport,
+      });
+    }
+    setEditingBasic(false);
+  };
+
+  const handleSaveContact = async () => {
+    if (!businessData) return;
+    setLoading(true);
+    try {
+      const updatedData: Partial<BusinessCollection> = {
+        contact: {
+          ...businessData.contact,
+          phone: tempContact.phone,
+        },
+        paymentSupport: {
+          ...businessData.paymentSupport,
+          accountDetails: tempContact.accountDetails,
+        },
+      };
+      await updateDoc(doc(db, "business", businessData.id), updatedData);
+      const newData = { ...businessData, ...updatedData };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+      setEditingContact(false);
+    } catch (error) {
+      console.error("Error saving contact info:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelContact = () => {
+    if (businessData) {
+      setTempContact({
+        phone: businessData.contact.phone,
+        accountDetails: businessData.paymentSupport?.accountDetails || '',
+      });
+    }
+    setEditingContact(false);
+  };
+
+  const handleAddService = () => {
+    const newId = Date.now().toString();
+    setTempService({
+      id: newId,
+      name: '',
+      description: '',
+      price: 0,
+      duration: '',
+      imageUrl: [],
+    });
+    setEditingService(newId);
+  };
+
+  const handleSaveService = async () => {
+    if (!businessData || !tempService) return;
+    setLoading(true);
+    try {
+      let newServices = businessData.services;
+      const isNew = !businessData.services.some((s) => s.id === tempService.id);
+      if (isNew) {
+        newServices = [...newServices, tempService];
+      } else {
+        newServices = newServices.map((s) => s.id === tempService.id ? tempService : s);
+      }
+      await updateDoc(doc(db, "business", businessData.id), { services: newServices });
+      const newData = { ...businessData, services: newServices };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+      setEditingService(null);
+      setTempService(null);
+    } catch (error) {
+      console.error("Error saving service:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelService = () => {
+    setEditingService(null);
+    setTempService(null);
+  };
+
+  const handleRemoveService = async (id: string) => {
+    if (!businessData || !confirm("Are you sure you want to remove this service?")) return;
+    setLoading(true);
+    try {
+      const serviceToRemove = businessData.services.find((s) => s.id === id);
+      if (serviceToRemove?.imageUrl) {
+        await Promise.all(serviceToRemove.imageUrl.map(deleteFromCloudinary));
+      }
+      const newServices = businessData.services.filter((s) => s.id !== id);
+      await updateDoc(doc(db, "business", businessData.id), { services: newServices });
+      const newData = { ...businessData, services: newServices };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+      if (editingService === id) {
+        setEditingService(null);
+        setTempService(null);
+      }
+    } catch (error) {
+      console.error("Error removing service:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddProduct = () => {
+    const newId = Date.now().toString();
+    setTempProduct({
+      id: newId,
+      name: '',
+      description: '',
+      price: 0,
+      stock: 0,
+      imageUrl: [],
+    });
+    setEditingProduct(newId);
+  };
+
+  const handleSaveProduct = async () => {
+    if (!businessData || !tempProduct) return;
+    setLoading(true);
+    try {
+      let newProducts = businessData.products;
+      const isNew = !businessData.products.some((p) => p.id === tempProduct.id);
+      if (isNew) {
+        newProducts = [...newProducts, tempProduct];
+      } else {
+        newProducts = newProducts.map((p) => p.id === tempProduct.id ? tempProduct : p);
+      }
+      await updateDoc(doc(db, "business", businessData.id), { products: newProducts });
+      const newData = { ...businessData, products: newProducts };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+      setEditingProduct(null);
+      setTempProduct(null);
+    } catch (error) {
+      console.error("Error saving product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelProduct = () => {
+    setEditingProduct(null);
+    setTempProduct(null);
+  };
+
+  const handleRemoveProduct = async (id: string) => {
+    if (!businessData || !confirm("Are you sure you want to remove this product?")) return;
+    setLoading(true);
+    try {
+      const productToRemove = businessData.products.find((p) => p.id === id);
+      if (productToRemove?.imageUrl) {
+        await Promise.all(productToRemove.imageUrl.map(deleteFromCloudinary));
+      }
+      const newProducts = businessData.products.filter((p) => p.id !== id);
+      await updateDoc(doc(db, "business", businessData.id), { products: newProducts });
+      const newData = { ...businessData, products: newProducts };
+      setBusinessData(newData);
+      setIncompleteFields(checkIncompleteFields(newData));
+      if (editingProduct === id) {
+        setEditingProduct(null);
+        setTempProduct(null);
+      }
+    } catch (error) {
+      console.error("Error removing product:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Skeleton loading */}
+        <Skeleton className="h-full w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>;
+  }
+
+  if (!businessData) {
+    return null;
+  }
+
+  const isNewService = editingService && !businessData.services.some((s) => s.id === editingService);
+  const isNewProduct = editingProduct && !businessData.products.some((p) => p.id === editingProduct);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div
+        className={`fixed inset-y-0 left-0 w-64 transform ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 transition-transform duration-300 z-100`}
+      >
+        <Sidebar handleLogout={handleLogout} isSidebarOpen={isSidebarOpen} />
+      </div>
+
+      {isSidebarOpen && (
         <div
-          className={`fixed inset-y-0 left-0 w-64 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0 transition-transform duration-300 z-100`}
-        >
-          <Sidebar handleLogout={handleLogout} isSidebarOpen={isSidebarOpen} />
+          className="fixed inset-0 bg-transparent z-30 md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+
+      <div className="md:ml-64">
+        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
+          {/* Header with hamburger */}
+          <div className="flex items-center justify-between p-4 md:hidden">
+            <button onClick={toggleSidebar}>
+              <GiHamburgerMenu className="text-2xl" />
+            </button>
+          </div>
         </div>
 
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-transparent z-30 md:hidden"
-            onClick={toggleSidebar}
-          />
-        )}
-
-        <div className="md:ml-64">
-          <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
-            <div className="flex items-center justify-between p-4">
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={toggleSidebar}
-              >
-                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+          {/* Hero Section */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-8 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                  <FaStore className="text-orange-700 dark:text-yellow-300 text-xl" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                  Business Overview
+                </h2>
               </div>
+              <button onClick={() => setEditingBasic(true)} className="text-blue-600">
+                <Edit className="w-5 h-5" />
+              </button>
+              {!isProfileComplete() && (
+                <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-600 rounded-md px-3 py-1">
+                  <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                    Profile Incomplete
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <div className="flex items-center ">
-                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
-                  Neighbour
-                </h1>
-                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                  Link
-                </h1>
-                <span className="mx-2 text-blue-500 dark:text-gray-400">|</span>
-                <div className="flex items-center">
-                  <FaStore className="mr-1 dark:text-yellow-300 text-orange-600" />
-                  <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
-                    Business
-                  </h2>
+            {/* Cover Image */}
+            <div className="relative mb-6 group">
+              {businessData.coverImage ? (
+                <ImageDisplay
+                  publicId={businessData.coverImage}
+                  className="w-full h-48 object-cover rounded-lg border border-slate-200 dark:border-slate-600"
+                />
+              ) : (
+                <div className="w-full h-48 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                  <span className="text-slate-500 text-sm">No Cover Image</span>
+                </div>
+              )}
+              <button
+                onClick={() => fileInputCover.current?.click()}
+                className="absolute top-2 right-2 bg-white/80 dark:bg-gray-800/80 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-blue-600"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
+              <input
+                type="file"
+                hidden
+                ref={fileInputCover}
+                onChange={handleChangeCover}
+              />
+            </div>
+
+            <div className="flex items-center mb-6">
+              <div className="relative group mr-4">
+                {businessData.businessProfileImage ? (
+                  <ImageDisplay
+                    publicId={businessData.businessProfileImage}
+                    className="w-20 h-20 rounded-lg border border-slate-200 dark:border-slate-600 object-cover"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                    <span className="text-slate-500 text-xs">No Image</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => fileInputProfile.current?.click()}
+                  className="absolute top-0 right-0 bg-white/80 dark:bg-gray-800/80 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-blue-600"
+                >
+                  <Edit className="w-3 h-3" />
+                </button>
+                <input
+                  type="file"
+                  hidden
+                  ref={fileInputProfile}
+                  onChange={handleChangeProfile}
+                />
+              </div>
+              <div className="flex-1">
+                {editingBasic ? (
+                  <input
+                    type="text"
+                    value={tempBasic.businessName}
+                    onChange={(e) => setTempBasic({ ...tempBasic, businessName: e.target.value })}
+                    className="text-xl font-semibold text-slate-800 dark:text-slate-200 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none"
+                  />
+                ) : (
+                  <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
+                    {businessData.businessName}
+                  </h3>
+                )}
+                {editingBasic ? (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={tempBasic.address}
+                      onChange={(e) => setTempBasic({ ...tempBasic, address: e.target.value })}
+                      className="text-slate-600 dark:text-slate-400 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none w-full"
+                    />
+                    <div className="flex gap-4">
+                      <input
+                        type="number"
+                        placeholder="Latitude"
+                        value={tempBasic.latitude}
+                        onChange={(e) => setTempBasic({ ...tempBasic, latitude: parseFloat(e.target.value) || 0 })}
+                        className="text-slate-600 dark:text-slate-400 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none w-full"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Longitude"
+                        value={tempBasic.longitude}
+                        onChange={(e) => setTempBasic({ ...tempBasic, longitude: parseFloat(e.target.value) || 0 })}
+                        className="text-slate-600 dark:text-slate-400 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none w-full"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {businessData.location?.address || "Location not set"}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {editingBasic ? (
+              <textarea
+                value={tempBasic.businessBio}
+                onChange={(e) => setTempBasic({ ...tempBasic, businessBio: e.target.value })}
+                rows={4}
+                className="w-full text-slate-700 dark:text-slate-300 mb-6 leading-relaxed bg-transparent border border-gray-300 dark:border-gray-600 rounded-md p-2 focus:outline-none"
+              />
+            ) : (
+              <p className="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
+                {businessData.businessBio ||
+                  "Manage your business presence, connect with customers, and grow your local network."}
+              </p>
+            )}
+
+            {editingBasic && (
+              <div className="flex items-center mb-6">
+                <input
+                  type="checkbox"
+                  checked={tempBasic.deliverySupport}
+                  onChange={(e) => setTempBasic({ ...tempBasic, deliverySupport: e.target.checked })}
+                  className="h-4 w-4 text-blue-600"
+                />
+                <label className="ml-2 text-slate-700 dark:text-slate-300">
+                  Offer delivery services
+                </label>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                  {reviews.length}
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Reviews
                 </div>
               </div>
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                  {(businessData.products?.length || 0) +
+                    (businessData.services?.length || 0)}
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Items
+                </div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                  {businessData.deliverySupport ? "Yes" : "No"}
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Delivery
+                </div>
+              </div>
+              <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
+                <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                  {businessData.isVerified ? "✓" : "—"}
+                </div>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  Verified
+                </div>
+              </div>
+            </div>
 
-              <div className="flex gap-2">
+            {editingBasic && (
+              <div className="flex gap-3">
                 <button
-                  onClick={handleNewAnnouncement}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                  onClick={handleSaveBasic}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
-                  New Announcement
+                  <Save className="w-4 h-4" />
+                  {loading ? "Saving..." : "Save"}
                 </button>
-                <button className="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
-                  Inbox
+                <button
+                  onClick={handleCancelBasic}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border rounded"
+                >
+                  Cancel
                 </button>
               </div>
+            )}
+          </div>
+
+          {/* Business Details Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-800 dark:text-white">
+                Business Information
+              </h3>
+              <button onClick={() => setEditingContact(true)} className="text-blue-600">
+                <Edit className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contact Information Warning */}
+            {isContactIncomplete() && (
+              <WarningCard
+                title="Contact Information Missing"
+                message="Add your phone number so customers can reach you directly."
+                actionText="Add Phone Number"
+                onAction={() => setEditingContact(true)}
+                icon={<Phone className="w-5 h-5 text-amber-600" />}
+              />
+            )}
+
+            {/* Location Information Warning */}
+            {isLocationIncomplete() && (
+              <WarningCard
+                title="Business Location Missing"
+                message="Set your business address and location coordinates for better discoverability."
+                actionText="Set Location"
+                onAction={() => setEditingBasic(true)}
+                icon={<MapPin className="w-5 h-5 text-amber-600" />}
+              />
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <Phone className="w-4 h-4" />
+                  {editingContact ? (
+                    <input
+                      type="tel"
+                      value={tempContact.phone}
+                      onChange={(e) => setTempContact({ ...tempContact, phone: e.target.value })}
+                      className="bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none"
+                    />
+                  ) : (
+                    <span>
+                      Contact: {businessData.contact?.phone || "Not set"}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      businessData.deliverySupport ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  ></span>
+                  <span>
+                    Delivery available: {businessData.deliverySupport ? "YES" : "NO"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <CreditCard className="w-4 h-4" />
+                  {editingContact ? (
+                    <input
+                      type="text"
+                      value={tempContact.accountDetails}
+                      onChange={(e) => setTempContact({ ...tempContact, accountDetails: e.target.value })}
+                      className="bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none"
+                      placeholder="UPI ID, Bank details, etc."
+                    />
+                  ) : (
+                    <span>
+                      Payment:{" "}
+                      {businessData.paymentSupport?.accountDetails
+                        ? "Digital + Cash"
+                        : "Cash only"}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleViewQRCode}
+                  className="flex items-center justify-center gap-2 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                >
+                  <QrCode className="w-4 h-4" />
+                  View QR Code
+                </button>
+                <button
+                  onClick={handleUpgradeToPremium}
+                  className="flex items-center justify-center gap-2 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
+                >
+                  <Crown className="w-4 h-4" />
+                  Upgrade To Premium
+                </button>
+              </div>
+            </div>
+
+            {editingContact && (
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={handleSaveContact}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  <Save className="w-4 h-4" />
+                  {loading ? "Saving..." : "Save"}
+                </button>
+                <button
+                  onClick={handleCancelContact}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border rounded"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Business Images Section */}
+          {isImagesIncomplete() && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
+                Business Images
+              </h3>
+              <WarningCard
+                title="Business Images Missing"
+                message="Add a profile image and cover photo to make your business more attractive to customers."
+                actionText="Upload Images"
+                onAction={() => fileInputProfile.current?.click()}
+                icon={<Camera className="w-5 h-5 text-amber-600" />}
+              />
+            </div>
+          )}
+
+          {/* Business Description Section */}
+          {isDescriptionIncomplete() && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
+                Business Description
+              </h3>
+              <WarningCard
+                title="Business Description Missing"
+                message="Add a compelling description of your business to help customers understand what you offer."
+                actionText="Add Description"
+                onAction={() => setEditingBasic(true)}
+                icon={<FileText className="w-5 h-5 text-amber-600" />}
+              />
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
+              Quick Actions
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={handleViewInsights}
+                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
+              >
+                <Eye className="w-5 h-5 text-blue-600" />
+                <span>View Insights</span>
+              </button>
+              <button
+                onClick={handleViewGallery}
+                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
+              >
+                <Image className="w-5 h-5 text-green-600" />
+                <span>
+                  Your Gallery ({businessData?.gallery?.length || 0})
+                </span>
+              </button>
+              <button
+                onClick={handleViewVerificationDocument}
+                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
+              >
+                <FileText className="w-5 h-5 text-purple-600" />
+                <span>Verification Document</span>
+              </button>
             </div>
           </div>
 
-          <div className="container w-full mt-8 mx-auto px-4 py-8">
-            <div className="mb-8 text-center space-y-3">
-              <div className="h-8 w-48 mx-auto">
-                <Skeleton className="h-full w-full" />
-              </div>
-              <div className="h-4 w-32 mx-auto">
-                <Skeleton className="h-full w-full" />
-              </div>
+          {/* Statistics Section */}
+          <div className="mt-8 mb-8">
+            <div className="flex items-center mb-6">
+              <div className="h-8 w-1 bg-blue-600 rounded-full mr-3"></div>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                Statistics
+              </h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, index) => (
-                <div key={index} className="space-y-3">
-                  <Skeleton className="h-[200px] w-full rounded-xl" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-[80%]" />
-                    <Skeleton className="h-4 w-[60%]" />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
+                >
+                  <StarRating rating={review.rating} className="mb-2" />
+                  <h4 className="font-medium text-gray-800 dark:text-white mb-1">
+                    {review.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    {review.body}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={review.reviewerAvatar || "/api/placeholder/32/32"}
+                      alt={review.reviewerName}
+                      className="w-6 h-6 rounded-full"
+                    />
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="font-medium">{review.reviewerName}</div>
+                      <div>{review.date}</div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {isMobile && <Bottombar />}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div
-          className={`fixed inset-y-0 left-0 w-64 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0 transition-transform duration-300 z-100`}
-        >
-          <Sidebar handleLogout={handleLogout} isSidebarOpen={isSidebarOpen} />
-        </div>
-
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-transparent z-30 md:hidden"
-            onClick={toggleSidebar}
-          />
-        )}
-
-        <div className="md:ml-64">
-          <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
-            <div className="flex items-center justify-between p-4">
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={toggleSidebar}
-              >
-                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
-              </div>
-
-              <div className="flex items-center ">
-                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
-                  Neighbour
-                </h1>
-                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                  Link
-                </h1>
-                <span className="mx-2 text-blue-500 dark:text-gray-400">|</span>
-                <div className="flex items-center">
-                  <FaStore className="mr-1 dark:text-yellow-300 text-orange-600" />
-                  <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
-                    Business
-                  </h2>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleNewAnnouncement}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                >
-                  New Announcement
-                </button>
-                <button className="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
-                  Inbox
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="container mx-auto px-4 py-8">
-            <div
-              className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative"
-              role="alert"
-            >
-              <strong className="font-bold">Error!</strong>
-              <span className="block sm:inline"> {error}</span>
-            </div>
-          </div>
-
-          {isMobile && <Bottombar />}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div
-          className={`fixed inset-y-0 left-0 w-64 transform ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } md:translate-x-0 transition-transform duration-300 z-100`}
-        >
-          <Sidebar handleLogout={handleLogout} isSidebarOpen={isSidebarOpen} />
-        </div>
-
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-transparent z-30 md:hidden"
-            onClick={toggleSidebar}
-          />
-        )}
-
-        <div className="md:ml-64">
-          <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
-            <div className="flex items-center justify-between p-4">
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={toggleSidebar}
-              >
-                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
-              </div>
-
-              <div className="flex items-center ">
-                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
-                  Neighbour
-                </h1>
-                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                  Link
-                </h1>
-                <span className="mx-2 text-blue-500 dark:text-gray-400">|</span>
-                <div className="flex items-center">
-                  <FaStore className="mr-1 dark:text-yellow-300 text-orange-600" />
-                  <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
-                    Business
-                  </h2>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleNewAnnouncement}
-                  className={`px-3 py-1 text-sm rounded transition-colors ${
-                    !isProfileComplete()
-                      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  New Announcement
-                </button>
-                <button className="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
-                  Inbox
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 px-4 py-6 pb-24">
-            {/* Profile Completion Banner - Only show if incomplete */}
-            {!isProfileComplete() && (
-              <div className="bg-gradient-to-r from-slate-700 to-slate-700 text-white rounded-lg p-4 mb-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-6 h-6" />
-                    <div>
-                      <h3 className="font-semibold">
-                        Complete Your Business Profile
-                      </h3>
-                      <p className="text-sm opacity-90">
-                        {incompleteFields.length} fields remaining - Complete to
-                        unlock all features
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowBusinessDetailsModal(true)}
-                    className="bg-white text-orange-600 px-4 py-2 rounded hover:bg-orange-50 transition-colors font-medium"
-                  >
-                    Complete Now
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Hero Section */}
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-8 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg">
-                    <FaStore className="text-orange-700 dark:text-yellow-300 text-xl" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                    Business Overview
-                  </h2>
-                </div>
-                {!isProfileComplete() && (
-                  <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-600 rounded-md px-3 py-1">
-                    <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                      Profile Incomplete
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {businessData && (
-                <>
-                  <div className="flex items-center mb-6">
-                    {businessData.businessProfileImage ? (
-                      <ImageDisplay
-                        publicId={businessData.businessProfileImage}
-                        className="w-20 h-20 rounded-lg border border-slate-200 dark:border-slate-600 mr-4 object-cover"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-lg border border-slate-200 dark:border-slate-600 mr-4 bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                        <span className="text-slate-500 text-xs">No Image</span>
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
-                        {businessData.businessName}
-                      </h3>
-                      <p className="text-slate-600 dark:text-slate-400">
-                        {businessData.location?.address || "Location not set"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
-                    {businessData.businessBio ||
-                      "Manage your business presence, connect with customers, and grow your local network."}
-                  </p>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                      <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                        {reviews.length}
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        Reviews
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                      <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                        {(businessData.products?.length || 0) +
-                          (businessData.services?.length || 0)}
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        Items
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                      <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                        {businessData.deliverySupport ? "Yes" : "No"}
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        Delivery
-                      </div>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                      <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                        {businessData.isVerified ? "✓" : "—"}
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        Verified
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Business Details Card */}
-            {businessData && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-                  Business Information
-                </h3>
-
-                {/* Contact Information Warning */}
-                {isContactIncomplete() && (
-                  <WarningCard
-                    title="Contact Information Missing"
-                    message="Add your phone number so customers can reach you directly."
-                    actionText="Add Phone Number"
-                    onAction={() => setShowBusinessDetailsModal(true)}
-                    icon={<Phone className="w-5 h-5 text-amber-600" />}
-                  />
-                )}
-
-                {/* Location Information Warning */}
-                {isLocationIncomplete() && (
-                  <WarningCard
-                    title="Business Location Missing"
-                    message="Set your business address and location coordinates for better discoverability."
-                    actionText="Set Location"
-                    onAction={() => setShowBusinessDetailsModal(true)}
-                    icon={<MapPin className="w-5 h-5 text-amber-600" />}
-                  />
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                      <Phone className="w-4 h-4" />
-                      <span>
-                        Contact: {businessData.contact?.phone || "Not set"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          businessData.deliverySupport
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                        }`}
-                      ></span>
-                      <span>
-                        Delivery available:{" "}
-                        {businessData.deliverySupport ? "YES" : "NO"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                      <CreditCard className="w-4 h-4" />
-                      <span>
-                        Payment:{" "}
-                        {businessData.paymentSupport?.accountDetails
-                          ? "Digital + Cash"
-                          : "Cash only"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={handleViewQRCode}
-                      className="flex items-center justify-center gap-2 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                    >
-                      <QrCode className="w-4 h-4" />
-                      View QR Code
-                    </button>
-                    <button
-                      onClick={handleUpgradeToPremium}
-                      className="flex items-center justify-center gap-2 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
-                    >
-                      <Crown className="w-4 h-4" />
-                      Upgrade To Premium
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Business Images Section */}
-            {businessData && isImagesIncomplete() && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-                  Business Images
-                </h3>
-                <WarningCard
-                  title="Business Images Missing"
-                  message="Add a profile image and cover photo to make your business more attractive to customers."
-                  actionText="Upload Images"
-                  onAction={handleEditBusinessProfile}
-                  icon={<Camera className="w-5 h-5 text-amber-600" />}
-                />
-              </div>
-            )}
-
-            {/* Business Description Section */}
-            {businessData && isDescriptionIncomplete() && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-                  Business Description
-                </h3>
-                <WarningCard
-                  title="Business Description Missing"
-                  message="Add a compelling description of your business to help customers understand what you offer."
-                  actionText="Add Description"
-                  onAction={() => setShowBusinessDetailsModal(true)}
-                  icon={<FileText className="w-5 h-5 text-amber-600" />}
-                />
-              </div>
-            )}
-
-            {/* Quick Actions */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-                Quick Actions
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button
-                  onClick={handleViewInsights}
-                  className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
-                >
-                  <Eye className="w-5 h-5 text-blue-600" />
-                  <span>View Insights</span>
-                </button>
-                <button
-                  onClick={handleViewGallery}
-                  className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
-                >
-                  <Image className="w-5 h-5 text-green-600" />
-                  <span>
-                    Your Gallery ({businessData?.gallery?.length || 0})
-                  </span>
-                </button>
-                <button
-                  onClick={handleViewVerificationDocument}
-                  className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
-                >
-                  <FileText className="w-5 h-5 text-purple-600" />
-                  <span>Verification Document</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Statistics Section */}
-            <div className="mt-8 mb-8">
-              <div className="flex items-center mb-6">
-                <div className="h-8 w-1 bg-blue-600 rounded-full mr-3"></div>
+          {/* Services Section */}
+          <div className="mt-8 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="h-8 w-1 bg-green-600 rounded-full mr-3"></div>
                 <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                  Statistics
+                  Services
                 </h3>
               </div>
+              <button
+                onClick={handleAddService}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Add Service
+              </button>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {reviews.map((review) => (
+            {businessData.services.length === 0 && isServicesProductsIncomplete() && (
+              <WarningCard
+                title="No Services or Products Added"
+                message="Add at least one service or product to complete your profile."
+                actionText="Add Service"
+                onAction={handleAddService}
+                icon={<Briefcase className="w-5 h-5 text-amber-600" />}
+              />
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {businessData.services.map((service) => {
+                const isEditing = editingService === service.id;
+                const displayService = isEditing && tempService ? tempService : service;
+                return (
                   <div
-                    key={review.id}
+                    key={service.id}
                     className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
                   >
-                    <StarRating rating={review.rating} className="mb-2" />
-                    <h4 className="font-medium text-gray-800 dark:text-white mb-1">
-                      {review.title}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                      {review.body}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={review.reviewerAvatar || "/api/placeholder/32/32"}
-                        alt={review.reviewerName}
-                        className="w-6 h-6 rounded-full"
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          placeholder="Service name"
+                          value={displayService.name}
+                          onChange={(e) => setTempService({ ...displayService, name: e.target.value })}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          value={displayService.price || ''}
+                          onChange={(e) => setTempService({ ...displayService, price: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Duration"
+                          value={displayService.duration || ''}
+                          onChange={(e) => setTempService({ ...displayService, duration: e.target.value })}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <textarea
+                          placeholder="Service description"
+                          value={displayService.description || ''}
+                          onChange={(e) => setTempService({ ...displayService, description: e.target.value })}
+                          rows={2}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <div className="space-y-2">
+                          <h5 className="text-sm font-medium">Images</h5>
+                          <div className="grid grid-cols-2 gap-2">
+                            {displayService.imageUrl?.map((img) => (
+                              <div key={img} className="relative">
+                                <ImageDisplay publicId={img} className="h-24 w-full object-cover rounded" />
+                                <button
+                                  onClick={async () => {
+                                    await deleteFromCloudinary(img);
+                                    setTempService({
+                                      ...displayService,
+                                      imageUrl: displayService.imageUrl?.filter((i) => i !== img) || [],
+                                    });
+                                  }}
+                                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <input
+                            type="file"
+                            multiple
+                            onChange={async (e) => {
+                              if (!e.target.files) return;
+                              setLoading(true);
+                              try {
+                                const files = Array.from(e.target.files);
+                                const ids = await Promise.all(
+                                  files.map((f) => uploadFileToCloudinary(f, createUniqueFileName(f.name)))
+                                );
+                                setTempService({
+                                  ...displayService,
+                                  imageUrl: [...(displayService.imageUrl || []), ...ids],
+                                });
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={handleSaveService} className="bg-blue-600 text-white px-4 py-2 rounded">
+                            Save
+                          </button>
+                          <button onClick={handleCancelService} className="border px-4 py-2 rounded">
+                            Cancel
+                          </button>
+                          <button onClick={() => handleRemoveService(service.id)} className="text-red-500">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-gray-800 dark:text-white">
+                            {service.name}
+                          </h4>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingService(service.id);
+                                setTempService({ ...service, imageUrl: service.imageUrl || [] });
+                              }}
+                              className="text-blue-600"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleRemoveService(service.id)} className="text-red-500">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handlePromoteItem(service.id, "service")}
+                              className={`text-xs px-2 py-1 rounded transition-colors ${
+                                !isProfileComplete()
+                                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                  : "bg-green-200 dark:bg-green-600 text-green-700 dark:text-green-200 hover:bg-green-300 dark:hover:bg-green-500"
+                              }`}
+                              disabled={!isProfileComplete()}
+                            >
+                              Promote
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                          {service.description}
+                        </p>
+                        {service.imageUrl?.length ? (
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            {service.imageUrl.map((img) => (
+                              <ImageDisplay key={img} publicId={img} className="h-20 w-full object-cover rounded" />
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                          {service.price && <span>₹{service.price}</span>}
+                          {service.duration && <span>{service.duration}</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {isNewService && tempService && (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
+                  {/* Edit form for new service */}
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Service name"
+                      value={tempService.name}
+                      onChange={(e) => setTempService({ ...tempService, name: e.target.value })}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={tempService.price || ''}
+                      onChange={(e) => setTempService({ ...tempService, price: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Duration"
+                      value={tempService.duration || ''}
+                      onChange={(e) => setTempService({ ...tempService, duration: e.target.value })}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <textarea
+                      placeholder="Service description"
+                      value={tempService.description || ''}
+                      onChange={(e) => setTempService({ ...tempService, description: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium">Images</h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        {tempService.imageUrl?.map((img) => (
+                          <div key={img} className="relative">
+                            <ImageDisplay publicId={img} className="h-24 w-full object-cover rounded" />
+                            <button
+                              onClick={async () => {
+                                await deleteFromCloudinary(img);
+                                setTempService({
+                                  ...tempService,
+                                  imageUrl: (tempService.imageUrl || []).filter((i) => i !== img),
+                                });
+                              }}
+                              className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={async (e) => {
+                          if (!e.target.files) return;
+                          setLoading(true);
+                          try {
+                            const files = Array.from(e.target.files);
+                            const ids = await Promise.all(
+                              files.map((f) => uploadFileToCloudinary(f, createUniqueFileName(f.name)))
+                            );
+                            setTempService({
+                              ...tempService,
+                              imageUrl: [...(tempService.imageUrl || []), ...ids],
+                            });
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
                       />
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        <div className="font-medium">{review.reviewerName}</div>
-                        <div>{review.date}</div>
-                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveService} className="bg-blue-600 text-white px-4 py-2 rounded">
+                        Save
+                      </button>
+                      <button onClick={handleCancelService} className="border px-4 py-2 rounded">
+                        Cancel
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
-
-            {/* Services Section */}
-            {businessData?.services && businessData.services.length > 0 ? (
-              <div className="mt-8 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="h-8 w-1 bg-green-600 rounded-full mr-3"></div>
-                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    Services
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {businessData.services.map((service) => (
-                    <div
-                      key={service.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-gray-800 dark:text-white">
-                          {service.name}
-                        </h4>
-                        <button
-                          onClick={() =>
-                            handlePromoteItem(service.id, "service")
-                          }
-                          className={`text-xs px-2 py-1 rounded transition-colors ${
-                            !isProfileComplete()
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-green-200 dark:bg-green-600 text-green-700 dark:text-green-200 hover:bg-green-300 dark:hover:bg-green-500"
-                          }`}
-                          disabled={!isProfileComplete()}
-                        >
-                          Promote
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        {service.description}
-                      </p>
-                      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                        {service.price && <span>₹{service.price}</span>}
-                        {service.duration && <span>{service.duration}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              businessData && (
-                <div className="mt-8 mb-8">
-                  <div className="flex items-center mb-6">
-                    <div className="h-8 w-1 bg-green-600 rounded-full mr-3"></div>
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                      Services
-                    </h3>
-                  </div>
-                  <WarningCard
-                    title="No Services Added"
-                    message="Add your services to let customers know what you offer. This helps complete your business profile."
-                    actionText="Add Services"
-                    onAction={() => setShowBusinessDetailsModal(true)}
-                    icon={<Briefcase className="w-5 h-5 text-amber-600" />}
-                  />
-                </div>
-              )
-            )}
-
-            {/* Products Section */}
-            {businessData?.products && businessData.products.length > 0 ? (
-              <div className="mt-8 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="h-8 w-1 bg-orange-600 rounded-full mr-3"></div>
-                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    Products
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {businessData.products.map((product) => (
-                    <div
-                      key={product.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-gray-800 dark:text-white">
-                          {product.name}
-                        </h4>
-                        <button
-                          onClick={() =>
-                            handlePromoteItem(product.id, "product")
-                          }
-                          className={`text-xs px-2 py-1 rounded transition-colors ${
-                            !isProfileComplete()
-                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                              : "bg-orange-200 dark:bg-orange-600 text-orange-700 dark:text-orange-200 hover:bg-orange-300 dark:hover:bg-orange-500"
-                          }`}
-                          disabled={!isProfileComplete()}
-                        >
-                          Promote
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        {product.description}
-                      </p>
-                      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-                        {product.price && <span>₹{product.price}</span>}
-                        {product.stock && <span>Stock: {product.stock}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              businessData && (
-                <div className="mt-8 mb-8">
-                  <div className="flex items-center mb-6">
-                    <div className="h-8 w-1 bg-orange-600 rounded-full mr-3"></div>
-                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                      Products
-                    </h3>
-                  </div>
-                  <WarningCard
-                    title="No Products Added"
-                    message="Add your products to showcase what you sell. This helps customers discover your offerings."
-                    actionText="Add Products"
-                    onAction={() => setShowBusinessDetailsModal(true)}
-                    icon={<ShoppingBag className="w-5 h-5 text-amber-600" />}
-                  />
-                </div>
-              )
-            )}
-
-            {/* Overall completion warning if both services and products are missing */}
-            {businessData && isServicesProductsIncomplete() && (
-              <div className="mt-8 mb-16">
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-                  <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
-                    Profile Incomplete
-                  </h3>
-                  <p className="text-red-700 dark:text-red-300 mb-4">
-                    Add at least one product or service to complete your
-                    business profile and unlock announcements.
-                  </p>
-                  <button
-                    onClick={() => setShowBusinessDetailsModal(true)}
-                    className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition-colors"
-                  >
-                    Complete Profile Now
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
-          {isMobile && <Bottombar />}
-        </div>
-      </div>
+          {/* Products Section */}
+          <div className="mt-8 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="h-8 w-1 bg-orange-600 rounded-full mr-3"></div>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                  Products
+                </h3>
+              </div>
+              <button
+                onClick={handleAddProduct}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4" />
+                Add Product
+              </button>
+            </div>
 
-      {/* Business Details Modal */}
-      {businessData && (
-        <BusinessDetailsModal
-          isOpen={showBusinessDetailsModal}
-          setBusinessData={setBusinessData}
-          onClose={() => setShowBusinessDetailsModal(false)}
-          businessData={businessData}
-          incompleteFields={incompleteFields}
-        />
-      )}
+            {businessData.products.length === 0 && isServicesProductsIncomplete() && (
+              <WarningCard
+                title="No Products Added"
+                message="Add your products to showcase what you sell."
+                actionText="Add Product"
+                onAction={handleAddProduct}
+                icon={<ShoppingBag className="w-5 h-5 text-amber-600" />}
+              />
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {businessData.products.map((product) => {
+                const isEditing = editingProduct === product.id;
+                const displayProduct = isEditing && tempProduct ? tempProduct : product;
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
+                  >
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          placeholder="Product name"
+                          value={displayProduct.name}
+                          onChange={(e) => setTempProduct({ ...displayProduct, name: e.target.value })}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Price"
+                          value={displayProduct.price || ''}
+                          onChange={(e) => setTempProduct({ ...displayProduct, price: parseFloat(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Stock"
+                          value={displayProduct.stock || ''}
+                          onChange={(e) => setTempProduct({ ...displayProduct, stock: parseInt(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <textarea
+                          placeholder="Product description"
+                          value={displayProduct.description || ''}
+                          onChange={(e) => setTempProduct({ ...displayProduct, description: e.target.value })}
+                          rows={2}
+                          className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                        />
+                        <div className="space-y-2">
+                          <h5 className="text-sm font-medium">Images</h5>
+                          <div className="grid grid-cols-2 gap-2">
+                            {displayProduct.imageUrl?.map((img) => (
+                              <div key={img} className="relative">
+                                <ImageDisplay publicId={img} className="h-24 w-full object-cover rounded" />
+                                <button
+                                  onClick={async () => {
+                                    await deleteFromCloudinary(img);
+                                    setTempProduct({
+                                      ...displayProduct,
+                                      imageUrl: displayProduct.imageUrl?.filter((i) => i !== img) || [],
+                                    });
+                                  }}
+                                  className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <input
+                            type="file"
+                            multiple
+                            onChange={async (e) => {
+                              if (!e.target.files) return;
+                              setLoading(true);
+                              try {
+                                const files = Array.from(e.target.files);
+                                const ids = await Promise.all(
+                                  files.map((f) => uploadFileToCloudinary(f, createUniqueFileName(f.name)))
+                                );
+                                setTempProduct({
+                                  ...displayProduct,
+                                  imageUrl: [...(displayProduct.imageUrl || []), ...ids],
+                                });
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={handleSaveProduct} className="bg-blue-600 text-white px-4 py-2 rounded">
+                            Save
+                          </button>
+                          <button onClick={handleCancelProduct} className="border px-4 py-2 rounded">
+                            Cancel
+                          </button>
+                          <button onClick={() => handleRemoveProduct(product.id)} className="text-red-500">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-gray-800 dark:text-white">
+                            {product.name}
+                          </h4>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingProduct(product.id);
+                                setTempProduct({ ...product, imageUrl: product.imageUrl || [] });
+                              }}
+                              className="text-blue-600"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleRemoveProduct(product.id)} className="text-red-500">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handlePromoteItem(product.id, "product")}
+                              className={`text-xs px-2 py-1 rounded transition-colors ${
+                                !isProfileComplete()
+                                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                  : "bg-orange-200 dark:bg-orange-600 text-orange-700 dark:text-orange-200 hover:bg-orange-300 dark:hover:bg-orange-500"
+                              }`}
+                              disabled={!isProfileComplete()}
+                            >
+                              Promote
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                          {product.description}
+                        </p>
+                        {product.imageUrl?.length ? (
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            {product.imageUrl.map((img) => (
+                              <ImageDisplay key={img} publicId={img} className="h-20 w-full object-cover rounded" />
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                          {product.price && <span>₹{product.price}</span>}
+                          {product.stock && <span>Stock: {product.stock}</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {isNewProduct && tempProduct && (
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
+                  {/* Edit form for new product */}
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Product name"
+                      value={tempProduct.name}
+                      onChange={(e) => setTempProduct({ ...tempProduct, name: e.target.value })}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={tempProduct.price || ''}
+                      onChange={(e) => setTempProduct({ ...tempProduct, price: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Stock"
+                      value={tempProduct.stock || ''}
+                      onChange={(e) => setTempProduct({ ...tempProduct, stock: parseInt(e.target.value) || 0 })}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <textarea
+                      placeholder="Product description"
+                      value={tempProduct.description || ''}
+                      onChange={(e) => setTempProduct({ ...tempProduct, description: e.target.value })}
+                      rows={2}
+                      className="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"
+                    />
+                    <div className="space-y-2">
+                      <h5 className="text-sm font-medium">Images</h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        {tempProduct.imageUrl?.map((img) => (
+                          <div key={img} className="relative">
+                            <ImageDisplay publicId={img} className="h-24 w-full object-cover rounded" />
+                            <button
+                              onClick={async () => {
+                                await deleteFromCloudinary(img);
+                                setTempProduct({
+                                  ...tempProduct,
+                                  imageUrl: (tempProduct.imageUrl || []).filter((i) => i !== img),
+                                });
+                              }}
+                              className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={async (e) => {
+                          if (!e.target.files) return;
+                          setLoading(true);
+                          try {
+                            const files = Array.from(e.target.files);
+                            const ids = await Promise.all(
+                              files.map((f) => uploadFileToCloudinary(f, createUniqueFileName(f.name)))
+                            );
+                            setTempProduct({
+                              ...tempProduct,
+                              imageUrl: [...(tempProduct.imageUrl || []), ...ids],
+                            });
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveProduct} className="bg-blue-600 text-white px-4 py-2 rounded">
+                        Save
+                      </button>
+                      <button onClick={handleCancelProduct} className="border px-4 py-2 rounded">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Overall completion warning if both services and products are missing */}
+          {isServicesProductsIncomplete() && (
+            <div className="mt-8 mb-16">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                  Profile Incomplete
+                </h3>
+                <p className="text-red-700 dark:text-red-300 mb-4">
+                  Add at least one product or service to complete your
+                  business profile and unlock announcements.
+                </p>
+                <button
+                  onClick={handleAddService}
+                  className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition-colors"
+                >
+                  Add Service/Product Now
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {isMobile && <Bottombar />}
+      </div>
 
       {/* Statistics Modal */}
       {showStatisticsModal && (
@@ -1541,17 +1766,23 @@ const NeighbourLinkBusiness: React.FC = () => {
             </div>
 
             <div className="p-4">
-              {businessData?.gallery && businessData.gallery.length > 0 ? (
+              {businessData.gallery.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
                   {businessData.gallery.map((imageId, index) => (
                     <div
                       key={index}
-                      className="aspect-square rounded-lg overflow-hidden"
+                      className="aspect-square rounded-lg overflow-hidden relative group"
                     >
                       <ImageDisplay
                         publicId={imageId}
                         className="w-full h-full object-cover"
                       />
+                      <button
+                        onClick={() => handleRemoveGallery(imageId)}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -1564,19 +1795,29 @@ const NeighbourLinkBusiness: React.FC = () => {
                   <p className="text-gray-500 dark:text-gray-400 mb-4">
                     Add images to showcase your business.
                   </p>
-                  <button
-                    onClick={handleEditBusinessProfile}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Add Images
-                  </button>
                 </div>
               )}
+              <div className="mt-4">
+                <button
+                  onClick={() => fileInputGallery.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full justify-center"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Images
+                </button>
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  ref={fileInputGallery}
+                  onChange={handleAddGallery}
+                />
+              </div>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
