@@ -1,9 +1,10 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import MapContainer from "@/components/MapContainer";
 import { db, auth } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "react-toastify";
-import { BusinessFormData } from "@/interface/main";
+import { BusinessCollection } from "@/interface/main";
+import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
 
 const BUSINESS_TYPES = [
   "-- select --",
@@ -33,7 +34,8 @@ const CreateBusiness: React.FC = () => {
     longitude: number;
     address: string;
   } | null>(null);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [businessProfileImage, setBusinessProfileImage] = useState<File | null>(null);
+  const [businessProfileImagePublicId, setBusinessProfileImagePublicId] = useState<string>('');
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [mapData, setMapData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,12 +52,23 @@ const CreateBusiness: React.FC = () => {
   };
 
   // Handle business profile image upload
-  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBusinessProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setProfileImage(e.target.files[0]);
+      setBusinessProfileImage(e.target.files[0]);
       setProfilePreview(URL.createObjectURL(e.target.files[0]));
     }
   };
+  async function uploadImage() {
+      console.log("outside");
+    
+    if(businessProfileImage){
+      console.log("inside");
+      
+      
+      setBusinessProfileImagePublicId(await uploadFileToCloudinary(businessProfileImage,`${businessProfileImage}_${Date.now}`))
+    }
+  } 
+ 
 
   // Handle map location selection
   const handleMapData = (data: any) => {
@@ -91,19 +104,37 @@ const CreateBusiness: React.FC = () => {
 
     try {
       setIsSubmitting(true);
+      uploadImage()
 
       // Prepare business data for Firebase
-      const businessData: Omit<BusinessFormData, "id"> = {
+      const businessData: Omit<BusinessCollection, "id"> = {
         businessName: businessName.trim(),
-        businessType,
-        isVerified,
-        verificationDoc: "", // Will be updated when file upload is understood
-        location,
-        profileImage: "", // Will be updated when file upload is understood
+        businessBio: "",
         ownerId: auth.currentUser.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        isActive: true, // if needed we will add a button to handle active or disable
+        isActive: true,
+        isVerified: isVerified,
+        verificationDocUrl: verificationDoc ? URL.createObjectURL(verificationDoc) : undefined,
+        businessType: businessType,
+        contact: {
+          phone: "",
+          verified: false,
+        },
+        gallery: [],
+        businessProfileImage: businessProfileImagePublicId?businessProfileImagePublicId: "",
+        coverImage: "",
+        deliverySupport: false,
+        paymentSupport: {
+          accountDetails: "",
+          qrCodeUrl: "",
+        },
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: location.address,
+        },
+        services: [],
+        products: [],
+        faq: [],
       };
 
       // Save to Firebase
@@ -119,7 +150,7 @@ const CreateBusiness: React.FC = () => {
       setVerificationDoc(null);
       setVerificationPreview(null);
       setLocation(null);
-      setProfileImage(null);
+      setBusinessProfileImage(null);
       setProfilePreview(null);
       setMapData(null);
 
@@ -297,7 +328,7 @@ const CreateBusiness: React.FC = () => {
                     type="file"
                     className="hidden"
                     accept="image/*"
-                    onChange={handleProfileImageChange}
+                    onChange={handleBusinessProfileImageChange}
                   />
                   {profilePreview ? (
                     <img

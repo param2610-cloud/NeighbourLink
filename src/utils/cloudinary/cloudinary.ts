@@ -19,6 +19,8 @@ export const uploadFileToCloudinary = async (file: File, fileName: string): Prom
     });
     
     const data = await response.json();
+    console.log(data);
+    
     
     if (!response.ok) {
       throw new Error(data.error?.message || 'Upload failed');

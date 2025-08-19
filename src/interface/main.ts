@@ -110,25 +110,32 @@ export interface UpdateWithUserData extends UpdateFormData {
 export interface BusinessCollection {
   
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  createdAt: Date;
-
+  businessName: string;
+  businessBio: string;
+  ownerId: string;
+  isActive: boolean;
+  isVerified: boolean;
+  verificationDocUrl?: string;
+  businessType: string;
+  createdAt?: Date;
+  
   contact: {
     phone: string;
     verified: boolean;
   };
-  address: string;
   gallery: string[];
-  profileImage: string;
+  businessProfileImage: string;
   coverImage: string;
   deliverySupport: boolean;
   paymentSupport?: {
     accountDetails?: string;
     qrCodeUrl?: string;
   };
-
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
   services: {
     id: string;
     name: string;
