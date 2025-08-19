@@ -18,6 +18,7 @@ import { doc, getDoc } from "firebase/firestore";
 import ThemeToggle from "@/components/common/ThemeToggle";
 import GoogleTranslate from "@/components/GoogleTranslation";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
+import { FaStore } from "react-icons/fa";
 
 interface SidebarProps {
   handleLogout: () => void;
@@ -65,6 +66,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
     { path: "/messages", label: "Messages", icon: <MessageSquare size={18} /> },
     { path: "/updates", label: "Updates", icon: <Newspaper size={18} /> },
+    { path: "/nbu", label: "Business", icon: <FaStore size={18} /> },
     // {
     //   path: "/saved/posts",
     //   label: "Saved Posts",
