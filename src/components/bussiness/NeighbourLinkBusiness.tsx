@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { BsLightningChargeFill } from "react-icons/bs";
 import { FaStore } from "react-icons/fa";
-import { Star, Phone, CreditCard, QrCode, Eye, Image, FileText, Crown } from 'lucide-react';
+import { Star, Phone, CreditCard, QrCode, Eye, Image, FileText, Crown, Edit, X, BarChart3, TrendingUp, Users, ShoppingBag, AlertTriangle, MapPin, Camera, Briefcase } from 'lucide-react';
 import Sidebar from "../authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { useMobileContext } from "@/contexts/MobileContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 
 interface Review {
   id: string;
@@ -21,22 +22,54 @@ interface Review {
   reviewerAvatar?: string;
 }
 
-interface Product {
+interface BusinessCollection {
   id: string;
-  name: string;
-  description: string;
-  image: string;
-  isPromoted?: boolean;
-}
-
-interface BusinessInfo {
-  name: string;
-  location: string;
-  avatar: string;
+  businessName: string;
+  businessBio: string;
+  ownerId: string;
+  isActive: boolean;
+  isVerified: boolean;
+  verificationDocUrl?: string;
+  businessType: string;
+  createdAt?: Date;
+  
+  contact: {
+    phone: string;
+    verified: boolean;
+  };
+  gallery: string[];
+  businessProfileImage: string;
   coverImage: string;
-  contact: string;
-  deliveryAvailable: boolean;
-  paymentModes: string[];
+  deliverySupport: boolean;
+  paymentSupport?: {
+    accountDetails?: string;
+    qrCodeUrl?: string;
+  };
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  services: {
+    id: string;
+    name: string;
+    description?: string;
+    price?: number;
+    duration?: string;
+  }[];
+
+  products: {
+    id: string;
+    name: string;
+    description?: string;
+    price?: number;
+    stock?: number; 
+  }[];
+
+  faq?: {
+    question: string;
+    answer: string;
+  }[];
 }
 
 const StarRating: React.FC<{ rating: number; className?: string }> = ({ rating, className = "" }) => {
@@ -54,104 +87,162 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({ rating, 
   );
 };
 
+// Warning Card Component for inline warnings
+const WarningCard: React.FC<{ 
+  title: string; 
+  message: string; 
+  actionText?: string; 
+  onAction?: () => void;
+  icon?: React.ReactNode;
+}> = ({ title, message, actionText, onAction, icon }) => {
+  return (
+    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0">
+          {icon || <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">
+            {title}
+          </h4>
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+            {message}
+          </p>
+          {actionText && onAction && (
+            <button
+              onClick={onAction}
+              className="inline-flex items-center gap-2 text-sm bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 transition-colors"
+            >
+              <Edit className="w-3 h-3" />
+              {actionText}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const NeighbourLinkBusiness: React.FC = () => {
-  const [userDetails, setUserDetails] = useState<any>(null);
+  const [businessData, setBusinessData] = useState<BusinessCollection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showStatisticsModal, setShowStatisticsModal] = useState(false);
+  const [showGalleryDrawer, setShowGalleryDrawer] = useState(false);
+  const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
-  // Sample data - replace with your actual data
-  const businessInfo: BusinessInfo = {
-    name: "XYZ Business",
-    location: "Location: Kolkata, West Bengal, India",
-    avatar: "/api/placeholder/48/48",
-    coverImage: "/api/placeholder/300/128",
-    contact: "+91 12345 67890",
-    deliveryAvailable: false,
-    paymentModes: ["Both cash and UPI"]
-  };
-
+  // Sample reviews data - replace with actual reviews from Firebase
   const reviews: Review[] = [
     {
       id: "1",
-      title: "Review title",
-      body: "Review body",
-      reviewerName: "Reviewer name",
-      date: "Date",
-      rating: 0,
+      title: "Great Service",
+      body: "Excellent quality and fast delivery",
+      reviewerName: "John Doe",
+      date: "2024-01-15",
+      rating: 5,
       reviewerAvatar: "/api/placeholder/24/24"
     },
     {
       id: "2",
-      title: "Review title",
-      body: "Review body",
-      reviewerName: "Reviewer name",
-      date: "Date",
-      rating: 0,
+      title: "Satisfied Customer",
+      body: "Good value for money",
+      reviewerName: "Jane Smith",
+      date: "2024-01-10",
+      rating: 4,
       reviewerAvatar: "/api/placeholder/24/24"
     },
     {
       id: "3",
-      title: "Review title",
-      body: "Review body",
-      reviewerName: "Reviewer name",
-      date: "Date",
-      rating: 0,
+      title: "Recommended",
+      body: "Will definitely come back",
+      reviewerName: "Mike Johnson",
+      date: "2024-01-05",
+      rating: 5,
       reviewerAvatar: "/api/placeholder/24/24"
-    }
-  ];
-
-  const products: Product[] = [
-    {
-      id: "1",
-      name: "Spider man",
-      description: "Body text for whatever you'd like to say. Add main takeaway points, quotes, anecdotes, or even a very short story.",
-      image: "/api/placeholder/200/150",
-      isPromoted: true
-    },
-    {
-      id: "2",
-      name: "Shoe",
-      description: "Body text for whatever you'd like to say. Add main takeaway points, quotes, anecdotes, or even a very short story.",
-      image: "/api/placeholder/200/150"
-    },
-    {
-      id: "3",
-      name: "Camera",
-      description: "Body text for whatever you'd like to say. Add main takeaway points, quotes, anecdotes, or even a very short story.",
-      image: "/api/placeholder/200/150"
     }
   ];
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchUserAndBusinessData = async () => {
       try {
         auth.onAuthStateChanged(async (user) => {
           if (user) {
-            const docRef = doc(db, "Users", user.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-              setUserDetails(docSnap.data());
+            const userDocRef = doc(db, "Users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            
+            if (userDocSnap.exists()) {
+              // Fetch business data
+              const businessQuery = query(
+                collection(db, "business"), 
+                where("ownerId", "==", user.uid)
+              );
+              const businessSnapshot = await getDocs(businessQuery);
+              
+              if (!businessSnapshot.empty) {
+                const businessDoc = businessSnapshot.docs[0];
+                const business = { id: businessDoc.id, ...businessDoc.data() } as BusinessCollection;
+                setBusinessData(business);
+                
+                // Check if profile is complete
+                const incomplete = checkIncompleteFields(business);
+                setIncompleteFields(incomplete);
+              } else {
+                // No business found, redirect to create business
+                navigate("/business/create");
+              }
+              
               setLoading(false);
             } else {
               navigate("/login");
-              console.log("No such document!");
             }
           } else {
             navigate("/login");
           }
         });
       } catch (err) {
-        setError("Failed to load user data. Please try again.");
+        setError("Failed to load business data. Please try again.");
         setLoading(false);
-        console.error("Error fetching user data:", err);
+        console.error("Error fetching business data:", err);
       }
     };
 
-    fetchUserData();
+    fetchUserAndBusinessData();
   }, [navigate]);
+
+  const checkIncompleteFields = (business: BusinessCollection): string[] => {
+    const incomplete: string[] = [];
+    
+    if (!business.contact?.phone) incomplete.push("Phone number");
+    if (!business.location?.address) incomplete.push("Business address");
+    if (!business.location?.latitude || !business.location?.longitude) incomplete.push("Location coordinates");
+    if (!business.services?.length && !business.products?.length) incomplete.push("At least one service or product");
+    if (!business.businessProfileImage) incomplete.push("Business profile image");
+    if (!business.coverImage) incomplete.push("Cover image");
+    if (!business.businessBio) incomplete.push("Business description");
+    
+    return incomplete;
+  };
+
+  const isProfileComplete = () => {
+    return incompleteFields.length === 0;
+  };
+
+  const handleNewAnnouncement = () => {
+    if (!isProfileComplete()) {
+      // Instead of showing modal, just show a toast or alert
+      alert("Please complete your business profile first to create announcements.");
+      return;
+    }
+    console.log("New announcement clicked");
+    // Navigate to announcement creation page
+  };
+
+  const handleEditBusinessProfile = () => {
+    navigate("/business/settings");
+  };
 
   async function handleLogout() {
     try {
@@ -168,20 +259,16 @@ const NeighbourLinkBusiness: React.FC = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const handleNewAnnouncement = () => {
-    console.log("New announcement clicked");
-  };
-
   const handleViewQRCode = () => {
     console.log("View QR Code clicked");
   };
 
   const handleViewInsights = () => {
-    console.log("View Insights clicked");
+    setShowStatisticsModal(true);
   };
 
   const handleViewGallery = () => {
-    console.log("View Gallery clicked");
+    setShowGalleryDrawer(true);
   };
 
   const handleViewVerificationDocument = () => {
@@ -192,14 +279,24 @@ const NeighbourLinkBusiness: React.FC = () => {
     console.log("Upgrade to Premium clicked");
   };
 
-  const handlePromoteProduct = (productId: string) => {
-    console.log(`Promote product ${productId} clicked`);
+  const handlePromoteItem = (itemId: string, type: 'product' | 'service') => {
+    if (!isProfileComplete()) {
+      alert("Please complete your business profile first to promote items.");
+      return;
+    }
+    console.log(`Promote ${type} ${itemId} clicked`);
   };
+
+  // Helper functions to check specific incomplete fields
+  const isContactIncomplete = () => !businessData?.contact?.phone;
+  const isLocationIncomplete = () => !businessData?.location?.address || !businessData?.location?.latitude || !businessData?.location?.longitude;
+  const isImagesIncomplete = () => !businessData?.businessProfileImage || !businessData?.coverImage;
+  const isDescriptionIncomplete = () => !businessData?.businessBio;
+  const isServicesProductsIncomplete = () => !businessData?.services?.length && !businessData?.products?.length;
 
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Responsive Sidebar */}
         <div
           className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             } md:translate-x-0 transition-transform duration-300 z-100`}
@@ -210,7 +307,6 @@ const NeighbourLinkBusiness: React.FC = () => {
           />
         </div>
 
-        {/* Overlay to close sidebar when clicking outside (only on mobile) */}
         {isSidebarOpen && (
           <div
             className="fixed inset-0 bg-transparent z-30 md:hidden"
@@ -218,9 +314,7 @@ const NeighbourLinkBusiness: React.FC = () => {
           />
         )}
 
-        {/* Main Content Area */}
         <div className="md:ml-64">
-          {/* Enhanced Top Navigation with animated gradient */}
           <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
             <div className="flex items-center justify-between p-4">
               <div
@@ -262,7 +356,6 @@ const NeighbourLinkBusiness: React.FC = () => {
             </div>
           </div>
 
-          {/* Loading content */}
           <div className="container w-full mt-8 mx-auto px-4 py-8">
             <div className="mb-8 text-center space-y-3">
               <div className="h-8 w-48 mx-auto">
@@ -285,7 +378,6 @@ const NeighbourLinkBusiness: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom Navigation */}
           {isMobile && <Bottombar />}
         </div>
       </div>
@@ -295,7 +387,6 @@ const NeighbourLinkBusiness: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Responsive Sidebar */}
         <div
           className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             } md:translate-x-0 transition-transform duration-300 z-100`}
@@ -306,7 +397,6 @@ const NeighbourLinkBusiness: React.FC = () => {
           />
         </div>
 
-        {/* Overlay to close sidebar when clicking outside (only on mobile) */}
         {isSidebarOpen && (
           <div
             className="fixed inset-0 bg-transparent z-30 md:hidden"
@@ -314,9 +404,7 @@ const NeighbourLinkBusiness: React.FC = () => {
           />
         )}
 
-        {/* Main Content Area */}
         <div className="md:ml-64">
-          {/* Enhanced Top Navigation with animated gradient */}
           <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
             <div className="flex items-center justify-between p-4">
               <div
@@ -358,7 +446,6 @@ const NeighbourLinkBusiness: React.FC = () => {
             </div>
           </div>
 
-          {/* Error content */}
           <div className="container mx-auto px-4 py-8">
             <div className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative" role="alert">
               <strong className="font-bold">Error!</strong>
@@ -366,7 +453,6 @@ const NeighbourLinkBusiness: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom Navigation */}
           {isMobile && <Bottombar />}
         </div>
       </div>
@@ -376,7 +462,6 @@ const NeighbourLinkBusiness: React.FC = () => {
   return (
     <>
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Responsive Sidebar - with Business active */}
         <div
           className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             } md:translate-x-0 transition-transform duration-300 z-100`}
@@ -387,7 +472,6 @@ const NeighbourLinkBusiness: React.FC = () => {
           />
         </div>
 
-        {/* Overlay to close sidebar when clicking outside (only on mobile) */}
         {isSidebarOpen && (
           <div
             className="fixed inset-0 bg-transparent z-30 md:hidden"
@@ -395,9 +479,7 @@ const NeighbourLinkBusiness: React.FC = () => {
           />
         )}
 
-        {/* Main Content Area */}
         <div className="md:ml-64">
-          {/* Enhanced Top Navigation with animated gradient */}
           <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
             <div className="flex items-center justify-between p-4">
               <div
@@ -428,7 +510,11 @@ const NeighbourLinkBusiness: React.FC = () => {
               <div className="flex gap-2">
                 <button 
                   onClick={handleNewAnnouncement}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                  className={`px-3 py-1 text-sm rounded transition-colors ${
+                    !isProfileComplete() 
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
                 >
                   New Announcement
                 </button>
@@ -439,93 +525,187 @@ const NeighbourLinkBusiness: React.FC = () => {
             </div>
           </div>
 
-          {/* Business Dashboard Content - Added pb-24 for bottom padding to prevent content from being cut off by Bottombar */}
           <div className="flex-1 px-4 py-6 pb-24">
+            {/* Profile Completion Banner - Only show if incomplete */}
+            {!isProfileComplete() && (
+              <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg p-4 mb-6 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-6 h-6" />
+                    <div>
+                      <h3 className="font-semibold">Complete Your Business Profile</h3>
+                      <p className="text-sm opacity-90">
+                        {incompleteFields.length} fields remaining - Complete to unlock all features
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleEditBusinessProfile}
+                    className="bg-white text-orange-600 px-4 py-2 rounded hover:bg-orange-50 transition-colors font-medium"
+                  >
+                    Complete Now
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Hero Section */}
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl p-8 mb-8 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-2xl"></div>
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-yellow-300/20 rounded-full -ml-10 -mb-10 blur-xl"></div>
 
               <div className="relative z-10">
-                <div className="flex items-center space-x-3 mb-4">
-                  <BsLightningChargeFill className="text-yellow-300 text-2xl" />
-                  <h2 className="text-3xl font-bold">Business Dashboard</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <BsLightningChargeFill className="text-yellow-300 text-2xl" />
+                    <h2 className="text-3xl font-bold">Business Dashboard</h2>
+                  </div>
+                  {!isProfileComplete() && (
+                    <div className="bg-red-500/20 border border-red-300/30 rounded-lg px-3 py-1">
+                      <span className="text-sm font-medium">Profile Incomplete</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Business Profile Section */}
-                <div className="flex items-center mb-6">
-                  <img 
-                    src={businessInfo.avatar} 
-                    alt={businessInfo.name}
-                    className="w-16 h-16 rounded-full border-2 border-white mr-4"
-                  />
-                  <div>
-                    <h3 className="text-2xl font-bold">{businessInfo.name}</h3>
-                    <p className="text-blue-100">{businessInfo.location}</p>
-                  </div>
-                </div>
+                {businessData && (
+                  <>
+                    <div className="flex items-center mb-6">
+                      {businessData.businessProfileImage ? (
+                        <ImageDisplay 
+                          publicId={businessData.businessProfileImage} 
+                          className="w-16 h-16 rounded-full border-2 border-white mr-4 object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full border-2 border-white mr-4 bg-gray-300 flex items-center justify-center">
+                          <span className="text-gray-600 text-xs">No Image</span>
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="text-2xl font-bold">{businessData.businessName}</h3>
+                        <p className="text-blue-100">{businessData.location?.address || "Location not set"}</p>
+                      </div>
+                    </div>
 
-                <p className="text-lg max-w-2xl mb-6 text-blue-50">
-                  Manage your business presence, connect with customers, and grow your local network. 
-                  Track your performance and showcase your products to the community.
-                </p>
+                    <p className="text-lg max-w-2xl mb-6 text-blue-50">
+                      {businessData.businessBio || "Manage your business presence, connect with customers, and grow your local network."}
+                    </p>
 
-                <div className="flex flex-wrap gap-4 items-center">
-                  <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
-                    <span className="text-sm font-medium">
-                      {reviews.length} Reviews
-                    </span>
-                  </div>
-                  <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
-                    <span className="text-sm font-medium">
-                      {products.length} Products
-                    </span>
-                  </div>
-                  <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
-                    <span className="text-sm font-medium">
-                      Delivery: {businessInfo.deliveryAvailable ? 'Available' : 'Not Available'}
-                    </span>
-                  </div>
-                </div>
+                    <div className="flex flex-wrap gap-4 items-center">
+                      <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
+                        <span className="text-sm font-medium">
+                          {reviews.length} Reviews
+                        </span>
+                      </div>
+                      <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
+                        <span className="text-sm font-medium">
+                          {(businessData.products?.length || 0) + (businessData.services?.length || 0)} Items
+                        </span>
+                      </div>
+                      <div className="flex items-center bg-white/20 rounded-full px-4 py-2">
+                        <span className="text-sm font-medium">
+                          Delivery: {businessData.deliverySupport ? 'Available' : 'Not Available'}
+                        </span>
+                      </div>
+                      {businessData.isVerified && (
+                        <div className="flex items-center bg-green-500/30 rounded-full px-4 py-2">
+                          <span className="text-sm font-medium">✓ Verified</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Business Details Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Business Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <Phone className="w-4 h-4" />
-                    <span>Contact: {businessInfo.contact}</span>
+            {businessData && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Business Information</h3>
+                
+                {/* Contact Information Warning */}
+                {isContactIncomplete() && (
+                  <WarningCard
+                    title="Contact Information Missing"
+                    message="Add your phone number so customers can reach you directly."
+                    actionText="Add Phone Number"
+                    onAction={handleEditBusinessProfile}
+                    icon={<Phone className="w-5 h-5 text-amber-600" />}
+                  />
+                )}
+
+                {/* Location Information Warning */}
+                {isLocationIncomplete() && (
+                  <WarningCard
+                    title="Business Location Missing"
+                    message="Set your business address and location coordinates for better discoverability."
+                    actionText="Set Location"
+                    onAction={handleEditBusinessProfile}
+                    icon={<MapPin className="w-5 h-5 text-amber-600" />}
+                  />
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <Phone className="w-4 h-4" />
+                      <span>Contact: {businessData.contact?.phone || 'Not set'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <span className={`w-2 h-2 rounded-full ${businessData.deliverySupport ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span>Delivery available: {businessData.deliverySupport ? 'YES' : 'NO'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                      <CreditCard className="w-4 h-4" />
+                      <span>Payment: {businessData.paymentSupport?.accountDetails ? 'Digital + Cash' : 'Cash only'}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                    <span>Delivery available: {businessInfo.deliveryAvailable ? 'YES' : 'NO'}</span>
+                  <div className="flex flex-col gap-2">
+                    <button 
+                      onClick={handleViewQRCode}
+                      className="flex items-center justify-center gap-2 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      View QR Code
+                    </button>
+                    <button 
+                      onClick={handleUpgradeToPremium}
+                      className="flex items-center justify-center gap-2 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Upgrade To Premium
+                    </button>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <CreditCard className="w-4 h-4" />
-                    <span>Payment modes: {businessInfo.paymentModes.join(', ')}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <button 
-                    onClick={handleViewQRCode}
-                    className="flex items-center justify-center gap-2 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                  >
-                    <QrCode className="w-4 h-4" />
-                    View QR Code
-                  </button>
-                  <button 
-                    onClick={handleUpgradeToPremium}
-                    className="flex items-center justify-center gap-2 py-2 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
-                  >
-                    <Crown className="w-4 h-4" />
-                    Upgrade To Premium
-                  </button>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Business Images Section */}
+            {businessData && isImagesIncomplete() && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Business Images</h3>
+                <WarningCard
+                  title="Business Images Missing"
+                  message="Add a profile image and cover photo to make your business more attractive to customers."
+                  actionText="Upload Images"
+                  onAction={handleEditBusinessProfile}
+                  icon={<Camera className="w-5 h-5 text-amber-600" />}
+                />
+              </div>
+            )}
+
+            {/* Business Description Section */}
+            {businessData && isDescriptionIncomplete() && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+                <h3 className="font-semibold text-gray-800 dark:text-white mb-4">Business Description</h3>
+                <WarningCard
+                  title="Business Description Missing"
+                  message="Add a compelling description of your business to help customers understand what you offer."
+                  actionText="Add Description"
+                  onAction={handleEditBusinessProfile}
+                  icon={<FileText className="w-5 h-5 text-amber-600" />}
+                />
+              </div>
+            )}
 
             {/* Quick Actions */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
@@ -543,7 +723,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                   className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
                 >
                   <Image className="w-5 h-5 text-green-600" />
-                  <span>Your Gallery</span>
+                  <span>Your Gallery ({businessData?.gallery?.length || 0})</span>
                 </button>
                 <button 
                   onClick={handleViewVerificationDocument}
@@ -586,56 +766,246 @@ const NeighbourLinkBusiness: React.FC = () => {
               </div>
             </div>
 
-            {/* Product/Service Gallery */}
-            <div className="mt-8 mb-16">
-              <div className="flex items-center mb-6">
-                <div className="h-8 w-1 bg-blue-600 rounded-full mr-3"></div>
-                <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                  Product/Service Gallery
-                </h3>
-              </div>
-              
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">Manage all your products here</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <div key={product.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
-                    <div className="relative">
-                      <img 
-                        src={product.image} 
-                        alt={product.name}
-                        className="w-full h-40 object-cover"
-                      />
-                      {product.isPromoted && (
-                        <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                          Promoted
-                        </div>
-                      )}
+            {/* Services Section */}
+            {businessData?.services && businessData.services.length > 0 ? (
+              <div className="mt-8 mb-8">
+                <div className="flex items-center mb-6">
+                  <div className="h-8 w-1 bg-green-600 rounded-full mr-3"></div>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    Services
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {businessData.services.map((service) => (
+                    <div key={service.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-gray-800 dark:text-white">{service.name}</h4>
+                        <button 
+                          onClick={() => handlePromoteItem(service.id, 'service')}
+                          className={`text-xs px-2 py-1 rounded transition-colors ${
+                            !isProfileComplete() 
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-green-200 dark:bg-green-600 text-green-700 dark:text-green-200 hover:bg-green-300 dark:hover:bg-green-500'
+                          }`}
+                          disabled={!isProfileComplete()}
+                        >
+                          Promote
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{service.description}</p>
+                      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        {service.price && <span>₹{service.price}</span>}
+                        {service.duration && <span>{service.duration}</span>}
+                      </div>
                     </div>
-                    <div className="p-4">
+                  ))}
+                </div>
+              </div>
+            ) : businessData && (
+              <div className="mt-8 mb-8">
+                <div className="flex items-center mb-6">
+                  <div className="h-8 w-1 bg-green-600 rounded-full mr-3"></div>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    Services
+                  </h3>
+                </div>
+                <WarningCard
+                  title="No Services Added"
+                  message="Add your services to let customers know what you offer. This helps complete your business profile."
+                  actionText="Add Services"
+                  onAction={handleEditBusinessProfile}
+                  icon={<Briefcase className="w-5 h-5 text-amber-600" />}
+                />
+              </div>
+            )}
+
+            {/* Products Section */}
+            {businessData?.products && businessData.products.length > 0 ? (
+              <div className="mt-8 mb-8">
+                <div className="flex items-center mb-6">
+                  <div className="h-8 w-1 bg-orange-600 rounded-full mr-3"></div>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    Products
+                  </h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {businessData.products.map((product) => (
+                    <div key={product.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-semibold text-gray-800 dark:text-white">{product.name}</h4>
-                        {!product.isPromoted && (
-                          <button 
-                            onClick={() => handlePromoteProduct(product.id)}
-                            className="text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                          >
-                            Promote
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => handlePromoteItem(product.id, 'product')}
+                          className={`text-xs px-2 py-1 rounded transition-colors ${
+                            !isProfileComplete() 
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-orange-200 dark:bg-orange-600 text-orange-700 dark:text-orange-200 hover:bg-orange-300 dark:hover:bg-orange-500'
+                          }`}
+                          disabled={!isProfileComplete()}
+                        >
+                          Promote
+                        </button>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{product.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{product.description}</p>
+                      <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                        {product.price && <span>₹{product.price}</span>}
+                        {product.stock && <span>Stock: {product.stock}</span>}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : businessData && (
+              <div className="mt-8 mb-8">
+                <div className="flex items-center mb-6">
+                  <div className="h-8 w-1 bg-orange-600 rounded-full mr-3"></div>
+                  <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    Products
+                  </h3>
+                </div>
+                <WarningCard
+                  title="No Products Added"
+                  message="Add your products to showcase what you sell. This helps customers discover your offerings."
+                  actionText="Add Products"
+                  onAction={handleEditBusinessProfile}
+                  icon={<ShoppingBag className="w-5 h-5 text-amber-600" />}
+                />
+              </div>
+            )}
+
+            {/* Overall completion warning if both services and products are missing */}
+            {businessData && isServicesProductsIncomplete() && (
+              <div className="mt-8 mb-16">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                  <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+                    Profile Incomplete
+                  </h3>
+                  <p className="text-red-700 dark:text-red-300 mb-4">
+                    Add at least one product or service to complete your business profile and unlock announcements.
+                  </p>
+                  <button
+                    onClick={handleEditBusinessProfile}
+                    className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition-colors"
+                  >
+                    Complete Profile Now
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Bottom Navigation */}
           {isMobile && <Bottombar />}
         </div>
       </div>
+
+      {/* Statistics Modal */}
+      {showStatisticsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-semibold text-gray-800 dark:text-white">Business Insights</h3>
+              <button
+                onClick={() => setShowStatisticsModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            {/* Placeholder for statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <BarChart3 className="w-8 h-8 text-blue-600" />
+                  <span className="text-2xl font-bold text-blue-600">0</span>
+                </div>
+                <h4 className="font-semibold text-gray-800 dark:text-white">Total Views</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">This month</p>
+              </div>
+              
+              <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <TrendingUp className="w-8 h-8 text-green-600" />
+                  <span className="text-2xl font-bold text-green-600">0</span>
+                </div>
+                <h4 className="font-semibold text-gray-800 dark:text-white">Engagement</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">This month</p>
+              </div>
+              
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <Users className="w-8 h-8 text-purple-600" />
+                  <span className="text-2xl font-bold text-purple-600">{reviews.length}</span>
+                </div>
+                <h4 className="font-semibold text-gray-800 dark:text-white">Reviews</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Total received</p>
+              </div>
+            </div>
+
+            <div className="text-center py-12">
+              <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">
+                Detailed Analytics Coming Soon
+              </h4>
+              <p className="text-gray-500 dark:text-gray-400">
+                We're working on comprehensive business insights for you.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gallery Drawer */}
+      {showGalleryDrawer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-50">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md h-full overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white">Gallery</h3>
+                <button
+                  onClick={() => setShowGalleryDrawer(false)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-4">
+              {businessData?.gallery && businessData.gallery.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {businessData.gallery.map((imageId, index) => (
+                    <div key={index} className="aspect-square rounded-lg overflow-hidden">
+                      <ImageDisplay 
+                        publicId={imageId} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Image className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-2">
+                    No Images Yet
+                  </h4>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Add images to showcase your business.
+                  </p>
+                  <button
+                    onClick={handleEditBusinessProfile}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Add Images
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

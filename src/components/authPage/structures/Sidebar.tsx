@@ -66,7 +66,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
     { path: "/profileCard", label: "Profile", icon: <User size={18} /> },
     { path: "/messages", label: "Messages", icon: <MessageSquare size={18} /> },
     { path: "/updates", label: "Updates", icon: <Newspaper size={18} /> },
-    { path: "/nbu", label: "Business", icon: <FaStore size={18} /> },
+    { path: "/business", label: "Business", icon: <FaStore size={18} /> },
     // {
     //   path: "/saved/posts",
     //   label: "Saved Posts",

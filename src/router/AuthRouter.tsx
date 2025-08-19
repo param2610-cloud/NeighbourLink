@@ -27,6 +27,7 @@ import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
 import UpdatesPage from "@/components/update/UpdatesFeedPage";
 import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
+import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusiness";
 
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
 const ResourceForm = lazy(() => import("@/components/Forms/ResourceForm"));
@@ -117,6 +118,7 @@ const AuthRouter: React.FC = () => {
           <Route path="/update/new" element={<NewUpdateForm />} />
           <Route path="/register" element={<Navigate to="/" />} />
           <Route path="/login" element={<Navigate to="/" />} />
+          <Route path="/business" element={<NeighbourLinkBusiness/>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
