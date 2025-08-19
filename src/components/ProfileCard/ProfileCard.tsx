@@ -1,6 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { auth, db } from "../../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { toast } from "react-toastify";
 import CreateBusiness from "@/components/bussiness/createBusiness";
 import {
@@ -10,7 +18,7 @@ import {
   AiOutlineHome,
   AiOutlineCheckCircle,
 } from "react-icons/ai";
-import { FaIdCard } from "react-icons/fa";
+import { FaIdCard, FaStore } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { useNavigate } from "react-router-dom";
 import Bottombar from "../authPage/structures/Bottombar";
@@ -43,6 +51,7 @@ function ProfileCard() {
   const [verificationError, setVerificationError] = useState<string>("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState(false);
+  const [hasExistingBusiness, setHasExistingBusiness] = useState(false);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
@@ -74,9 +83,7 @@ function ProfileCard() {
   const fetchProfilePhoto = useCallback(async () => {
     if (userDetails?.photo) {
       try {
-        
         setProfilePhoto(photoUrl);
-        
       } catch (error) {
         console.error("Error fetching profile photo:", error);
       }
@@ -155,9 +162,10 @@ function ProfileCard() {
       const nameData = await extractNameWithGemini(extractedText);
       console.log("Extracted name:", nameData);
 
-      const userFullName = `${userDetails.firstName.trim()} ${userDetails.lastName.trim()}`
-        .toLowerCase()
-        .trim();
+      const userFullName =
+        `${userDetails.firstName.trim()} ${userDetails.lastName.trim()}`
+          .toLowerCase()
+          .trim();
       console.log("User full name:", userFullName);
       const extractedFullName = nameData.name.toLowerCase().trim();
       console.log("Extracted full name:", extractedFullName, userFullName);
@@ -234,6 +242,22 @@ function ProfileCard() {
     });
   }, []);
 
+  // Check if user has existing business
+  const checkExistingBusiness = useCallback(async () => {
+    if (auth.currentUser) {
+      try {
+        const businessQuery = query(
+          collection(db, "business"),
+          where("ownerId", "==", auth.currentUser.uid)
+        );
+        const businessSnapshot = await getDocs(businessQuery);
+        setHasExistingBusiness(!businessSnapshot.empty);
+      } catch (error) {
+        console.error("Error checking existing business:", error);
+      }
+    }
+  }, []);
+
   // Initialize user data on component mount
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -242,12 +266,15 @@ function ProfileCard() {
       unsubscribe = unsubFn;
     });
 
+    // Check for existing business
+    checkExistingBusiness();
+
     return () => {
       if (unsubscribe) {
         unsubscribe();
       }
     };
-  }, [fetchUserData]);
+  }, [fetchUserData, checkExistingBusiness]);
 
   const handleLogout = async () => {
     try {
@@ -331,6 +358,14 @@ function ProfileCard() {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleBusinessAction = () => {
+    if (hasExistingBusiness) {
+      navigate("/business");
+    } else {
+      setIsBusinessModalOpen(true);
+    }
   };
 
   return (
@@ -420,18 +455,18 @@ function ProfileCard() {
 
                   <div className="absolute -bottom-16 left-6">
                     <div className="relative group">
-                      {
-                        profilePhoto ? (
-                          <ImageDisplay
-                            publicId={
-                              profilePhoto
-                            }
-                            className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ):(
-                          <img src="/assets/pictures/blue-circle-with-white-user_78370-4707.avif" className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105" alt="User Circle" />
-                        )
-                      }
+                      {profilePhoto ? (
+                        <ImageDisplay
+                          publicId={profilePhoto}
+                          className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <img
+                          src="/assets/pictures/blue-circle-with-white-user_78370-4707.avif"
+                          className="w-32 h-32 rounded-2xl border-4 border-white dark:border-gray-800 shadow-lg object-cover transform transition-transform duration-300 group-hover:scale-105"
+                          alt="User Circle"
+                        />
+                      )}
                       <label className="absolute bottom-0 right-0 bg-white dark:bg-gray-700 p-2 rounded-full shadow-sm cursor-pointer border border-gray-200 dark:border-gray-600">
                         <input
                           type="file"
@@ -494,20 +529,49 @@ function ProfileCard() {
                         Edit Profile
                       </button>
                       <button
-                        onClick={() => setIsBusinessModalOpen(true)}
-                        id="create-business-btn"
-                        className="relative px-5 py-2.5 text-sm font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-gray-700 rounded-lg border border-yellow-200 dark:border-gray-600 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-all duration-200 shadow-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-yellow-400 group"
-                        style={{ transition: 'transform 0.2s' }}
+                        onClick={handleBusinessAction}
+                        id="business-action-btn"
+                        className={`relative px-5 py-2.5 text-sm font-medium rounded-lg border transition-all duration-200 shadow-md overflow-hidden focus:outline-none focus:ring-2 group ${
+                          hasExistingBusiness
+                            ? "text-green-700 dark:text-green-300 bg-green-100 dark:bg-gray-700 border-green-200 dark:border-gray-600 hover:bg-green-200 dark:hover:bg-green-800 focus:ring-green-400"
+                            : "text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-gray-700 border-yellow-200 dark:border-gray-600 hover:bg-yellow-200 dark:hover:bg-yellow-800 focus:ring-yellow-400"
+                        }`}
+                        style={{ transition: "transform 0.2s" }}
                       >
                         <span className="inline-block align-middle mr-2">
-                          <svg className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                          {hasExistingBusiness ? (
+                            <FaStore className="w-5 h-5 text-green-500 group-hover:scale-110 transition-transform duration-200" />
+                          ) : (
+                            <svg
+                              className="w-5 h-5 text-yellow-500 group-hover:scale-110 transition-transform duration-200"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 4v16m8-8H4"
+                              />
+                            </svg>
+                          )}
                         </span>
-                        Create Business
-                        <span className="absolute left-1/2 top-1/2 w-0 h-0 bg-yellow-300 opacity-30 rounded-full group-active:animate-ripple" style={{transform: 'translate(-50%, -50%)'}}></span>
+                        {hasExistingBusiness
+                          ? "Manage Business"
+                          : "Create Business"}
+                        <span
+                          className={`absolute left-1/2 top-1/2 w-0 h-0 opacity-30 rounded-full group-active:animate-ripple ${
+                            hasExistingBusiness
+                              ? "bg-green-300"
+                              : "bg-yellow-300"
+                          }`}
+                          style={{ transform: "translate(-50%, -50%)" }}
+                        ></span>
                       </button>
 
-                      {/* Business Creation Modal */}
-                      {isBusinessModalOpen && (
+                      {/* Business Creation Modal - Only show for new business */}
+                      {isBusinessModalOpen && !hasExistingBusiness && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                           <div className="relative w-full max-w-2xl mx-auto">
                             <div className="absolute top-2 right-2 z-10">
@@ -516,8 +580,18 @@ function ProfileCard() {
                                 className="p-2 rounded-full bg-white dark:bg-gray-800 shadow hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                 aria-label="Close business modal"
                               >
-                                <svg className="w-6 h-6 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                <svg
+                                  className="w-6 h-6 text-gray-700 dark:text-gray-200"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
                                 </svg>
                               </button>
                             </div>
@@ -658,7 +732,9 @@ function ProfileCard() {
                                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                               />
                             </svg>
-                            <span className="text-sm">Click to upload photo</span>
+                            <span className="text-sm">
+                              Click to upload photo
+                            </span>
                           </div>
                         )}
                       </label>
@@ -778,7 +854,9 @@ function ProfileCard() {
                         />
                         <div className="flex flex-col items-center text-gray-400 dark:text-gray-500">
                           <FaIdCard className="w-8 h-8 mb-2" />
-                          <span className="text-sm">Click to upload ID photo</span>
+                          <span className="text-sm">
+                            Click to upload ID photo
+                          </span>
                         </div>
                       </label>
                     )}
@@ -830,8 +908,8 @@ function ProfileCard() {
 
                   <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
                     <p>
-                      Your ID will only be used for verification and won't be stored
-                      permanently. We value your privacy.
+                      Your ID will only be used for verification and won't be
+                      stored permanently. We value your privacy.
                     </p>
                   </div>
                 </div>

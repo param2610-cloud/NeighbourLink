@@ -7,6 +7,7 @@ import {
   query,
   where,
   getDocs,
+  updateDoc,
 } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { GiHamburgerMenu } from "react-icons/gi";
@@ -31,6 +32,9 @@ import {
   MapPin,
   Camera,
   Briefcase,
+  Save,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import Sidebar from "../authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
@@ -116,6 +120,418 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({
   );
 };
 
+// Business Details Modal Component
+const BusinessDetailsModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  businessData: BusinessCollection;
+  onSave: (updatedData: Partial<BusinessCollection>) => void;
+  incompleteFields: string[];
+}> = ({ isOpen, onClose, businessData, onSave, incompleteFields }) => {
+  const [formData, setFormData] = useState({
+    businessName: businessData.businessName || "",
+    businessBio: businessData.businessBio || "",
+    phone: businessData.contact?.phone || "",
+    address: businessData.location?.address || "",
+    deliverySupport: businessData.deliverySupport || false,
+    accountDetails: businessData.paymentSupport?.accountDetails || "",
+    services: businessData.services || [],
+    products: businessData.products || [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("basic");
+
+  const addService = () => {
+    setFormData((prev) => ({
+      ...prev,
+      services: [
+        ...prev.services,
+        { id: Date.now().toString(), name: "", description: "", price: 0 },
+      ],
+    }));
+  };
+
+  const removeService = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      services: prev.services.filter((service) => service.id !== id),
+    }));
+  };
+
+  const updateService = (id: string, field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      services: prev.services.map((service) =>
+        service.id === id ? { ...service, [field]: value } : service
+      ),
+    }));
+  };
+
+  const addProduct = () => {
+    setFormData((prev) => ({
+      ...prev,
+      products: [
+        ...prev.products,
+        { id: Date.now().toString(), name: "", description: "", price: 0, stock: 0 },
+      ],
+    }));
+  };
+
+  const removeProduct = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.filter((product) => product.id !== id),
+    }));
+  };
+
+  const updateProduct = (id: string, field: string, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.map((product) =>
+        product.id === id ? { ...product, [field]: value } : product
+      ),
+    }));
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const updatedData: Partial<BusinessCollection> = {
+        businessName: formData.businessName,
+        businessBio: formData.businessBio,
+        contact: {
+          ...businessData.contact,
+          phone: formData.phone,
+        },
+        location: {
+          ...businessData.location,
+          address: formData.address,
+        },
+        deliverySupport: formData.deliverySupport,
+        paymentSupport: {
+          ...businessData.paymentSupport,
+          accountDetails: formData.accountDetails,
+        },
+        services: formData.services,
+        products: formData.products,
+      };
+
+      await onSave(updatedData);
+      onClose();
+    } catch (error) {
+      console.error("Error saving business data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabs = [
+    { id: "basic", label: "Basic Info", icon: FileText },
+    { id: "contact", label: "Contact", icon: Phone },
+    { id: "services", label: "Services", icon: Briefcase },
+    { id: "products", label: "Products", icon: ShoppingBag },
+  ];
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <Edit className="w-6 h-6 text-blue-600" />
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+              Complete Business Profile
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 dark:border-gray-700">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "text-blue-600 border-b-2 border-blue-600"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {activeTab === "basic" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Business Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.businessName}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, businessName: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter your business name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Business Description
+                </label>
+                <textarea
+                  value={formData.businessBio}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, businessBio: e.target.value }))
+                  }
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Describe your business and what you offer"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Business Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, address: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter your business address"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="delivery"
+                  checked={formData.deliverySupport}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, deliverySupport: e.target.checked }))
+                  }
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="delivery"
+                  className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+                >
+                  Offer delivery services
+                </label>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "contact" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="Enter your phone number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Payment Account Details (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.accountDetails}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, accountDetails: e.target.value }))
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="UPI ID, Bank details, etc."
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === "services" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
+                  Services
+                </h3>
+                <button
+                  onClick={addService}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Service
+                </button>
+              </div>
+              {formData.services.map((service, index) => (
+                <div key={service.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Service {index + 1}
+                    </span>
+                    <button
+                      onClick={() => removeService(service.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Service name"
+                      value={service.name}
+                      onChange={(e) => updateService(service.id, "name", e.target.value)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={service.price || ""}
+                      onChange={(e) => updateService(service.id, "price", parseFloat(e.target.value) || 0)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <textarea
+                    placeholder="Service description"
+                    value={service.description || ""}
+                    onChange={(e) => updateService(service.id, "description", e.target.value)}
+                    rows={2}
+                    className="w-full mt-3 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              ))}
+              {formData.services.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Briefcase className="w-12 h-12 mx-auto mb-2" />
+                  <p>No services added yet. Click "Add Service" to get started.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "products" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-800 dark:text-white">
+                  Products
+                </h3>
+                <button
+                  onClick={addProduct}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Product
+                </button>
+              </div>
+              {formData.products.map((product, index) => (
+                <div key={product.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Product {index + 1}
+                    </span>
+                    <button
+                      onClick={() => removeProduct(product.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Product name"
+                      value={product.name}
+                      onChange={(e) => updateProduct(product.id, "name", e.target.value)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price"
+                      value={product.price || ""}
+                      onChange={(e) => updateProduct(product.id, "price", parseFloat(e.target.value) || 0)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Stock"
+                      value={product.stock || ""}
+                      onChange={(e) => updateProduct(product.id, "stock", parseInt(e.target.value) || 0)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  <textarea
+                    placeholder="Product description"
+                    value={product.description || ""}
+                    onChange={(e) => updateProduct(product.id, "description", e.target.value)}
+                    rows={2}
+                    className="w-full mt-3 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              ))}
+              {formData.products.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <ShoppingBag className="w-12 h-12 mx-auto mb-2" />
+                  <p>No products added yet. Click "Add Product" to get started.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {incompleteFields.length > 0 && (
+              <span>Missing: {incompleteFields.join(", ")}</span>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Warning Card Component for inline warnings
 const WarningCard: React.FC<{
   title: string;
@@ -164,6 +580,7 @@ const NeighbourLinkBusiness: React.FC = () => {
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
   const [showGalleryDrawer, setShowGalleryDrawer] = useState(false);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
+  const [showBusinessDetailsModal, setShowBusinessDetailsModal] = useState(false);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
@@ -271,10 +688,7 @@ const NeighbourLinkBusiness: React.FC = () => {
 
   const handleNewAnnouncement = () => {
     if (!isProfileComplete()) {
-      // Instead of showing modal, just show a toast or alert
-      alert(
-        "Please complete your business profile first to create announcements."
-      );
+      setShowBusinessDetailsModal(true);
       return;
     }
     console.log("New announcement clicked");
@@ -282,7 +696,7 @@ const NeighbourLinkBusiness: React.FC = () => {
   };
 
   const handleEditBusinessProfile = () => {
-    navigate("/business/settings");
+    setShowBusinessDetailsModal(true);
   };
 
   async function handleLogout() {
@@ -326,7 +740,7 @@ const NeighbourLinkBusiness: React.FC = () => {
 
   const handlePromoteItem = (itemId: string, type: "product" | "service") => {
     if (!isProfileComplete()) {
-      alert("Please complete your business profile first to promote items.");
+      setShowBusinessDetailsModal(true);
       return;
     }
     console.log(`Promote ${type} ${itemId} clicked`);
@@ -490,7 +904,7 @@ const NeighbourLinkBusiness: React.FC = () => {
 
           <div className="container mx-auto px-4 py-8">
             <div
-              className="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative"
+              className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative"
               role="alert"
             >
               <strong className="font-bold">Error!</strong>
@@ -569,7 +983,7 @@ const NeighbourLinkBusiness: React.FC = () => {
           <div className="flex-1 px-4 py-6 pb-24">
             {/* Profile Completion Banner - Only show if incomplete */}
             {!isProfileComplete() && (
-              <div className="bg-gradient-to-r from-slate-00 to-slate-500 text-white rounded-lg p-4 mb-6 shadow-lg">
+              <div className="bg-gradient-to-r from-slate-700 to-slate-700 text-white rounded-lg p-4 mb-6 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6" />
@@ -584,7 +998,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     </div>
                   </div>
                   <button
-                    onClick={handleEditBusinessProfile}
+                    onClick={() => setShowBusinessDetailsModal(true)}
                     className="bg-white text-orange-600 px-4 py-2 rounded hover:bg-orange-50 transition-colors font-medium"
                   >
                     Complete Now
@@ -693,7 +1107,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     title="Contact Information Missing"
                     message="Add your phone number so customers can reach you directly."
                     actionText="Add Phone Number"
-                    onAction={handleEditBusinessProfile}
+                    onAction={() => setShowBusinessDetailsModal(true)}
                     icon={<Phone className="w-5 h-5 text-amber-600" />}
                   />
                 )}
@@ -704,7 +1118,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     title="Business Location Missing"
                     message="Set your business address and location coordinates for better discoverability."
                     actionText="Set Location"
-                    onAction={handleEditBusinessProfile}
+                    onAction={() => setShowBusinessDetailsModal(true)}
                     icon={<MapPin className="w-5 h-5 text-amber-600" />}
                   />
                 )}
@@ -786,7 +1200,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                   title="Business Description Missing"
                   message="Add a compelling description of your business to help customers understand what you offer."
                   actionText="Add Description"
-                  onAction={handleEditBusinessProfile}
+                  onAction={() => setShowBusinessDetailsModal(true)}
                   icon={<FileText className="w-5 h-5 text-amber-600" />}
                 />
               </div>
@@ -920,7 +1334,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     title="No Services Added"
                     message="Add your services to let customers know what you offer. This helps complete your business profile."
                     actionText="Add Services"
-                    onAction={handleEditBusinessProfile}
+                    onAction={() => setShowBusinessDetailsModal(true)}
                     icon={<Briefcase className="w-5 h-5 text-amber-600" />}
                   />
                 </div>
@@ -985,7 +1399,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     title="No Products Added"
                     message="Add your products to showcase what you sell. This helps customers discover your offerings."
                     actionText="Add Products"
-                    onAction={handleEditBusinessProfile}
+                    onAction={() => setShowBusinessDetailsModal(true)}
                     icon={<ShoppingBag className="w-5 h-5 text-amber-600" />}
                   />
                 </div>
@@ -1005,7 +1419,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     business profile and unlock announcements.
                   </p>
                   <button
-                    onClick={handleEditBusinessProfile}
+                    onClick={() => setShowBusinessDetailsModal(true)}
                     className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition-colors"
                   >
                     Complete Profile Now
@@ -1018,6 +1432,17 @@ const NeighbourLinkBusiness: React.FC = () => {
           {isMobile && <Bottombar />}
         </div>
       </div>
+
+      {/* Business Details Modal */}
+      {businessData && (
+        <BusinessDetailsModal
+          isOpen={showBusinessDetailsModal}
+          onClose={() => setShowBusinessDetailsModal(false)}
+          businessData={businessData}
+          onSave={handleSaveBusinessDetails}
+          incompleteFields={incompleteFields}
+        />
+      )}
 
       {/* Statistics Modal */}
       {showStatisticsModal && (

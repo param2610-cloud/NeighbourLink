@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, {  useState } from "react";
 import MapContainer from "@/components/MapContainer";
 import { db, auth } from "@/firebase";
 import { collection, addDoc } from "firebase/firestore";
@@ -111,8 +111,8 @@ const CreateBusiness: React.FC = () => {
       setIsSubmitting(true);
       console.log("before image upload ")
 
-      const verificationDocPublicId =await uploadImage();
-      const businessProfileImagePublicId = await uploadVerificationDoc();
+      const businessProfileImagePublicId =await uploadImage();
+      const verificationDocPublicId = await uploadVerificationDoc();
       console.log("after image upload but before form data ")
 
 
