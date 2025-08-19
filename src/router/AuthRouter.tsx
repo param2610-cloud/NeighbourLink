@@ -12,7 +12,7 @@ import ChatDetail from "@/components/messaging/ChatDetail";
 import LandingPage from "@/components/landingPage/LandingPage";
 import EmergencyPosts from "@/pages/EmergencyPosts";
 import SavedPosts from "@/components/post/SavedPosts";
-import SkillList from "@/components/communities/skillSharing/SkillList";
+// import SkillList from "@/components/communities/skillSharing/SkillList";
 import SkillSharingForm from "@/components/communities/skillSharing/SkillSharingForm";
 import SkillHome from "@/pages/skillSharing";
 import VolunteerShow from "@/pages/VolunteerShow";
@@ -27,6 +27,7 @@ import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
 import UpdatesPage from "@/components/update/UpdatesFeedPage";
 import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
+import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusiness";
 
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
 const ResourceForm = lazy(() => import("@/components/Forms/ResourceForm"));
@@ -81,7 +82,6 @@ const AuthRouter: React.FC = () => {
           <Route path="/profileCard" element={<ProfileCard />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/home" element={<LandingPage />} />
-          <Route path="/skill-share" element={<SkillList />} />
           <Route
             path="/skills-sharing-register"
             element={<SkillSharingForm isOpen={true} />}
@@ -118,6 +118,7 @@ const AuthRouter: React.FC = () => {
           <Route path="/register" element={<Navigate to="/" />} />
           <Route path="/login" element={<Navigate to="/" />} />
           <Route path="*" element={<NotFoundPage />} />
+          <Route path="/nbu" element={<NeighbourLinkBusiness />} />
         </Routes>
       </Suspense>
     </>
