@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MapContainer from "@/components/MapContainer";
 import { db, auth } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { BusinessCollection } from "@/interface/main";
 import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
-import { u } from "node_modules/framer-motion/dist/types.d-B50aGbjN";
 
 const BUSINESS_TYPES = [
   "-- select --",
@@ -27,7 +26,6 @@ const CreateBusiness: React.FC = () => {
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
   const [isVerified, setIsVerified] = useState(false);
   const [verificationDoc, setVerificationDoc] = useState<File | null>(null);
-  const [verificationDocPublicId, setVerificationDocPublicId] = useState<string>('');
   const [verificationPreview, setVerificationPreview] = useState<string | null>(null);
   const [location, setLocation] = useState<{
     latitude: number;
@@ -35,11 +33,9 @@ const CreateBusiness: React.FC = () => {
     address: string;
   } | null>(null);
   const [businessProfileImage, setBusinessProfileImage] = useState<File | null>(null);
-  const [businessProfileImagePublicId, setBusinessProfileImagePublicId] = useState<string>('');
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
-  const [mapData, setMapData] = useState<any>(null);
+  const [, setMapData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const mapRef = useRef<any>(null);
 
   // Handle verification doc upload
   const handleVerificationDocChange = (
@@ -54,8 +50,8 @@ const CreateBusiness: React.FC = () => {
   // Upload verification doc
   async function uploadVerificationDoc() {
     if (verificationDoc) {
-      setVerificationDocPublicId(await uploadFileToCloudinary(verificationDoc, `${verificationDoc}_${Date.now()}`));
-      console.log("Verification document uploaded:", verificationDocPublicId);
+      return await uploadFileToCloudinary(verificationDoc, `${verificationDoc.name}_${Date.now()}`)
+      
     }
   }
 
@@ -73,8 +69,7 @@ const CreateBusiness: React.FC = () => {
       console.log("inside");
       
       
-      setBusinessProfileImagePublicId(await uploadFileToCloudinary(businessProfileImage,`${businessProfileImage}_${Date.now}`))
-      console.log("Business profile image uploaded:", businessProfileImagePublicId);
+      return await uploadFileToCloudinary(businessProfileImage,`${businessProfileImage.name}_${Date.now()}`)
       
     }
   } 
@@ -87,7 +82,7 @@ const CreateBusiness: React.FC = () => {
     }
     setMapData(data);
   };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -114,9 +109,12 @@ const CreateBusiness: React.FC = () => {
 
     try {
       setIsSubmitting(true);
+      console.log("before image upload ")
 
-      await uploadImage();
-      await uploadVerificationDoc();
+      const verificationDocPublicId =await uploadImage();
+      const businessProfileImagePublicId = await uploadVerificationDoc();
+      console.log("after image upload but before form data ")
+
 
       // Prepare business data for Firebase
       const businessData: Omit<BusinessCollection, "id"> = {
@@ -148,10 +146,12 @@ const CreateBusiness: React.FC = () => {
         products: [],
         faq: [],
       };
+      console.log("After form data populate")
 
       // Save to Firebase
       const businessCollection = collection(db, "business");
       const docRef = await addDoc(businessCollection, businessData);
+      console.log("Data stored at database")
 
       toast.success(`Business "${businessName}" created successfully!`);
 
