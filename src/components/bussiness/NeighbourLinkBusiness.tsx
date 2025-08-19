@@ -8,11 +8,9 @@ import {
   where,
   getDocs,
   updateDoc,
-  addDoc,
 } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { BsLightningChargeFill } from "react-icons/bs";
 import { FaStore } from "react-icons/fa";
 import {
   Star,
@@ -126,10 +124,9 @@ const BusinessDetailsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   businessData: BusinessCollection;
-  onSave: (updatedData: Partial<BusinessCollection>) => void;
   incompleteFields: string[];
   setBusinessData: React.Dispatch<SetStateAction<BusinessCollection | null>>;
-}> = ({ isOpen, onClose, businessData, onSave, incompleteFields, setBusinessData }) => {
+}> = ({ isOpen, onClose, businessData, incompleteFields, setBusinessData }) => {
   const [formData, setFormData] = useState({
     businessName: businessData.businessName || "",
     businessBio: businessData.businessBio || "",
@@ -227,7 +224,6 @@ const BusinessDetailsModal: React.FC<{
       };
       
       setBusinessData(updatedBusinessData);
-      await onSave(updatedData);
       onClose();
     } catch (error) {
       console.error("Error saving business data:", error);
@@ -721,9 +717,7 @@ const NeighbourLinkBusiness: React.FC = () => {
     }
   }
 
-  const handleSaveBusinessDetails = () => { 
-
-   }
+ 
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -1451,7 +1445,6 @@ const NeighbourLinkBusiness: React.FC = () => {
           setBusinessData={setBusinessData}
           onClose={() => setShowBusinessDetailsModal(false)}
           businessData={businessData}
-          onSave={handleSaveBusinessDetails}
           incompleteFields={incompleteFields}
         />
       )}
