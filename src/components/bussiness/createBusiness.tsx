@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, {  useState } from "react";
 import MapContainer from "@/components/MapContainer";
 
 const BUSINESS_TYPES = [
@@ -20,13 +20,13 @@ const CreateBusiness: React.FC = () => {
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
   const [isVerified, setIsVerified] = useState(false);
-  const [verificationDoc, setVerificationDoc] = useState<File | null>(null);
+  const [, setVerificationDoc] = useState<File | null>(null);
   const [verificationPreview, setVerificationPreview] = useState<string | null>(null);
   const [location, setLocation] = useState<{ latitude: number; longitude: number; address: string } | null>(null);
-  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [, setProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
-  const [mapData, setMapData] = useState<any>(null);
-  const mapRef = useRef<any>(null);
+  const [, setMapData] = useState<any>(null);
+  // const mapRef = useRef<any>(null);
 
   // Handle verification doc upload
   const handleVerificationDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -100,3 +100,47 @@ export interface UpdateWithUserData extends UpdateFormData {
     };
     replyCount?: number;
 }
+
+export interface BusinessCollection {
+  
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  createdAt: Date;
+
+  contact: {
+    phone: string;
+    verified: boolean;
+  };
+  address: string;
+  gallery: string[];
+  profileImage: string;
+  coverImage: string;
+  deliverySupport: boolean;
+  paymentSupport?: {
+    accountDetails?: string;
+    qrCodeUrl?: string;
+  };
+
+  services: {
+    id: string;
+    name: string;
+    description?: string;
+    price?: number;
+    duration?: string;
+  }[];
+
+  products: {
+    id: string;
+    name: string;
+    description?: string;
+    price?: number;
+    stock?: number; 
+  }[];
+
+  faq?: {
+    question: string;
+    answer: string;
+  }[];
+}
