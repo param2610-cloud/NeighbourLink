@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
@@ -438,9 +437,8 @@ const PromotionDetailsPage = () => {
                 {media.mediaItems.map((_, i) => (
                   <button
                     key={i}
-                    className={`w-2 h-2 rounded-full ${
-                      i === currentImageIndex ? "bg-white" : "bg-gray-400"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${i === currentImageIndex ? "bg-white" : "bg-gray-400"
+                      }`}
                     onClick={() => setCurrentImageIndex(i)}
                   />
                 ))}
@@ -469,11 +467,9 @@ const PromotionDetailsPage = () => {
             <div className="absolute top-3 right-3 bg-black/60 text-white text-xs rounded px-2 py-1">
               {media.mediaItems[currentImageIndex].type === "video"
                 ? "Video"
-                : `Photo ${
-                    currentImageIndex + 1 - (promotion.videoUrl ? 1 : 0)
-                  } of ${
-                    media.mediaItems.length - (promotion.videoUrl ? 1 : 0)
-                  }`}
+                : `Photo ${currentImageIndex + 1 - (promotion.videoUrl ? 1 : 0)
+                } of ${media.mediaItems.length - (promotion.videoUrl ? 1 : 0)
+                }`}
             </div>
           </div>
         ) : (
@@ -491,9 +487,8 @@ const PromotionDetailsPage = () => {
               {media.mediaItems.map((item, i) => (
                 <div
                   key={i}
-                  className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-md overflow-hidden cursor-pointer ${
-                    i === currentImageIndex ? "ring-2 ring-indigo-500" : ""
-                  }`}
+                  className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-md overflow-hidden cursor-pointer ${i === currentImageIndex ? "ring-2 ring-indigo-500" : ""
+                    }`}
                   onClick={() => setCurrentImageIndex(i)}
                 >
                   {item.type === "video" ? (
@@ -594,43 +589,56 @@ const PromotionDetailsPage = () => {
         </div>
 
 
-                {/* Location */}
-                {promotion.location && (
-                    <div className="mb-6">
-                        <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Location</h2>
-                        <div className="flex items-center mb-2">
-                            <FiMapPin className="mr-2 text-gray-500 dark:text-gray-400" />
-                            <p className="text-gray-700 dark:text-gray-300">{promotion.location.address}</p>
-                        </div>
-                        <div className="h-60 rounded-lg overflow-hidden">
-                            <GoogleMapsViewer 
-                                center={{ 
-                                    lat: promotion.location.latitude, 
-                                    lng: promotion.location.longitude 
-                                }}
-                                zoom={15}
-                                height="240px"
-                                markers={[{
-                                    position: { 
-                                        lat: promotion.location.latitude, 
-                                        lng: promotion.location.longitude 
-                                    },
-                                    color: '#8B5CF6',
-                                    title: promotion.title,
-                                    description: promotion.location.address,
-                                    icon: undefined
-                                }]}
-                                showCurrentLocation={true}
-                                enableGeolocation={true}
-                                showDirectionsButton={true}
-                                mapType="roadmap"
-                            />
-                        </div>
-                    </div>
+        {/* Location */}
+        {promotion.location && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Location</h2>
+            <div className="flex items-center mb-2">
+              <FiMapPin className="mr-2 text-gray-500 dark:text-gray-400" />
+              <p className="text-gray-700 dark:text-gray-300">{promotion.location.address}</p>
+            </div>
+            <div className="h-60 rounded-lg overflow-hidden">
+              <GoogleMapsViewer
+                center={{
+                  lat: promotion.location.latitude,
+                  lng: promotion.location.longitude
+                }}
+                zoom={15}
+                height="240px"
+                markers={[{
+                  position: {
+                    lat: promotion.location.latitude,
+                    lng: promotion.location.longitude
+                  },
+                  color: '#8B5CF6',
+                  title: promotion.title,
+                  description: promotion.location.address,
+                  icon: undefined
+                }]}
+                showCurrentLocation={true}
+                enableGeolocation={true}
+                showDirectionsButton={true}
+                mapType="roadmap"
+              />
+            </div>
+          </div>
+        )}
 
-                )}
-              </div>
-              <div className="ml-3 flex-grow">
+        {/* Provider Information */}
+        {providerInfo && (
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+              Business Information
+            </h2>
+            <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              {providerInfo.photoURL && (
+                <img
+                  src={providerInfo.photoURL}
+                  alt={providerInfo.displayName}
+                  className="w-12 h-12 rounded-full mr-3 object-cover"
+                />
+              )}
+              <div className="flex-grow">
                 <h3 className="font-medium text-gray-900 dark:text-white">
                   {providerInfo.displayName}
                 </h3>
@@ -640,64 +648,68 @@ const PromotionDetailsPage = () => {
                   </span>
                 )}
               </div>
+              <button
+                onClick={handleViewBusiness}
+                className="px-3 py-1 text-sm bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-200 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-800"
+              >
+                View Profile
+              </button>
             </div>
           </div>
         )}
+      </div>
 
-        {/* Action buttons */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
-          <div className="flex justify-between mb-3">
-            <button
-              onClick={handleSavePromotion}
-              disabled={!firebaseUser || saveLoading}
-              className={`flex items-center ${
-                !firebaseUser
-                  ? "opacity-50 cursor-not-allowed"
-                  : isSaved
+      {/* Action buttons */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
+        <div className="flex justify-between mb-3">
+          <button
+            onClick={handleSavePromotion}
+            disabled={!firebaseUser || saveLoading}
+            className={`flex items-center ${!firebaseUser
+                ? "opacity-50 cursor-not-allowed"
+                : isSaved
                   ? "text-red-500"
                   : "text-gray-500 dark:text-gray-400"
               } transition-colors`}
-              title={
-                !firebaseUser
-                  ? "Login to save promotions"
-                  : isSaved
+            title={
+              !firebaseUser
+                ? "Login to save promotions"
+                : isSaved
                   ? "Unsave promotion"
                   : "Save promotion"
-              }
-            >
-              {saveLoading ? (
-                <AiOutlineLoading3Quarters className="animate-spin mr-1" />
-              ) : isSaved ? (
-                <AiFillHeart className="mr-1" />
-              ) : (
-                <AiOutlineHeart className="mr-1" />
-              )}
-              {isSaved ? "Saved" : "Save"}
-            </button>
-            <button
-              onClick={handleSharePromotion}
-              className="flex items-center text-gray-500 dark:text-gray-400"
-            >
-              <AiOutlineShareAlt className="mr-1" /> Share
-            </button>
-          </div>
-
-          <button
-            onClick={handleContact}
-            className={`w-full py-3 ${
-              firebaseUser
-                ? "bg-indigo-600 hover:bg-indigo-700"
-                : "bg-indigo-400 cursor-not-allowed"
-            } text-white rounded-lg flex items-center justify-center font-medium`}
-            disabled={!firebaseUser}
+            }
           >
-            <BiMessageDetail className="mr-2" /> Contact Business
+            {saveLoading ? (
+              <AiOutlineLoading3Quarters className="animate-spin mr-1" />
+            ) : isSaved ? (
+              <AiFillHeart className="mr-1" />
+            ) : (
+              <AiOutlineHeart className="mr-1" />
+            )}
+            {isSaved ? "Saved" : "Save"}
+          </button>
+          <button
+            onClick={handleSharePromotion}
+            className="flex items-center text-gray-500 dark:text-gray-400"
+          >
+            <AiOutlineShareAlt className="mr-1" /> Share
           </button>
         </div>
 
-        {/* Spacer for fixed bottom bar */}
-        <div className="h-32"></div>
+        <button
+          onClick={handleContact}
+          className={`w-full py-3 ${firebaseUser
+              ? "bg-indigo-600 hover:bg-indigo-700"
+              : "bg-indigo-400 cursor-not-allowed"
+            } text-white rounded-lg flex items-center justify-center font-medium`}
+          disabled={!firebaseUser}
+        >
+          <BiMessageDetail className="mr-2" /> Contact Business
+        </button>
       </div>
+
+      {/* Spacer for fixed bottom bar */}
+      <div className="h-32"></div>
     </div>
   );
 };

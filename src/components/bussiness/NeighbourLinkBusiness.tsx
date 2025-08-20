@@ -1309,270 +1309,6 @@ const NeighbourLinkBusiness: React.FC = () => {
               )}
             </div>
           </div>
-
-          {/* Business Details Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md mb-8">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                  Contact & Payment Information
-                </h3>
-                {!editingContact && (
-                  <button
-                    onClick={() => setEditingContact(true)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit
-                  </button>
-                )}
-              </div>
-
-              {/* Contact Information Warning */}
-              {isContactIncomplete() && !editingContact && (
-                <WarningCard
-                  title="Contact Information Missing"
-                  message="Add your phone number so customers can reach you directly."
-                  actionText="Add Phone Number"
-                  onAction={() => setEditingContact(true)}
-                  icon={<Phone className="w-5 h-5 text-amber-600" />}
-                />
-              )}
-
-              {editingContact ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phone Number *
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="tel"
-                          value={tempContact.phone}
-                          onChange={(e) =>
-                            setTempContact({
-                              ...tempContact,
-                              phone: e.target.value,
-                            })
-                          }
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="+91 9876543210"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Payment Details
-                      </label>
-                      <div className="relative">
-                        <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={tempContact.accountDetails}
-                          onChange={(e) =>
-                            setTempContact({
-                              ...tempContact,
-                              accountDetails: e.target.value,
-                            })
-                          }
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="UPI ID, Bank details, etc."
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
-                    <button
-                      onClick={handleSaveContact}
-                      disabled={loading}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-                    >
-                      {loading ? (
-                        <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      {loading ? "Saving..." : "Save Changes"}
-                    </button>
-                    <button
-                      onClick={handleCancelContact}
-                      disabled={loading}
-                      className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <Phone className="w-5 h-5 text-blue-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Phone
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {businessData.contact?.phone || "Not set"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <CreditCard className="w-5 h-5 text-green-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Payment
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {businessData.paymentSupport?.accountDetails
-                            ? "Digital + Cash"
-                            : "Cash only"}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          businessData.deliverySupport
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                        }`}
-                      ></div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Delivery
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {businessData.deliverySupport
-                            ? "Available"
-                            : "Not available"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleViewQRCode}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      <QrCode className="w-5 h-5" />
-                      View QR Code
-                    </button>
-                    <button
-                      onClick={handleUpgradeToPremium}
-                      className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
-                    >
-                      <Crown className="w-5 h-5" />
-                      Upgrade To Premium
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Business Images Section */}
-          {isImagesIncomplete() && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-                Business Images
-              </h3>
-              <WarningCard
-                title="Business Images Missing"
-                message="Add a profile image and cover photo to make your business more attractive to customers."
-                actionText="Upload Images"
-                onAction={() => fileInputProfile.current?.click()}
-                icon={<Camera className="w-5 h-5 text-amber-600" />}
-              />
-            </div>
-          )}
-
-          {/* Business Description Section */}
-          {isDescriptionIncomplete() && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-                Business Description
-              </h3>
-              <WarningCard
-                title="Business Description Missing"
-                message="Add a compelling description of your business to help customers understand what you offer."
-                actionText="Add Description"
-                onAction={() => setEditingBasic(true)}
-                icon={<FileText className="w-5 h-5 text-amber-600" />}
-              />
-            </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
-              Quick Actions
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                onClick={handleViewInsights}
-                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
-              >
-                <Eye className="w-5 h-5 text-blue-600" />
-                <span>View Insights</span>
-              </button>
-              <button
-                onClick={handleViewGallery}
-                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
-              >
-                <Image className="w-5 h-5 text-green-600" />
-                <span>Your Gallery ({businessData?.gallery?.length || 0})</span>
-              </button>
-              <button
-                onClick={handleViewVerificationDocument}
-                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
-              >
-                <FileText className="w-5 h-5 text-purple-600" />
-                <span>Verification Document</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Statistics Section */}
-          <div className="mt-8 mb-8">
-            <div className="flex items-center mb-6">
-              <div className="h-8 w-1 bg-blue-600 rounded-full mr-3"></div>
-              <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Statistics
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
-                >
-                  <StarRating rating={review.rating} className="mb-2" />
-                  <h4 className="font-medium text-gray-800 dark:text-white mb-1">
-                    {review.title}
-                  </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                    {review.body}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <img
-                      src={review.reviewerAvatar || "/api/placeholder/32/32"}
-                      alt={review.reviewerName}
-                      className="w-6 h-6 rounded-full"
-                    />
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      <div className="font-medium">{review.reviewerName}</div>
-                      <div>{review.date}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Services Section */}
           <div className="mt-8 mb-8">
             <div className="flex items-center justify-between mb-6">
@@ -2558,6 +2294,271 @@ const NeighbourLinkBusiness: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Business Details Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md mb-8">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Contact & Payment Information
+                </h3>
+                {!editingContact && (
+                  <button
+                    onClick={() => setEditingContact(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {/* Contact Information Warning */}
+              {isContactIncomplete() && !editingContact && (
+                <WarningCard
+                  title="Contact Information Missing"
+                  message="Add your phone number so customers can reach you directly."
+                  actionText="Add Phone Number"
+                  onAction={() => setEditingContact(true)}
+                  icon={<Phone className="w-5 h-5 text-amber-600" />}
+                />
+              )}
+
+              {editingContact ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Phone Number *
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="tel"
+                          value={tempContact.phone}
+                          onChange={(e) =>
+                            setTempContact({
+                              ...tempContact,
+                              phone: e.target.value,
+                            })
+                          }
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder="+91 9876543210"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Payment Details
+                      </label>
+                      <div className="relative">
+                        <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={tempContact.accountDetails}
+                          onChange={(e) =>
+                            setTempContact({
+                              ...tempContact,
+                              accountDetails: e.target.value,
+                            })
+                          }
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                          placeholder="UPI ID, Bank details, etc."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <button
+                      onClick={handleSaveContact}
+                      disabled={loading}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                      {loading ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      onClick={handleCancelContact}
+                      disabled={loading}
+                      className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <Phone className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Phone
+                        </div>
+                        <div className="text-gray-600 dark:text-gray-400">
+                          {businessData.contact?.phone || "Not set"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <CreditCard className="w-5 h-5 text-green-600" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Payment
+                        </div>
+                        <div className="text-gray-600 dark:text-gray-400">
+                          {businessData.paymentSupport?.accountDetails
+                            ? "Digital + Cash"
+                            : "Cash only"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          businessData.deliverySupport
+                            ? "bg-green-500"
+                            : "bg-red-500"
+                        }`}
+                      ></div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Delivery
+                        </div>
+                        <div className="text-gray-600 dark:text-gray-400">
+                          {businessData.deliverySupport
+                            ? "Available"
+                            : "Not available"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleViewQRCode}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <QrCode className="w-5 h-5" />
+                      View QR Code
+                    </button>
+                    <button
+                      onClick={handleUpgradeToPremium}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                    >
+                      <Crown className="w-5 h-5" />
+                      Upgrade To Premium
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Business Images Section */}
+          {isImagesIncomplete() && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
+                Business Images
+              </h3>
+              <WarningCard
+                title="Business Images Missing"
+                message="Add a profile image and cover photo to make your business more attractive to customers."
+                actionText="Upload Images"
+                onAction={() => fileInputProfile.current?.click()}
+                icon={<Camera className="w-5 h-5 text-amber-600" />}
+              />
+            </div>
+          )}
+
+          {/* Business Description Section */}
+          {isDescriptionIncomplete() && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+              <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
+                Business Description
+              </h3>
+              <WarningCard
+                title="Business Description Missing"
+                message="Add a compelling description of your business to help customers understand what you offer."
+                actionText="Add Description"
+                onAction={() => setEditingBasic(true)}
+                icon={<FileText className="w-5 h-5 text-amber-600" />}
+              />
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+            <h3 className="font-semibold text-gray-800 dark:text-white mb-4">
+              Quick Actions
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={handleViewInsights}
+                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
+              >
+                <Eye className="w-5 h-5 text-blue-600" />
+                <span>View Insights</span>
+              </button>
+              <button
+                onClick={handleViewGallery}
+                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
+              >
+                <Image className="w-5 h-5 text-green-600" />
+                <span>Your Gallery ({businessData?.gallery?.length || 0})</span>
+              </button>
+              <button
+                onClick={handleViewVerificationDocument}
+                className="flex items-center gap-3 p-3 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors border border-gray-200 dark:border-gray-600"
+              >
+                <FileText className="w-5 h-5 text-purple-600" />
+                <span>Verification Document</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Statistics Section */}
+          <div className="mt-8 mb-8">
+            <div className="flex items-center mb-6">
+              <div className="h-8 w-1 bg-blue-600 rounded-full mr-3"></div>
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
+                Statistics
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm"
+                >
+                  <StarRating rating={review.rating} className="mb-2" />
+                  <h4 className="font-medium text-gray-800 dark:text-white mb-1">
+                    {review.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    {review.body}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={review.reviewerAvatar || "/api/placeholder/32/32"}
+                      alt={review.reviewerName}
+                      className="w-6 h-6 rounded-full"
+                    />
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="font-medium">{review.reviewerName}</div>
+                      <div>{review.date}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          
 
           {/* Overall completion warning if both services and products are missing */}
           {isServicesProductsIncomplete() && (
