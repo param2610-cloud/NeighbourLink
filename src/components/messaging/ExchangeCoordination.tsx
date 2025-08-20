@@ -3,7 +3,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { FiMap, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import { sendMessage } from '../../services/messagingService';
-import OlaMapsViewer from '../../utils/ola/OlaMapsViewer';
+import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
 
 interface ExchangeCoordinationProps {
   conversationId: string;
@@ -247,17 +247,19 @@ const ExchangeCoordination: React.FC<ExchangeCoordinationProps> = ({
             </div>
             
             <div className="mb-4">
-              <OlaMapsViewer 
+
+
+              <GoogleMapsViewer 
                 center={getMapCenter()}
                 zoom={14}
                 markers={getMapMarkers()}
                 height="200px"
-                onMapClick={(position) => {
+                onMapClick={(position: {lat: number; lng: number}) => {
                   if (showCustomMap) {
                     setCustomCoordinates(position);
                   }
                 }}
-                onMarkerDrag={(position) => {
+                onMarkerDrag={(position: {lat: number; lng: number}) => {
                   setCustomCoordinates(position);
                 }}
               />

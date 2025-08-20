@@ -32,7 +32,12 @@ import {
 } from 'lucide-react';
 
 import { addDoc, collection, serverTimestamp, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
-import MapContainer, { useOlaMaps } from '../MapContainer';
+import GoogleMapsViewer from '@/utils/google_map/GoogleMapsViewer';
+import { 
+  geocodeAddress, 
+  reverseGeocode, 
+  getCurrentLocation
+} from '@/utils/google_map/GoogleMapsUtils';
 
 import { db } from '@/firebase';
 import { useStateContext } from '@/contexts/StateContext';
@@ -155,7 +160,6 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   parentUpdateId = undefined, // Default to undefined if not provided
   threadDepth = 0 // Default to 0 for top-level updates
 }) => {
-  const { ref: mapRef, data: mapData } = useOlaMaps();
   const { user: currentUser } = useStateContext();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(userData); // Initialize with passed data
 
@@ -277,22 +281,10 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       setEventForm(prev => ({ ...prev, location: profileLocation }));
       setPromotionForm(prev => ({ ...prev, location: profileLocation }));
       setUpdateForm(prev => ({ ...prev, location: profileLocation }));
-
-      // Also update the ref used by the map
-      if (mapRef && typeof mapRef === 'function') {
-        mapRef({
-          currentLocation: {
-            latitude: parseFloat(userProfile.location.latitude),
-            longitude: parseFloat(userProfile.location.longitude)
-          },
-          currentAddress: userProfile.address || '',
-          selectedLocations: []
-        });
-      }
     } else {
       console.log("User profile has no location data:", userProfile);
     }
-  }, [userProfile, mapRef]);
+  }, [userProfile]);
 
   useEffect(() => {
     if (initialPostType && ['resource', 'event', 'promotion', 'update'].includes(initialPostType)) {
@@ -303,31 +295,58 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     }
   }, [initialPostType]);
 
-  useEffect(() => {
-    if (mapData && mapData.selectedLocations.length > 0) {
-      const selectedLocation = mapData.selectedLocations[0];
-      const location = {
-        latitude: selectedLocation.latitude,
-        longitude: selectedLocation.longitude,
-        address: selectedLocation.address,
+  // Helper function to handle map click and location selection
+  const handleMapClick = async (coordinates: { lat: number; lng: number }) => {
+    try {
+      // Get the address from coordinates using reverse geocoding
+      const address = await reverseGeocode(coordinates);
+      
+      const newLocation: Location = {
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        address: address || `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`
+      };
+
+      // Update the appropriate form based on current post type
+      switch (formState.postType) {
+        case 'resource':
+          setResourceForm(prev => ({ ...prev, location: newLocation }));
+          break;
+        case 'event':
+          setEventForm(prev => ({ ...prev, location: newLocation }));
+          break;
+        case 'promotion':
+          setPromotionForm(prev => ({ ...prev, location: newLocation }));
+          break;
+        case 'update':
+          setUpdateForm(prev => ({ ...prev, location: newLocation }));
+          break;
+      }
+    } catch (error) {
+      console.error('Error getting address:', error);
+      // Fallback without address
+      const newLocation: Location = {
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        address: `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`
       };
 
       switch (formState.postType) {
         case 'resource':
-          setResourceForm(prev => ({ ...prev, location }));
+          setResourceForm(prev => ({ ...prev, location: newLocation }));
           break;
         case 'event':
-          setEventForm(prev => ({ ...prev, location }));
+          setEventForm(prev => ({ ...prev, location: newLocation }));
           break;
         case 'promotion':
-          setPromotionForm(prev => ({ ...prev, location }));
+          setPromotionForm(prev => ({ ...prev, location: newLocation }));
           break;
         case 'update':
-          setUpdateForm(prev => ({ ...prev, location }));
+          setUpdateForm(prev => ({ ...prev, location: newLocation }));
           break;
       }
     }
-  }, [mapData, formState.postType]);
+  };
 
   const resetAllForms = () => {
     setFormState({...initialFormState, postType: null});
@@ -335,6 +354,83 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     setEventForm(initialEventForm);
     setPromotionForm(initialPromotionForm);
     setUpdateForm(initialUpdateForm);
+  };
+
+  // Enhanced address search function
+  const handleAddressSearch = async (address: string, formType: string) => {
+    if (!address.trim()) return;
+    
+    try {
+      const coordinates = await geocodeAddress(address);
+      if (coordinates) {
+        const newLocation: Location = {
+          latitude: coordinates.lat,
+          longitude: coordinates.lng,
+          address: address
+        };
+
+        switch (formType) {
+          case 'resource':
+            setResourceForm(prev => ({ ...prev, location: newLocation }));
+            break;
+          case 'event':
+            setEventForm(prev => ({ ...prev, location: newLocation }));
+            break;
+          case 'promotion':
+            setPromotionForm(prev => ({ ...prev, location: newLocation }));
+            break;
+          case 'update':
+            setUpdateForm(prev => ({ ...prev, location: newLocation }));
+            break;
+        }
+      }
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+      setFormState(prev => ({
+        ...prev,
+        error: "Could not find the address. Please try a different location or click on the map."
+      }));
+    }
+  };
+
+  // Get current location function
+  const handleGetCurrentLocation = async (formType: string) => {
+    try {
+      setFormState(prev => ({ ...prev, loading: true }));
+      const currentLocation = await getCurrentLocation();
+      
+      if (currentLocation) {
+        const address = await reverseGeocode(currentLocation);
+        const newLocation: Location = {
+          latitude: currentLocation.lat,
+          longitude: currentLocation.lng,
+          address: address || `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`
+        };
+
+        switch (formType) {
+          case 'resource':
+            setResourceForm(prev => ({ ...prev, location: newLocation }));
+            break;
+          case 'event':
+            setEventForm(prev => ({ ...prev, location: newLocation }));
+            break;
+          case 'promotion':
+            setPromotionForm(prev => ({ ...prev, location: newLocation }));
+            break;
+          case 'update':
+            setUpdateForm(prev => ({ ...prev, location: newLocation }));
+            break;
+        }
+      }
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      setFormState(prev => ({
+        ...prev,
+        error: "Could not get your current location. Please enable location services or select manually."
+      }));
+    } finally {
+      setFormState(prev => ({ ...prev, loading: false }));
+    }
   };
 
   const handleFileUpload = async (files: FileList | null) => {
@@ -1123,19 +1219,71 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
             {!resourceForm.useProfileLocation && (
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
+                
+                {/* Address Search Input */}
+                <div className="mb-3 space-y-2">
+                  <Input
+                    placeholder="Search for address (e.g., Times Square, New York)"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const target = e.target as HTMLInputElement;
+                        handleAddressSearch(target.value, 'resource');
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder*="Search for address"]') as HTMLInputElement;
+                        if (input?.value) {
+                          handleAddressSearch(input.value, 'resource');
+                        }
+                      }}
+                    >
+                      Search Address
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGetCurrentLocation('resource')}
+                    >
+                      📍 Use Current Location
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
-                  <MapContainer
-                    ref={mapRef}
-                    showCurrentLocation={true}
+                  <GoogleMapsViewer
+                    center={resourceForm.location ? 
+                      { lat: resourceForm.location.latitude, lng: resourceForm.location.longitude } : 
+                      { lat: 22.5726, lng: 88.3639 }
+                    }
                     zoom={13}
-                    isSelectable={true}
-                    maximumSelection={1}
-                    scrollWheelZoom={true}
+                    height="256px"
+                    onMapClick={handleMapClick}
+                    showCurrentLocation={true}
+                    enableGeolocation={true}
+                    showDirectionsButton={false}
+                    markers={resourceForm.location ? [{
+                      position: { lat: resourceForm.location.latitude, lng: resourceForm.location.longitude },
+                      title: "Selected Location",
+                      color: "#4CAF50",
+                      draggable: true
+                    }] : []}
+                    onMarkerDrag={(position) => {
+                      handleMapClick(position);
+                    }}
                   />
                 </div>
-                {mapData?.selectedLocations && mapData?.selectedLocations?.length > 0 && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Selected: {mapData.selectedLocations[0].address}
+                {resourceForm.location && (
+                  <div className="mt-2 p-2 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Selected:</strong> {resourceForm.location.address || `${resourceForm.location.latitude.toFixed(6)}, ${resourceForm.location.longitude.toFixed(6)}`}
+                    </p>
                   </div>
                 )}
                 {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
@@ -1323,20 +1471,73 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
             {!eventForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Event Location</label>
+                
+                {/* Address Search Input */}
+                <div className="mb-3 space-y-2">
+                  <Input
+                    placeholder="Search for event venue or address"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const target = e.target as HTMLInputElement;
+                        handleAddressSearch(target.value, 'event');
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const inputs = document.querySelectorAll('input[placeholder*="Search for event venue"]');
+                        const input = inputs[inputs.length - 1] as HTMLInputElement;
+                        if (input?.value) {
+                          handleAddressSearch(input.value, 'event');
+                        }
+                      }}
+                    >
+                      Search Address
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGetCurrentLocation('event')}
+                    >
+                      📍 Use Current Location
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
-                  <MapContainer
-                    ref={mapRef}
-                    showCurrentLocation={true}
+                  <GoogleMapsViewer
+                    center={eventForm.location ? 
+                      { lat: eventForm.location.latitude, lng: eventForm.location.longitude } : 
+                      { lat: 22.5726, lng: 88.3639 }
+                    }
                     zoom={13}
-                    isSelectable={true}
-                    maximumSelection={1}
-                    scrollWheelZoom={true}
+                    height="256px"
+                    onMapClick={handleMapClick}
+                    showCurrentLocation={true}
+                    enableGeolocation={true}
+                    showDirectionsButton={false}
+                    markers={eventForm.location ? [{
+                      position: { lat: eventForm.location.latitude, lng: eventForm.location.longitude },
+                      title: "Event Location",
+                      color: "#2196F3",
+                      draggable: true
+                    }] : []}
+                    onMarkerDrag={(position) => {
+                      handleMapClick(position);
+                    }}
                   />
                 </div>
-                {mapData?.selectedLocations && mapData?.selectedLocations?.length > 0 && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Selected: {mapData.selectedLocations[0].address}
+                {eventForm.location && (
+                  <div className="mt-2 p-2 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Event Venue:</strong> {eventForm.location.address || `${eventForm.location.latitude.toFixed(6)}, ${eventForm.location.longitude.toFixed(6)}`}
+                    </p>
                   </div>
                 )}
                 {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
@@ -1603,20 +1804,73 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
             {!promotionForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Business/Promotion Location</label>
+                
+                {/* Address Search Input */}
+                <div className="mb-3 space-y-2">
+                  <Input
+                    placeholder="Search for business address or location"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const target = e.target as HTMLInputElement;
+                        handleAddressSearch(target.value, 'promotion');
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const inputs = document.querySelectorAll('input[placeholder*="Search for business"]');
+                        const input = inputs[inputs.length - 1] as HTMLInputElement;
+                        if (input?.value) {
+                          handleAddressSearch(input.value, 'promotion');
+                        }
+                      }}
+                    >
+                      Search Address
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGetCurrentLocation('promotion')}
+                    >
+                      📍 Use Current Location
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
-                  <MapContainer
-                    ref={mapRef}
-                    showCurrentLocation={true}
+                  <GoogleMapsViewer
+                    center={promotionForm.location ? 
+                      { lat: promotionForm.location.latitude, lng: promotionForm.location.longitude } : 
+                      { lat: 22.5726, lng: 88.3639 }
+                    }
                     zoom={13}
-                    isSelectable={true}
-                    maximumSelection={1}
-                    scrollWheelZoom={true}
+                    height="256px"
+                    onMapClick={handleMapClick}
+                    showCurrentLocation={true}
+                    enableGeolocation={true}
+                    showDirectionsButton={false}
+                    markers={promotionForm.location ? [{
+                      position: { lat: promotionForm.location.latitude, lng: promotionForm.location.longitude },
+                      title: "Business Location",
+                      color: "#FF9800",
+                      draggable: true
+                    }] : []}
+                    onMarkerDrag={(position) => {
+                      handleMapClick(position);
+                    }}
                   />
                 </div>
-                {mapData?.selectedLocations && mapData?.selectedLocations?.length > 0 && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Selected: {mapData.selectedLocations[0].address}
+                {promotionForm.location && (
+                  <div className="mt-2 p-2 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Business Location:</strong> {promotionForm.location.address || `${promotionForm.location.latitude.toFixed(6)}, ${promotionForm.location.longitude.toFixed(6)}`}
+                    </p>
                   </div>
                 )}
                 {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}
@@ -1751,20 +2005,73 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
             {!updateForm.useProfileLocation && (
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-2 text-foreground">Select Location</label>
+                <label className="block text-sm font-medium mb-2 text-foreground">Select Update Location</label>
+                
+                {/* Address Search Input */}
+                <div className="mb-3 space-y-2">
+                  <Input
+                    placeholder="Search for location related to your update"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const target = e.target as HTMLInputElement;
+                        handleAddressSearch(target.value, 'update');
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const inputs = document.querySelectorAll('input[placeholder*="Search for location related"]');
+                        const input = inputs[inputs.length - 1] as HTMLInputElement;
+                        if (input?.value) {
+                          handleAddressSearch(input.value, 'update');
+                        }
+                      }}
+                    >
+                      Search Address
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGetCurrentLocation('update')}
+                    >
+                      📍 Use Current Location
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
-                  <MapContainer
-                    ref={mapRef}
-                    showCurrentLocation={true}
+                  <GoogleMapsViewer
+                    center={updateForm.location ? 
+                      { lat: updateForm.location.latitude, lng: updateForm.location.longitude } : 
+                      { lat: 22.5726, lng: 88.3639 }
+                    }
                     zoom={13}
-                    isSelectable={true}
-                    maximumSelection={1}
-                    scrollWheelZoom={true}
+                    height="256px"
+                    onMapClick={handleMapClick}
+                    showCurrentLocation={true}
+                    enableGeolocation={true}
+                    showDirectionsButton={false}
+                    markers={updateForm.location ? [{
+                      position: { lat: updateForm.location.latitude, lng: updateForm.location.longitude },
+                      title: "Update Location",
+                      color: "#9C27B0",
+                      draggable: true
+                    }] : []}
+                    onMarkerDrag={(position) => {
+                      handleMapClick(position);
+                    }}
                   />
                 </div>
-                {mapData?.selectedLocations && mapData?.selectedLocations?.length > 0 && (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Selected: {mapData.selectedLocations[0].address}
+                {updateForm.location && (
+                  <div className="mt-2 p-2 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Update Location:</strong> {updateForm.location.address || `${updateForm.location.latitude.toFixed(6)}, ${updateForm.location.longitude.toFixed(6)}`}
+                    </p>
                   </div>
                 )}
                 {formState.errors.location && <p className="text-sm text-destructive mt-1">{formState.errors.location}</p>}

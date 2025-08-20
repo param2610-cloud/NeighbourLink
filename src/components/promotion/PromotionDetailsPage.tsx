@@ -1,30 +1,18 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-} from "firebase/firestore";
-import { auth, db } from "../../firebase";
-import {
-  AiOutlineLoading3Quarters,
-  AiOutlineHeart,
-  AiOutlineShareAlt,
-  AiFillHeart,
-} from "react-icons/ai";
-import { BiMessageDetail } from "react-icons/bi";
-import { IoMdArrowBack } from "react-icons/io";
-import { FiPhone, FiMail, FiMapPin, FiClock, FiUser } from "react-icons/fi";
-import MapContainer from "../MapContainer";
-import { onAuthStateChanged } from "firebase/auth";
-import { toast } from "react-toastify";
-import { getOrCreateConversationWithUser } from "../../services/messagingService";
-import {
-  ImageDisplay,
-  VideoDisplay,
-} from "@/utils/cloudinary/CloudinaryDisplay";
+
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { auth, db } from '../../firebase';
+import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHeart } from 'react-icons/ai';
+import { BiMessageDetail } from 'react-icons/bi';
+import { IoMdArrowBack } from 'react-icons/io';
+import { FiPhone, FiMail, FiMapPin, FiClock, FiUser } from 'react-icons/fi';
+import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
+import { onAuthStateChanged } from 'firebase/auth';
+import { toast } from 'react-toastify';
+import { getOrCreateConversationWithUser } from '../../services/messagingService';
+import { ImageDisplay, VideoDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
+
 
 interface Promotion {
   id?: string;
@@ -605,59 +593,41 @@ const PromotionDetailsPage = () => {
           </div>
         </div>
 
-        {/* Location */}
-        {promotion.location && (
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
-              Location
-            </h2>
-            <div className="flex items-center mb-2">
-              <FiMapPin className="mr-2 text-gray-500 dark:text-gray-400" />
-              <p className="text-gray-700 dark:text-gray-300">
-                {promotion.location.address}
-              </p>
-            </div>
-            <div className="h-60 rounded-lg overflow-hidden">
-              <MapContainer
-                center={[
-                  promotion.location.latitude,
-                  promotion.location.longitude,
-                ]}
-                zoom={15}
-                scrollWheelZoom={false}
-                isSelectable={false}
-              />
-            </div>
-          </div>
-        )}
 
-        {/* Business Owner details (if available) */}
-        {providerInfo && (
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                Business Owner
-              </h2>
-              <button
-                onClick={handleViewBusiness}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-              >
-                View Business →
-              </button>
-            </div>
-            <div className="flex items-center">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-600 flex-shrink-0">
-                {providerInfo.photoURL ? (
-                  <ImageDisplay
-                    publicId={providerInfo.photoURL}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-300">
-                    <span>
-                      {providerInfo.displayName?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                {/* Location */}
+                {promotion.location && (
+                    <div className="mb-6">
+                        <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Location</h2>
+                        <div className="flex items-center mb-2">
+                            <FiMapPin className="mr-2 text-gray-500 dark:text-gray-400" />
+                            <p className="text-gray-700 dark:text-gray-300">{promotion.location.address}</p>
+                        </div>
+                        <div className="h-60 rounded-lg overflow-hidden">
+                            <GoogleMapsViewer 
+                                center={{ 
+                                    lat: promotion.location.latitude, 
+                                    lng: promotion.location.longitude 
+                                }}
+                                zoom={15}
+                                height="240px"
+                                markers={[{
+                                    position: { 
+                                        lat: promotion.location.latitude, 
+                                        lng: promotion.location.longitude 
+                                    },
+                                    color: '#8B5CF6',
+                                    title: promotion.title,
+                                    description: promotion.location.address,
+                                    icon: undefined
+                                }]}
+                                showCurrentLocation={true}
+                                enableGeolocation={true}
+                                showDirectionsButton={true}
+                                mapType="roadmap"
+                            />
+                        </div>
+                    </div>
+
                 )}
               </div>
               <div className="ml-3 flex-grow">

@@ -3,7 +3,7 @@ import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { FiMapPin, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import { sendMessage } from '../../services/messagingService';
-import OlaMapsViewer from '../../utils/ola/OlaMapsViewer';
+import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
 
 interface ExchangeDetailsProps {
   exchangeId: string;
@@ -181,10 +181,12 @@ const ExchangeDetails: React.FC<ExchangeDetailsProps> = ({
         </span>
       </div>
       
+
+
       {/* Display map if coordinates are available */}
       {exchange.location.coordinates && (
         <div className="mb-4">
-          <OlaMapsViewer
+          <GoogleMapsViewer
             center={exchange.location.coordinates}
             zoom={16}
             markers={[{

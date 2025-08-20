@@ -8,10 +8,11 @@ import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt, FaEx
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMobileContext } from "@/contexts/MobileContext";
-import MapContainer from "@/components/MapContainer";
+import GoogleMapsViewer from "@/utils/google_map/GoogleMapsViewer";
+import { getCurrentLocation, reverseGeocode, type Coordinates } from "@/utils/google_map/GoogleMapsUtils";
 import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
 
-const KOLKATA_COORDINATES: [number, number] = [22.5726, 88.3639];
+const KOLKATA_COORDINATES: Coordinates = { lat: 22.5726, lng: 88.3639 };
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -24,8 +25,8 @@ function Register() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [radius, setRadius] = useState(2);
-  const [lat, setLat] = useState<string>();
-  const [lon, setLon] = useState<string>();
+  const [lat, setLat] = useState<number>();
+  const [lon, setLon] = useState<number>();
   const [notifyEmergency, setNotifyEmergency] = useState(true);
   const [notifyMatches, setNotifyMatches] = useState(true);
   const [notifyMessages, setNotifyMessages] = useState(true);
@@ -34,8 +35,10 @@ function Register() {
   const [loading, setLoading] = useState<boolean>(false);
   const [locationSelected, setLocationSelected] = useState<boolean>(false);
   const [locationPermission, setLocationPermission] = useState<'granted' | 'denied' | 'prompt' | 'checking'>('checking');
-  const [defaultCenter, setDefaultCenter] = useState<[number, number]>(KOLKATA_COORDINATES);
+  const [defaultCenter, setDefaultCenter] = useState<Coordinates>(KOLKATA_COORDINATES);
   const [fetchingLocation, setFetchingLocation] = useState<boolean>(false);
+  const [selectedLocation, setSelectedLocation] = useState<Coordinates | null>(null);
+  const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const mapRef = useRef<any>(null);
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
@@ -44,29 +47,33 @@ function Register() {
     checkLocationPermission();
   }, []);
 
-  const checkLocationPermission = () => {
+  const checkLocationPermission = async () => {
     if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
         setLocationPermission(result.state as 'granted' | 'denied' | 'prompt');
         if (result.state === 'granted') {
-          fetchCurrentLocation();
+          await fetchCurrentLocation();
         } else if (result.state === 'denied') {
           setDefaultCenter(KOLKATA_COORDINATES);
-          setLat(KOLKATA_COORDINATES[0].toString());
-          setLon(KOLKATA_COORDINATES[1].toString());
+          setLat(KOLKATA_COORDINATES.lat);
+          setLon(KOLKATA_COORDINATES.lng);
           toast.warning("Location access denied. You can select your location manually on the map.", {
             position: "bottom-center",
           });
         }
-      });
+      } catch (error) {
+        console.error("Error checking permissions:", error);
+        setLocationPermission('prompt');
+      }
     } else {
       if ("geolocation" in navigator) {
-        fetchCurrentLocation();
+        await fetchCurrentLocation();
       } else {
         setLocationPermission('denied');
         setDefaultCenter(KOLKATA_COORDINATES);
-        setLat(KOLKATA_COORDINATES[0].toString());
-        setLon(KOLKATA_COORDINATES[1].toString());
+        setLat(KOLKATA_COORDINATES.lat);
+        setLon(KOLKATA_COORDINATES.lng);
         toast.error("Geolocation is not supported by your browser.", {
           position: "bottom-center",
         });
@@ -136,8 +143,6 @@ function Register() {
         try {
           if (photo) {
             photoUrl = await uploadFileToCloudinary(photo, `${user.uid}_profile_image`);
-            // photoURL = await uploadFileToS3(photo, `${user.uid}_profile_image`);
-
           }
         } catch (error) {
           console.log(error);
@@ -201,73 +206,86 @@ function Register() {
     }
   };
 
-  const handleMapData = (mapData: any) => {
-    if (mapData?.selectedLocations && mapData.selectedLocations.length > 0) {
-      const location = mapData.selectedLocations[0];
-      setLat(location.latitude.toString());
-      setLon(location.longitude.toString());
-      setAddress(location.address);
-      setLocationSelected(true);
-    }
+  const handleMapClick = async (position: Coordinates) => {
+    setSelectedLocation(position);
+    setLat(position.lat);
+    setLon(position.lng);
+    setLocationSelected(true);
 
-    if (mapData?.currentLocation && !locationSelected) {
-      setLat(mapData.currentLocation.latitude.toString());
-      setLon(mapData.currentLocation.longitude.toString());
-    }
+    // Update markers
+    setMapMarkers([{
+      position: position,
+      color: '#4CAF50',
+      title: 'Selected Location',
+      description: 'Your selected location'
+    }]);
 
-    if (mapData?.permissionStatus) {
-      setLocationPermission(mapData.permissionStatus);
+    // Get address from coordinates
+    try {
+      const addressResult = await reverseGeocode(position);
+      if (addressResult) {
+        setAddress(addressResult);
+        toast.success("Location selected successfully!", {
+          position: "bottom-center",
+        });
+      }
+    } catch (error) {
+      console.error("Error getting address:", error);
+      setAddress(`${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`);
     }
   };
 
-  const fetchCurrentLocation = () => {
+  const fetchCurrentLocation = async () => {
     if (fetchingLocation) return;
     
     setFetchingLocation(true);
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const latitude = position.coords.latitude.toString();
-          const longitude = position.coords.longitude.toString();
-          setLat(latitude);
-          setLon(longitude);
-          setLocationPermission('granted');
-          setDefaultCenter([parseFloat(latitude), parseFloat(longitude)]);
-          
-          // Update the map center without affecting form state
-          if (mapRef.current?.map) {
-            mapRef.current.map.flyTo({
-              center: [parseFloat(longitude), parseFloat(latitude)], 
-              zoom: 13
-            });
+    try {
+      const location = await getCurrentLocation();
+      if (location) {
+        setLat(location.lat);
+        setLon(location.lng);
+        setLocationPermission('granted');
+        setDefaultCenter(location);
+        setSelectedLocation(location);
+
+        // Update markers for current location
+        setMapMarkers([{
+          position: location,
+          color: '#2196F3',
+          title: 'Current Location',
+          description: 'Your current location'
+        }]);
+
+        // Get address
+        try {
+          const addressResult = await reverseGeocode(location);
+          if (addressResult) {
+            setAddress(addressResult);
           }
-          
-          toast.success("Location fetched successfully!", {
-            position: "bottom-center",
-          });
-          setFetchingLocation(false);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setLocationPermission('denied');
-          setDefaultCenter(KOLKATA_COORDINATES);
-          setFetchingLocation(false);
-          if (error.code === 1) {
-            toast.error("Location access denied. You can manually select your location on the map.", {
-              position: "bottom-center",
-            });
-          } else {
-            toast.error("Unable to retrieve your location. Please select location manually.", {
-              position: "bottom-center",
-            });
-          }
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      toast.error("Geolocation is not supported by your browser.", {
-        position: "bottom-center",
-      });
+        } catch (error) {
+          console.error("Error getting address:", error);
+        }
+
+        toast.success("Location fetched successfully!", {
+          position: "bottom-center",
+        });
+      } else {
+        throw new Error("Unable to get location");
+      }
+    } catch (error) {
+      console.error("Error getting location:", error);
+      setLocationPermission('denied');
+      setDefaultCenter(KOLKATA_COORDINATES);
+      if (error instanceof GeolocationPositionError && error.code === 1) {
+        toast.error("Location access denied. You can manually select your location on the map.", {
+          position: "bottom-center",
+        });
+      } else {
+        toast.error("Unable to retrieve your location. Please select location manually.", {
+          position: "bottom-center",
+        });
+      }
+    } finally {
       setFetchingLocation(false);
     }
   };
@@ -277,6 +295,15 @@ function Register() {
     toast.warn("Please manually select your location on the map.", {
       position: "bottom-center",
     });
+  };
+
+  const clearLocationSelection = () => {
+    setLocationSelected(false);
+    setSelectedLocation(null);
+    setMapMarkers([]);
+    setLat(undefined);
+    setLon(undefined);
+    setAddress("");
   };
 
   const pageVariants = {
@@ -500,23 +527,20 @@ function Register() {
                         {!lat && !lon && <span className="text-red-300 ml-1">*</span>}
                       </label>
                       <div className="h-64 border border-white/20 rounded-md overflow-hidden">
-                        <MapContainer
-                          ref={(data) => {
-                            mapRef.current = data;
-                            handleMapData(data);
-                          }}
-                          showCurrentLocation={locationPermission !== 'denied'}
-                          zoom={13}
-                          isSelectable={true}
-                          maximumSelection={1}
-                          scrollWheelZoom={true}
+                        <GoogleMapsViewer
                           center={defaultCenter}
-                          onPermissionDenied={handleLocationPermissionDenied}
+                          zoom={13}
+                          height="100%"
+                          markers={mapMarkers}
+                          showCurrentLocation={locationPermission === 'granted'}
+                          enableGeolocation={locationPermission !== 'denied'}
+                          onMapClick={handleMapClick}
+                          mapType="roadmap"
                         />
                       </div>
-                      {locationSelected && mapRef.current?.selectedLocations?.length > 0 && (
+                      {locationSelected && selectedLocation && (
                         <div className="mt-2 text-sm text-white/80 bg-green-500/20 p-2 rounded-md">
-                          Selected: {mapRef.current.selectedLocations[0].address}
+                          Selected: {address || `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`}
                         </div>
                       )}
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -535,12 +559,7 @@ function Register() {
                         {locationSelected && (
                           <button
                             type="button"
-                            onClick={() => {
-                              setLocationSelected(false);
-                              if (mapRef.current?.makers) {
-                                mapRef.current.makers.forEach((marker: any) => marker.remove());
-                              }
-                            }}
+                            onClick={clearLocationSelection}
                             className="px-4 py-2 bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded-md text-white text-sm transition-colors"
                           >
                             Clear Selection
@@ -550,7 +569,7 @@ function Register() {
                       {lat && lon && (
                         <div className="mt-3 p-2 bg-white/10 rounded text-sm text-white/80">
                           <p>
-                            Coordinates: {parseFloat(lat).toFixed(6)}, {parseFloat(lon).toFixed(6)}
+                            Coordinates: {lat.toFixed(6)}, {lon.toFixed(6)}
                           </p>
                         </div>
                       )}

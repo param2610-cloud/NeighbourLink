@@ -7,8 +7,7 @@ import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { FaMedkit, FaTools, FaBook, FaHome, FaUtensils } from 'react-icons/fa';
 import { Timestamp } from 'firebase/firestore';
-import LocationViewer from '@/utils/ola/LocationViewer';
-import FallbackMap from '@/components/maps/FallbackMap';
+import GoogleMapsViewer from '@/utils/google_map/GoogleMapsViewer';
 import PostResponders from './PostResponders';
 import ContactResponder from '../PostCard/modal/ContactResponder';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -65,7 +64,6 @@ const PostDetailsPage = () => {
     const [showContactModal, setShowContactModal] = useState<boolean>(false);
     const [selectedResponder, setSelectedResponder] = useState<UserData | null>(null);
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
-    const [mapError, setMapError] = useState<boolean>(false);
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
 
@@ -407,23 +405,39 @@ const PostDetailsPage = () => {
                     <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">Location</h2>
 
                     {post.coordinates && (
-                        <>
-                            {!mapError ? (
-                                <div className="relative">
-                                    <LocationViewer
-                                        lat={post.coordinates.lat.toString()}
-                                        lon={post.coordinates.lng.toString()}
-                                        onError={() => setMapError(true)}
-                                    />
-                                </div>
-                            ) : (
-                                <FallbackMap
-                                    lat={post.coordinates.lat}
-                                    lng={post.coordinates.lng}
-                                    location={post.location}
+                        <div className="space-y-3">
+                            {/* Enhanced Google Maps with new implementation */}
+                            <div className="h-64 border rounded-md overflow-hidden">
+                                <GoogleMapsViewer
+                                    center={{ 
+                                        lat: post.coordinates.lat, 
+                                        lng: post.coordinates.lng 
+                                    }}
+                                    zoom={15}
+                                    height="256px"
+                                    showCurrentLocation={true}
+                                    showDirectionsButton={true}
+                                    markers={[{
+                                        position: { 
+                                            lat: post.coordinates.lat, 
+                                            lng: post.coordinates.lng 
+                                        },
+                                        title: post.title,
+                                        description: post.location || 'Post location',
+                                        color: post.postType === 'offer' ? '#4CAF50' : '#2196F3'
+                                    }]}
                                 />
+                            </div>
+                            
+                            {/* Location info */}
+                            {post.location && (
+                                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                        📍 {post.location}
+                                    </p>
+                                </div>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
 
@@ -525,3 +539,4 @@ const PostDetailsPage = () => {
 };
 
 export default PostDetailsPage;
+

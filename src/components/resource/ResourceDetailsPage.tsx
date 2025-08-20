@@ -10,7 +10,7 @@ import { FaBook, FaTools, FaUtensils, FaTshirt, FaHome, FaBriefcaseMedical } fro
 import { Timestamp } from 'firebase/firestore';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
 import { toast } from 'react-toastify';
-import MapContainer from '../MapContainer';
+import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
 import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 interface Resource {
@@ -56,7 +56,6 @@ const ResourceDetailsPage = () => {
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
-    const [, setMapData] = useState<any>(null);
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -134,38 +133,6 @@ const ResourceDetailsPage = () => {
 
                     if (!resourceData.isAnonymous) {
                         await fetchUserInfo(resourceData.userId);
-                    }
-                    
-                    if (resourceData.location && typeof resourceData.location === 'object') {
-                        setMapData({
-                            currentLocation: {
-                                latitude: resourceData.location.latitude,
-                                longitude: resourceData.location.longitude
-                            },
-                            selectedLocations: [
-                                {
-                                    latitude: resourceData.location.latitude,
-                                    longitude: resourceData.location.longitude,
-                                    address: resourceData.location.address || 'Selected location'
-                                }
-                            ]
-                        });
-                    } else if (resourceData.coordinates) {
-                        setMapData({
-                            currentLocation: {
-                                latitude: resourceData.coordinates.lat,
-                                longitude: resourceData.coordinates.lng
-                            },
-                            selectedLocations: [
-                                {
-                                    latitude: resourceData.coordinates.lat,
-                                    longitude: resourceData.coordinates.lng,
-                                    address: typeof resourceData.location === 'string' 
-                                        ? resourceData.location 
-                                        : 'Selected location'
-                                }
-                            ]
-                        });
                     }
                 } else {
                     setError("Resource not found");
@@ -291,6 +258,39 @@ const ResourceDetailsPage = () => {
     const getImages = () => {
         if (!resource) return [];
         return resource.photoUrls || resource.images || [];
+    };
+
+    const getMapCenter = () => {
+        if (!resource) return { lat: 12.931423492103944, lng: 77.61648476788898 };
+        
+        if (typeof resource.location === 'object' && resource.location.latitude && resource.location.longitude) {
+            return { lat: resource.location.latitude, lng: resource.location.longitude };
+        }
+        
+        if (resource.coordinates) {
+            return { lat: resource.coordinates.lat, lng: resource.coordinates.lng };
+        }
+        
+        return { lat: 12.931423492103944, lng: 77.61648476788898 };
+    };
+
+    const getMapMarkers = () => {
+        if (!resource) return [];
+        
+        const center = getMapCenter();
+        const locationText = typeof resource.location === 'string' 
+            ? resource.location 
+            : resource.location && typeof resource.location === 'object' 
+                ? resource.location.address || 'Resource location'
+                : 'Resource location';
+
+        return [{
+            position: center,
+            title: resource.title || resource.resourceName || 'Resource Location',
+            description: locationText,
+            color: '#4CAF50', // Green color for resource location
+            icon: undefined // Use default marker
+        }];
     };
 
     if (loading) {
@@ -439,19 +439,15 @@ const ResourceDetailsPage = () => {
                     
                     {resource.location && (
                         <div className="h-64 border rounded-md overflow-hidden">
-                            <MapContainer
-                                center={[
-                                    typeof resource.location === 'object' ? resource.location.latitude : 
-                                    resource.coordinates ? resource.coordinates.lat : 0,
-                                    typeof resource.location === 'object' ? resource.location.longitude : 
-                                    resource.coordinates ? resource.coordinates.lng : 0
-                                ]}
-                                showCurrentLocation={false}
+                            <GoogleMapsViewer
+                                center={getMapCenter()}
                                 zoom={15}
-                                isSelectable={false}
-                                maximumSelection={1}
-                                scrollWheelZoom={true}
-                                ref={setMapData}
+                                height="256px"
+                                markers={getMapMarkers()}
+                                showCurrentLocation={true}
+                                enableGeolocation={true}
+                                showDirectionsButton={true}
+                                mapType="roadmap"
                             />
                         </div>
                     )}
@@ -460,7 +456,7 @@ const ResourceDetailsPage = () => {
                         {typeof resource.location === 'string' 
                             ? resource.location 
                             : resource.location && typeof resource.location === 'object' 
-                                ? resource.location.address || JSON.stringify(resource.location)
+                                ? resource.location.address || 'Resource location'
                                 : 'No location information available'}
                     </p>
                 </div>
