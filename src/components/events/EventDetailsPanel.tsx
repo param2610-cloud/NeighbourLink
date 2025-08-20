@@ -4,7 +4,8 @@ import { X, Calendar, Clock, Users, MapPin } from 'lucide-react';
 import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useStateContext } from '@/contexts/StateContext';
-import OlaMapsViewer from '@/utils/ola/OlaMapsViewer';
+import GoogleMapsViewer from '@/utils/google_map/GoogleMapsViewer';
+import LocationInfo from './LocationInfo';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Event {
@@ -188,21 +189,37 @@ const EventDetailsPanel: React.FC<EventDetailsPanelProps> = ({
                 {event.location.address && (
                   <p className="text-gray-400 ml-8 mb-3">{event.location.address}</p>
                 )}
-                
+
+                {/* Location Info with Distance and Directions */}
+                <div className="ml-8 mb-4">
+                  <LocationInfo 
+                    eventLocation={{ 
+                      lat: event.location.latitude, 
+                      lng: event.location.longitude 
+                    }}
+                    eventTitle={event.title}
+                  />
+                </div>
+
                 {/* Map */}
                 {event.location.latitude && event.location.longitude && (
                   <div className="mt-2 rounded-md overflow-hidden">
-                    <OlaMapsViewer
+                    <GoogleMapsViewer
                       center={{ lat: event.location.latitude, lng: event.location.longitude }}
                       zoom={15}
                       markers={[
                         {
                           position: { lat: event.location.latitude, lng: event.location.longitude },
                           color: '#4CAF50',
-                          title: event.title
+                          title: event.title,
+                          description: `${event.eventType} - ${event.location.address || 'Event Location'}`
                         }
                       ]}
                       height="200px"
+                      showCurrentLocation={true}
+                      enableGeolocation={true}
+                      showDirectionsButton={true}
+                      mapType="roadmap"
                     />
                   </div>
                 )}

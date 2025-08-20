@@ -48,7 +48,6 @@
     "motion": "^12.5.0",
     "neighbourlink": "file:",
     "next-themes": "^0.4.6",
-    "olamaps-web-sdk": "^1.1.2",
     "react": "^19.0.0",
     "react-datepicker": "^8.3.0",
     "react-dom": "^19.0.0",
@@ -69,6 +68,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@types/googlemaps": "^3.43.3",
     "@types/node": "^22.13.10",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

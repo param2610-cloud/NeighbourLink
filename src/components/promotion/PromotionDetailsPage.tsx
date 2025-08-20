@@ -6,7 +6,7 @@ import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHea
 import { BiMessageDetail } from 'react-icons/bi';
 import { IoMdArrowBack } from 'react-icons/io';
 import { FiPhone, FiMail, FiMapPin, FiClock, FiUser } from 'react-icons/fi';
-import MapContainer from '../MapContainer';
+import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
 import { onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { getOrCreateConversationWithUser } from '../../services/messagingService';
@@ -526,11 +526,27 @@ const PromotionDetailsPage = () => {
                             <p className="text-gray-700 dark:text-gray-300">{promotion.location.address}</p>
                         </div>
                         <div className="h-60 rounded-lg overflow-hidden">
-                            <MapContainer 
-                                center={[promotion.location.latitude, promotion.location.longitude]}
+                            <GoogleMapsViewer 
+                                center={{ 
+                                    lat: promotion.location.latitude, 
+                                    lng: promotion.location.longitude 
+                                }}
                                 zoom={15}
-                                scrollWheelZoom={false}
-                                isSelectable={false}
+                                height="240px"
+                                markers={[{
+                                    position: { 
+                                        lat: promotion.location.latitude, 
+                                        lng: promotion.location.longitude 
+                                    },
+                                    color: '#8B5CF6',
+                                    title: promotion.title,
+                                    description: promotion.location.address,
+                                    icon: undefined
+                                }]}
+                                showCurrentLocation={true}
+                                enableGeolocation={true}
+                                showDirectionsButton={true}
+                                mapType="roadmap"
                             />
                         </div>
                     </div>

@@ -8,7 +8,7 @@ import { IoMdArrowBack } from 'react-icons/io';
 import { BsCalendarEvent } from 'react-icons/bs';
 import { FiClock, FiUsers, FiMail, FiPhone } from 'react-icons/fi';
 import { Timestamp } from 'firebase/firestore';
-import MapContainer from '../MapContainer';
+import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
 import { onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-toastify';
 import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
@@ -352,10 +352,19 @@ const EventDetailsPage = () => {
                         <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Location</h2>
                         <p className="text-gray-700 dark:text-gray-300 mb-2">{event.location.address}</p>
                         <div className="h-60 rounded-lg overflow-hidden">
-                            <MapContainer 
-                                center={[event.location.latitude, event.location.longitude]}
+                            <GoogleMapsViewer 
+                                center={{ lat: event.location.latitude, lng: event.location.longitude }}
                                 zoom={15}
-                                scrollWheelZoom={false}
+                                height="240px"
+                                markers={[{
+                                    position: { lat: event.location.latitude, lng: event.location.longitude },
+                                    title: event.title,
+                                    description: event.location.address,
+                                    color: '#4F46E5'
+                                }]}
+                                showCurrentLocation={true}
+                                showDirectionsButton={true}
+                                mapType="roadmap"
                             />
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 import React, {  useState } from "react";
-import MapContainer from "@/components/MapContainer";
+import GoogleMapsViewer from "@/utils/google_map/GoogleMapsViewer";
 import { db, auth } from "@/firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -28,13 +28,12 @@ const CreateBusiness: React.FC = () => {
   const [verificationDoc, setVerificationDoc] = useState<File | null>(null);
   const [verificationPreview, setVerificationPreview] = useState<string | null>(null);
   const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
+    lat: number;
+    lng: number;
     address: string;
   } | null>(null);
   const [businessProfileImage, setBusinessProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
-  const [, setMapData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle verification doc upload
@@ -76,11 +75,28 @@ const CreateBusiness: React.FC = () => {
  
 
   // Handle map location selection
-  const handleMapData = (data: any) => {
-    if (data?.selectedLocations && data.selectedLocations.length > 0) {
-      setLocation(data.selectedLocations[0]);
+  const handleMapClick = async (position: { lat: number; lng: number }) => {
+    try {
+      // Import reverseGeocode function dynamically
+      const { reverseGeocode } = await import("@/utils/google_map/GoogleMapsUtils");
+      const address = await reverseGeocode(position);
+      
+      setLocation({
+        lat: position.lat,
+        lng: position.lng,
+        address: address || `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`
+      });
+      
+      toast.success("Location selected successfully!");
+    } catch (error) {
+      console.error("Error getting address:", error);
+      setLocation({
+        lat: position.lat,
+        lng: position.lng,
+        address: `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`
+      });
+      toast.success("Location selected!");
     }
-    setMapData(data);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,8 +154,8 @@ const CreateBusiness: React.FC = () => {
           qrCodeUrl: "",
         },
         location: {
-          latitude: location.latitude,
-          longitude: location.longitude,
+          latitude: location.lat,
+          longitude: location.lng,
           address: location.address,
         },
         services: [],
@@ -164,7 +180,6 @@ const CreateBusiness: React.FC = () => {
       setLocation(null);
       setBusinessProfileImage(null);
       setProfilePreview(null);
-      setMapData(null);
 
       console.log("Business created with ID:", docRef.id);
     } catch (error) {
@@ -309,13 +324,20 @@ const CreateBusiness: React.FC = () => {
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="h-40 border-2 border-yellow-200 dark:border-yellow-700 rounded-lg overflow-hidden mb-2">
-                  <MapContainer
-                    ref={handleMapData}
-                    showCurrentLocation={true}
+                  <GoogleMapsViewer
+                    center={{ lat: 12.931423492103944, lng: 77.61648476788898 }}
                     zoom={13}
-                    isSelectable={true}
-                    maximumSelection={1}
-                    scrollWheelZoom={true}
+                    height="160px"
+                    showCurrentLocation={true}
+                    enableGeolocation={true}
+                    onMapClick={handleMapClick}
+                    markers={location ? [{
+                      position: { lat: location.lat, lng: location.lng },
+                      color: '#FFA500',
+                      title: 'Selected Business Location',
+                      description: location.address
+                    }] : []}
+                    mapType="roadmap"
                   />
                 </div>
                 {location && (
@@ -324,9 +346,9 @@ const CreateBusiness: React.FC = () => {
                     {location.address}
                     <br />
                     <span className="font-medium">Lat:</span>{" "}
-                    {location.latitude.toFixed(6)}{" "}
+                    {location.lat.toFixed(6)}{" "}
                     <span className="font-medium">Lng:</span>{" "}
-                    {location.longitude.toFixed(6)}
+                    {location.lng.toFixed(6)}
                   </div>
                 )}
               </div>

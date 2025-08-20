@@ -8,6 +8,8 @@ import { BsThreeDots } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
+import GoogleMapsViewer from "@/utils/google_map/GoogleMapsViewer";
+import { getCurrentLocation, reverseGeocode, type Coordinates } from "@/utils/google_map/GoogleMapsUtils";
 
 interface ResourceFormProps {
   userId: string;
@@ -32,10 +34,13 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   
-  const [coordinates, setCoordinates] = useState<{ lat: string; lng: string } | null>(null);
-  const [userDefaultCoordinates, setUserDefaultCoordinates] = useState<{ lat: string; lng: string } | null>(null);
+  // Updated coordinate state to use new format
+  const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
+  const [userDefaultCoordinates, setUserDefaultCoordinates] = useState<Coordinates | null>(null);
   const [locationType, setLocationType] = useState<"default" | "custom">("default");
   const [locationError, setLocationError] = useState<string>("");
+  const [showLocationMap, setShowLocationMap] = useState(false);
+  const [mapMarkers, setMapMarkers] = useState<any[]>([]);
 
   // Fetch user's default location from Firestore
   useEffect(() => {
@@ -44,13 +49,22 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         const userDoc = await getDoc(doc(db, "Users", userId));
         if (userDoc.exists() && userDoc.data().location) {
           const userData = userDoc.data();
-          const userLoc = {
-            lat: userData.location.latitude.toString(),
-            lng: userData.location.longitude.toString()
+          const userLoc: Coordinates = {
+            lat: userData.location.latitude,
+            lng: userData.location.longitude
           };
           setUserDefaultCoordinates(userLoc);
           setCoordinates(userLoc); 
           setLocation(userData.address || "");
+          
+          // Set initial marker for default location
+          setMapMarkers([{
+            position: userLoc,
+            color: '#4285F4',
+            title: 'Your Default Location',
+            description: userData.address || 'Your registered address',
+            draggable: false
+          }]);
         } else {
           toast.warning("User location not found. Please set your location.", {
             position: "bottom-center"
@@ -66,38 +80,57 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     }
   }, [userId]);
 
-  const handleGetLocation = () => {
+  const handleGetCurrentLocation = async () => {
     setLocationError("");
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const latitude = position.coords.latitude.toString();
-          const longitude = position.coords.longitude.toString();
-          setCoordinates({ lat: latitude, lng: longitude });
-          toast.success("Location fetched successfully!", {
-            position: "bottom-center",
-          });
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setLocationError("Unable to retrieve your location. Please enable location access.");
-          toast.error("Unable to retrieve your location. Please enable location access.", {
-            position: "bottom-center",
-          });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      setLocationError("Geolocation is not supported by your browser.");
-      toast.error("Geolocation is not supported by your browser.", {
+    setLoading(true);
+    
+    try {
+      const currentLoc = await getCurrentLocation();
+      if (currentLoc) {
+        setCoordinates(currentLoc);
+        
+        // Get address for the location
+        const address = await reverseGeocode(currentLoc);
+        if (address) {
+          setLocation(address);
+        }
+        
+        // Update map marker
+        setMapMarkers([{
+          position: currentLoc,
+          color: '#FF5722',
+          title: 'Current Location',
+          description: address || 'Your current location',
+          draggable: true
+        }]);
+        
+        toast.success("Location fetched successfully!", {
+          position: "bottom-center",
+        });
+      } else {
+        throw new Error("Unable to get current location");
+      }
+    } catch (error) {
+      console.error("Error getting location:", error);
+      setLocationError("Unable to retrieve your location. Please enable location access.");
+      toast.error("Unable to retrieve your location. Please enable location access.", {
         position: "bottom-center",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const useDefaultLocation = () => {
     if (userDefaultCoordinates) {
       setCoordinates(userDefaultCoordinates);
+      setMapMarkers([{
+        position: userDefaultCoordinates,
+        color: '#4285F4',
+        title: 'Your Default Location',
+        description: location || 'Your registered address',
+        draggable: false
+      }]);
       toast.success("Using your default location", {
         position: "bottom-center",
       });
@@ -105,7 +138,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       toast.error("Default location not available. Please fetch your current location.", {
         position: "bottom-center",
       });
-      handleGetLocation();
+      handleGetCurrentLocation();
     }
   };
 
@@ -113,15 +146,60 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     setLocationType(type);
     if (type === "default") {
       useDefaultLocation();
+      setShowLocationMap(false);
     } else {
-      setCoordinates(null); // Clear coordinates to force user to fetch new location
+      setShowLocationMap(true);
+      if (!coordinates) {
+        handleGetCurrentLocation();
+      }
     }
   };
-  
+
+  const handleMapClick = async (position: Coordinates) => {
+    setCoordinates(position);
+    
+    // Get address for clicked location
+    const address = await reverseGeocode(position);
+    if (address) {
+      setLocation(address);
+    }
+    
+    // Update map marker
+    setMapMarkers([{
+      position,
+      color: '#4CAF50',
+      title: 'Selected Location',
+      description: address || 'Custom selected location',
+      draggable: true
+    }]);
+    
+    toast.success("Location selected on map!", {
+      position: "bottom-center",
+    });
+  };
+
+  const handleMarkerDrag = async (position: Coordinates, markerIndex: number) => {
+    setCoordinates(position);
+    
+    // Get address for new position
+    const address = await reverseGeocode(position);
+    if (address) {
+      setLocation(address);
+    }
+    
+    // Update marker
+    setMapMarkers([{
+      position,
+      color: '#4CAF50',
+      title: 'Selected Location',
+      description: address || 'Dragged location',
+      draggable: true
+    }]);
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      
       
       if (photos.length + newFiles.length > 3) {
         toast.warning("Maximum 3 photos allowed", { position: "bottom-center" });
@@ -131,7 +209,6 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       setLoading(true);
       
       try {
-        
         const uploadPromises = newFiles.map(async (file) => {
           const url = await uploadFileToCloudinary(file, `${userId}-${Date.now()}-${file.name}`);
           return url;
@@ -150,13 +227,11 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     }
   };
 
-  
   const removePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));
     setPhotoUrls(photoUrls.filter((_, i) => i !== index));
   };
 
-  
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     
@@ -182,7 +257,10 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
         ...(postType === "need" && { urgencyLevel: urgency }),
         photoUrls,
         location,
-        coordinates,
+        coordinates: {
+          lat: coordinates.lat.toString(),
+          lng: coordinates.lng.toString()
+        },
         userId,
         postType,
         duration,
@@ -192,24 +270,9 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       };
 
       const docRef = await addDoc(collection(db, "posts"), resourceData);
-      // const postId = docRef.id;  // Get the ID of the newly created post
-      
-      // Only send emergency notifications for "need" posts with emergency urgency
-      if (postType === "need" && urgency === 3 && coordinates) {
-        // Send emergency notifications to nearby users
-
-        // await sendEmergencyNotifications(
-        //   postId, 
-        //   title,
-        //   description,
-        //   coordinates,
-        //   visibilityRadius
-        // );
-
-      }
       console.log("Resource posted with ID: ", docRef.id);
 
-      
+      // Reset form
       setTitle("");
       setCategory("Medical");
       setCustomCategory("");
@@ -223,11 +286,11 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       setVisibilityRadius(3);
       setIsAnonymous(false);
       setCurrentStep(1);
+      setShowLocationMap(false);
       
       toast.success("Post created successfully!", {
         position: "top-center",
       });
-      
       
       window.location.href = "/";
     } catch (error) {
@@ -240,7 +303,6 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     }
   };
 
-  
   const nextStep = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -253,7 +315,6 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
     }
   };
 
-  
   const CategoryButton = ({ value, icon, label }: { value: string, icon: React.ReactNode, label: string }) => (
     <button
       type="button"
@@ -266,7 +327,6 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
       <span className="text-sm dark:text-white">{label}</span>
     </button>
   );
-  
   
   const renderStepContent = () => {
     switch (currentStep) {
@@ -401,8 +461,6 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
                 ))}
               </div>
             </div>
-            
-            
           </div>
         );
 
@@ -489,7 +547,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold dark:text-white">Location & Review</h3>
             
-            {/* Location selection section */}
+            {/* Enhanced Location selection section with map */}
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-4">
               <h4 className="text-md font-medium dark:text-white mb-2">Set Location</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -517,19 +575,41 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
                       : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-300"
                   }`}
                 >
-                  Set Custom Location
+                  Select on Map
                 </button>
               </div>
               
               {locationType === "custom" && (
-                <button
-                  type="button"
-                  onClick={handleGetLocation}
-                  className="flex items-center justify-center w-full py-2 px-3 bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 rounded-md hover:bg-green-200 dark:hover:bg-green-700"
-                >
-                  <FaMapMarkerAlt className="mr-2" />
-                  Fetch Current Location
-                </button>
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    disabled={loading}
+                    className="flex items-center justify-center w-full py-2 px-3 bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 rounded-md hover:bg-green-200 dark:hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <FaMapMarkerAlt className="mr-2" />
+                    {loading ? 'Getting Location...' : 'Get Current Location'}
+                  </button>
+                  
+                  {showLocationMap && coordinates && (
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        Click on the map or drag the marker to set your location:
+                      </p>
+                      <div className="border rounded-lg overflow-hidden">
+                        <GoogleMapsViewer
+                          center={coordinates}
+                          zoom={15}
+                          height="250px"
+                          markers={mapMarkers}
+                          onMapClick={handleMapClick}
+                          onMarkerDrag={handleMarkerDrag}
+                          showCurrentLocation={false}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
               
               {locationError && (
@@ -540,7 +620,9 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
               
               {coordinates && (
                 <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded text-sm">
-                  Location set successfully! Your post will be visible to neighbors within {visibilityRadius}km.
+                  <p className="font-medium">✓ Location set successfully!</p>
+                  <p className="text-xs mt-1">{location || `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`}</p>
+                  <p className="text-xs">Your post will be visible to neighbors within {visibilityRadius}km.</p>
                 </div>
               )}
             </div>
@@ -567,7 +649,7 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
               
               <div className="mt-3 text-sm dark:text-gray-400 text-gray-500">
                 <p>Duration: {duration}</p>
-                <p>Location: {location || "Not specified"}</p>
+                <p>Location: {location || "Location selected on map"}</p>
               </div>
               
               {photoUrls.length > 0 && (
@@ -670,8 +752,8 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                disabled={loading || !coordinates}
+                className="px-6 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Posting..." : "Post Now"}
               </button>
