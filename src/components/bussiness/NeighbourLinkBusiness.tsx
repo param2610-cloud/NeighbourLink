@@ -8,6 +8,8 @@ import {
   where,
   getDocs,
   updateDoc,
+  addDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db, auth } from "@/firebase";
 import { GiHamburgerMenu } from "react-icons/gi";
@@ -45,6 +47,7 @@ import {
   createUniqueFileName,
   deleteFromCloudinary,
 } from "@/utils/cloudinary/cloudinary";
+import { toast } from "react-toastify";
 
 interface Review {
   id: string;
@@ -54,6 +57,26 @@ interface Review {
   date: string;
   rating: number;
   reviewerAvatar?: string;
+}
+
+interface PromotionFormData {
+  title: string;
+  description: string;
+  contactInfo: {
+    name: string;
+    contact: string;
+    email: string;
+  };
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  visibilityRadius: string;
+  images?: string[];
+  videoUrl?: string;
+  duration: string;
+  isPromoted: boolean;
 }
 
 interface BusinessCollection {
@@ -106,6 +129,12 @@ interface BusinessCollection {
     question: string;
     answer: string;
   }[];
+
+  // Add promoted items tracking
+  promotedItems?: {
+    serviceIds: string[];
+    productIds: string[];
+  };
 }
 
 const StarRating: React.FC<{ rating: number; className?: string }> = ({
@@ -174,6 +203,10 @@ const NeighbourLinkBusiness: React.FC = () => {
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
   const [showGalleryDrawer, setShowGalleryDrawer] = useState(false);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
+  const [promotingItemId, setPromotingItemId] = useState<string | null>(null);
+  const [removingPromotionId, setRemovingPromotionId] = useState<string | null>(
+    null
+  );
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
@@ -368,12 +401,214 @@ const NeighbourLinkBusiness: React.FC = () => {
     console.log("Upgrade to Premium clicked");
   };
 
-  const handlePromoteItem = (itemId: string, type: "product" | "service") => {
+  // Helper function to check if an item is promoted
+  const isItemPromoted = (itemId: string, type: "product" | "service") => {
+    if (!businessData?.promotedItems) return false;
+
+    if (type === "service") {
+      return businessData.promotedItems.serviceIds?.includes(itemId) || false;
+    } else {
+      return businessData.promotedItems.productIds?.includes(itemId) || false;
+    }
+  };
+
+  const handlePromoteItem = async (
+    itemId: string,
+    type: "product" | "service"
+  ) => {
     if (!isProfileComplete()) {
-      alert("Please complete your profile first");
+      toast.error("Please complete your profile first");
       return;
     }
-    console.log(`Promote ${type} ${itemId} clicked`);
+
+    if (!auth.currentUser || !businessData) {
+      toast.error("Please log in to create promotions");
+      return;
+    }
+
+    // Check if already promoted
+    if (isItemPromoted(itemId, type)) {
+      toast.info("This item is already promoted");
+      return;
+    }
+
+    setPromotingItemId(itemId);
+    try {
+      // Find the item being promoted
+      const item =
+        type === "product"
+          ? businessData.products.find((p) => p.id === itemId)
+          : businessData.services.find((s) => s.id === itemId);
+
+      if (!item) {
+        toast.error("Item not found");
+        return;
+      }
+
+      // Create promotion data matching PromotionFormData interface
+      const promotionData: PromotionFormData & {
+        userId: string;
+        createdAt: Date;
+        type: string;
+        useProfileLocation: boolean;
+        businessId: string;
+        itemId: string;
+        itemType: "product" | "service";
+      } = {
+        title: `${type === "product" ? "Product" : "Service"}: ${item.name}`,
+        description:
+          item.description ||
+          `Check out our ${item.name}. ${
+            type === "product" && item.price ? `Price: ₹${item.price}` : ""
+          }${
+            type === "service" && item.price
+              ? `Starting from ₹${item.price}`
+              : ""
+          }`,
+        contactInfo: {
+          name: businessData.contact?.phone
+            ? `${businessData.businessName}`
+            : businessData.businessName,
+          contact: businessData.contact?.phone || "",
+          email: businessData.paymentSupport?.accountDetails || "",
+        },
+        location: {
+          latitude: businessData.location?.latitude || 0,
+          longitude: businessData.location?.longitude || 0,
+          address: businessData.location?.address || "",
+        },
+        visibilityRadius: "10", // Default 10km radius
+        images: item.imageUrl || [],
+        videoUrl: "", // No video for now
+        duration: "30", // Default 30 days
+        isPromoted: true,
+        userId: auth.currentUser.uid,
+        createdAt: new Date(),
+        type: "promotion",
+        useProfileLocation: true,
+        businessId: businessData.id,
+        itemId: itemId,
+        itemType: type,
+      };
+
+      // Add to Firebase promotions collection
+      const docRef = await addDoc(collection(db, "promotions"), promotionData);
+
+      // Update business data to track promoted items
+      const currentPromotedItems = businessData.promotedItems || {
+        serviceIds: [],
+        productIds: [],
+      };
+
+      const updatedPromotedItems = {
+        serviceIds:
+          type === "service"
+            ? [...currentPromotedItems.serviceIds, itemId]
+            : currentPromotedItems.serviceIds,
+        productIds:
+          type === "product"
+            ? [...currentPromotedItems.productIds, itemId]
+            : currentPromotedItems.productIds,
+      };
+
+      // Update business document
+      await updateDoc(doc(db, "business", businessData.id), {
+        promotedItems: updatedPromotedItems,
+      });
+
+      // Update local state
+      setBusinessData({
+        ...businessData,
+        promotedItems: updatedPromotedItems,
+      });
+
+      toast.success(
+        `${type.charAt(0).toUpperCase() + type.slice(1)} promoted successfully!`
+      );
+      console.log(`Promotion created with ID: ${docRef.id}`);
+
+      // Navigate to the promotion details page
+      navigate(`/promotion/${docRef.id}`);
+    } catch (error) {
+      console.error("Error creating promotion:", error);
+      toast.error("Failed to create promotion");
+    } finally {
+      setPromotingItemId(null);
+    }
+  };
+
+  const handleRemovePromotion = async (
+    itemId: string,
+    type: "product" | "service"
+  ) => {
+    if (!auth.currentUser || !businessData) {
+      toast.error("Please log in to remove promotions");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to remove this promotion?")) {
+      return;
+    }
+
+    setRemovingPromotionId(itemId);
+    try {
+      // Find and delete the promotion document
+      const promotionsQuery = query(
+        collection(db, "promotions"),
+        where("businessId", "==", businessData.id),
+        where("itemId", "==", itemId),
+        where("itemType", "==", type)
+      );
+
+      const promotionsSnapshot = await getDocs(promotionsQuery);
+
+      if (!promotionsSnapshot.empty) {
+        // Delete all matching promotion documents (there should typically be only one)
+        const deletePromises = promotionsSnapshot.docs.map((doc) =>
+          deleteDoc(doc.ref)
+        );
+        await Promise.all(deletePromises);
+      }
+
+      // Update business data to remove from promoted items tracking
+      const currentPromotedItems = businessData.promotedItems || {
+        serviceIds: [],
+        productIds: [],
+      };
+
+      const updatedPromotedItems = {
+        serviceIds:
+          type === "service"
+            ? currentPromotedItems.serviceIds.filter((id) => id !== itemId)
+            : currentPromotedItems.serviceIds,
+        productIds:
+          type === "product"
+            ? currentPromotedItems.productIds.filter((id) => id !== itemId)
+            : currentPromotedItems.productIds,
+      };
+
+      // Update business document
+      await updateDoc(doc(db, "business", businessData.id), {
+        promotedItems: updatedPromotedItems,
+      });
+
+      // Update local state
+      setBusinessData({
+        ...businessData,
+        promotedItems: updatedPromotedItems,
+      });
+
+      toast.success(
+        `${
+          type.charAt(0).toUpperCase() + type.slice(1)
+        } promotion removed successfully!`
+      );
+    } catch (error) {
+      console.error("Error removing promotion:", error);
+      toast.error("Failed to remove promotion");
+    } finally {
+      setRemovingPromotionId(null);
+    }
   };
 
   // Helper functions to check specific incomplete fields
@@ -843,7 +1078,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                   <button
                     onClick={() => fileInputProfile.current?.click()}
                     disabled={loading}
-                    className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/50 disabled:opacity-50 border border-slate-200 dark:border-slate-600"
+                    className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all duration-200 text-blue-600 bg-blue-50 dark:hover:bg-blue-900/30 disabled:opacity-50 border border-slate-200 dark:border-slate-600"
                   >
                     {loading ? (
                       <div className="w-3 h-3 animate-spin rounded-full border border-blue-600 border-t-transparent" />
@@ -1016,12 +1251,27 @@ const NeighbourLinkBusiness: React.FC = () => {
                     Items
                   </div>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
-                  <div className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                    {businessData.deliverySupport ? "Yes" : "No"}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    Delivery
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 items-center text-center">
+                  <div className="flex items-center gap-3 p-3 text-center rounded-lg">
+                    <div className="flex flex-col items-center justify-center w-full">
+                      <div className="flex items-center justify-center mb-2">
+                        <span
+                          className={`w-3 h-3 rounded-full mr-2 ${
+                            businessData.deliverySupport
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                          }`}
+                        ></span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Delivery
+                        </span>
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400">
+                        {businessData.deliverySupport
+                          ? "Available"
+                          : "Not available"}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 text-center">
@@ -1590,19 +1840,55 @@ const NeighbourLinkBusiness: React.FC = () => {
                                 <div>{service.duration}</div>
                               )}
                             </div>
-                            <button
-                              onClick={() =>
-                                handlePromoteItem(service.id, "service")
-                              }
-                              disabled={!isProfileComplete()}
-                              className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                                !isProfileComplete()
-                                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                  : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50"
-                              }`}
-                            >
-                              Promote
-                            </button>
+                            <div className="flex flex-col items-end gap-2">
+                              {isItemPromoted(service.id, "service") && (
+                                <span className="px-3 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full border border-green-200 dark:border-green-700">
+                                  ✓ Promoted
+                                </span>
+                              )}
+                              {isItemPromoted(service.id, "service") ? (
+                                <button
+                                  onClick={() =>
+                                    handleRemovePromotion(service.id, "service")
+                                  }
+                                  disabled={removingPromotionId === service.id}
+                                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors min-w-[100px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {removingPromotionId === service.id ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-3 h-3 animate-spin rounded-full border border-red-600 border-t-transparent" />
+                                      <span>Removing...</span>
+                                    </div>
+                                  ) : (
+                                    "Remove Promotion"
+                                  )}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handlePromoteItem(service.id, "service")
+                                  }
+                                  disabled={
+                                    !isProfileComplete() ||
+                                    promotingItemId === service.id
+                                  }
+                                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors min-w-[100px] ${
+                                    !isProfileComplete()
+                                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                      : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50"
+                                  }`}
+                                >
+                                  {promotingItemId === service.id ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-3 h-3 animate-spin rounded-full border border-green-600 border-t-transparent" />
+                                      <span>Promoting...</span>
+                                    </div>
+                                  ) : (
+                                    "Promote"
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2047,19 +2333,55 @@ const NeighbourLinkBusiness: React.FC = () => {
                                 <div>Stock: {product.stock}</div>
                               )}
                             </div>
-                            <button
-                              onClick={() =>
-                                handlePromoteItem(product.id, "product")
-                              }
-                              disabled={!isProfileComplete()}
-                              className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                                !isProfileComplete()
-                                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                  : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50"
-                              }`}
-                            >
-                              Promote
-                            </button>
+                            <div className="flex flex-col items-end gap-2">
+                              {isItemPromoted(product.id, "product") && (
+                                <span className="px-3 py-1 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full border border-orange-200 dark:border-orange-700">
+                                  ✓ Promoted
+                                </span>
+                              )}
+                              {isItemPromoted(product.id, "product") ? (
+                                <button
+                                  onClick={() =>
+                                    handleRemovePromotion(product.id, "product")
+                                  }
+                                  disabled={removingPromotionId === product.id}
+                                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors min-w-[100px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {removingPromotionId === product.id ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-3 h-3 animate-spin rounded-full border border-red-600 border-t-transparent" />
+                                      <span>Removing...</span>
+                                    </div>
+                                  ) : (
+                                    "Remove Promotion"
+                                  )}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handlePromoteItem(product.id, "product")
+                                  }
+                                  disabled={
+                                    !isProfileComplete() ||
+                                    promotingItemId === product.id
+                                  }
+                                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors min-w-[100px] ${
+                                    !isProfileComplete()
+                                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                      : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50"
+                                  }`}
+                                >
+                                  {promotingItemId === product.id ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <div className="w-3 h-3 animate-spin rounded-full border border-orange-600 border-t-transparent" />
+                                      <span>Promoting...</span>
+                                    </div>
+                                  ) : (
+                                    "Promote"
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -2389,7 +2711,7 @@ const NeighbourLinkBusiness: React.FC = () => {
               <div className="mt-4">
                 <button
                   onClick={() => fileInputGallery.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full justify-center"
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors w-full justify-center"
                 >
                   <Plus className="w-4 h-4" />
                   Add Images
