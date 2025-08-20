@@ -18,6 +18,9 @@ const config: Config = {
         '100': '100',
         '200': '200',
       },
+      backdropBlur: {
+        xs: '2px',
+      },
     },
   },
   plugins: [],
