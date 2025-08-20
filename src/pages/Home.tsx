@@ -441,13 +441,13 @@ export const FloatingActionMenu: React.FC<{
         </div>
       </div>
 
-      <button
+      {/* <button
         className={`fixed ${isMobile ? "bottom-20 right-5" : "bottom-8 right-8"} h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg z-50 transition-transform duration-300`}
         onClick={()=>{setIsSidebarOpen(false); toggleMenu()}}
         aria-label="Open menu"
       >
         <Plus size={28} className={`transition-transform duration-300 ${isOpen ? 'rotate-45' : 'rotate-0'}`} />
-      </button>
+      </button> */}
     </div>
   );
 };
