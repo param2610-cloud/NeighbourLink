@@ -5,6 +5,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { BusinessCollection } from "@/interface/main";
 import { uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
+import { useNavigate } from "react-router-dom";
 
 const BUSINESS_TYPES = [
   "-- select --",
@@ -35,6 +36,7 @@ const CreateBusiness: React.FC = () => {
   const [businessProfileImage, setBusinessProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   // Handle verification doc upload
   const handleVerificationDocChange = (
@@ -182,6 +184,7 @@ const CreateBusiness: React.FC = () => {
       setProfilePreview(null);
 
       console.log("Business created with ID:", docRef.id);
+      navigate("/business")
     } catch (error) {
       console.error("Error creating business:", error);
       toast.error("Failed to create business. Please try again.");

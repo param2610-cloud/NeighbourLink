@@ -27,7 +27,7 @@ import NewUpdateForm from "@/components/update/UpdateFormSingleComponent";
 import UpdatesPage from "@/components/update/UpdatesFeedPage";
 import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
-import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusiness";
+import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusinessModular";
 import BusinessViewPage from "@/components/bussiness/BusinessViewPage";
 
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
