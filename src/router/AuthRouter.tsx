@@ -28,6 +28,7 @@ import UpdatesPage from "@/components/update/UpdatesFeedPage";
 import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
 import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusiness";
+import BusinessViewPage from "@/components/bussiness/BusinessViewPage";
 
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
 const ResourceForm = lazy(() => import("@/components/Forms/ResourceForm"));
@@ -37,7 +38,9 @@ const UserSharedResources = lazy(
 );
 const SearchPage = lazy(() => import("@/components/search/SearchPage"));
 const PostDetailsPage = lazy(() => import("@/components/post/PostDetailsPage"));
-const ResourceDetailsPage = lazy(() => import("@/components/resource/ResourceDetailsPage"));
+const ResourceDetailsPage = lazy(
+  () => import("@/components/resource/ResourceDetailsPage")
+);
 
 const AuthRouter: React.FC = () => {
   const [user, setUser] = useState<any>();
@@ -65,7 +68,9 @@ const AuthRouter: React.FC = () => {
       });
 
       // Add the notification ID to shown notifications in localStorage
-      const shown = JSON.parse(localStorage.getItem("shown_notifications") || "[]");
+      const shown = JSON.parse(
+        localStorage.getItem("shown_notifications") || "[]"
+      );
       if (!shown.includes(notification.id)) {
         shown.push(notification.id);
         localStorage.setItem("shown_notifications", JSON.stringify(shown));
@@ -118,7 +123,11 @@ const AuthRouter: React.FC = () => {
           <Route path="/update/new" element={<NewUpdateForm />} />
           <Route path="/register" element={<Navigate to="/" />} />
           <Route path="/login" element={<Navigate to="/" />} />
-          <Route path="/business" element={<NeighbourLinkBusiness/>} />
+          <Route path="/business" element={<NeighbourLinkBusiness />} />
+          <Route
+            path="/business/view/:businessId"
+            element={<BusinessViewPage />}
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>

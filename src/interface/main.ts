@@ -73,7 +73,6 @@ export interface PromotionFormData {
     contact: string;
     email: string;
   };
-  useProfileLocation: boolean;
   location?: Location;
   visibilityRadius: string;
   images?: string[];
