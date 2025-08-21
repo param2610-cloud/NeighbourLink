@@ -22,7 +22,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
         const startAngle = -45.7 - (angleRange / 2); // Start from left (-90 degrees is top)
         const angle = startAngle + (index * (angleRange / (totalItems - 1))) * (Math.PI / 180);
 
-        const radius = 140; // Distance from center
+        const radius = 120; // Distance from center
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
 
@@ -98,7 +98,7 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal, setI
     const quickActions = [
         { icon: <Search size={20} />, label: 'Search', action: () => navigate("/search") },
         { icon: <BookOpen size={20} />, label: 'Resorce', action: () => openModal('resource') },
-        { icon: <Bell size={20} />, label: 'Promote', action: () => openModal('promotion') },
+        // { icon: <Bell size={20} />, label: 'Promote', action: () => openModal('promotion') },
         { icon: <Calendar size={20} />, label: 'Event', action: () => openModal('event') },
         { icon: <Users size={20} />, label: 'Update', action: () => openModal('update') },
         {
@@ -117,7 +117,7 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal, setI
     };
 
     return (
-        <div className={`fixed top-17.5 ${isMobile ? "right-5" : "right-20"} z-50`}>
+        <div className={`fixed top-17.5 ${isMobile ? "right-5" : "right-8   "} z-50`}>
             {/* Main button */}
             
             <button

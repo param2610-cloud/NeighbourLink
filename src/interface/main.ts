@@ -78,6 +78,7 @@ export interface PromotionFormData {
   images?: string[];
   videoUrl?: string;
   duration: string;
+  isPromoted: boolean;
 }
 
 export interface UpdateFormData {
@@ -106,8 +107,35 @@ export interface UpdateWithUserData extends UpdateFormData {
   replyCount?: number;
 }
 
+export interface Review {
+  id: string;
+  title: string;
+  body: string;
+  reviewerName: string;
+  date: string;
+  rating: number;
+  reviewerAvatar?: string;
+}
+
+export interface UserInteraction {
+  userId: string;
+  type: 'like' | 'rating' | 'feedback';
+  value?: number; // for ratings (1-5)
+  comment?: string; // for feedback
+  timestamp: Date;
+}
+
+export interface BusinessStats {
+  totalViews: number;
+  totalLikes: number;
+  averageRating: number;
+  totalRatings: number;
+  totalFeedbacks: number;
+  monthlyViews: number;
+  monthlyLikes: number;
+}
+
 export interface BusinessCollection {
-  
   id: string;
   businessName: string;
   businessBio: string;
@@ -146,7 +174,6 @@ export interface BusinessCollection {
   services: {
     id: string;
     name: string;
-    itemId?: string;
     description?: string;
     price?: number;
     duration?: string;
@@ -156,10 +183,9 @@ export interface BusinessCollection {
   products: {
     id: string;
     name: string;
-    itemId?: string;
     description?: string;
     price?: number;
-    stock?: number; 
+    stock?: number;
     imageUrl?: string[];
   }[];
 
@@ -167,4 +193,14 @@ export interface BusinessCollection {
     question: string;
     answer: string;
   }[];
+
+  // Add promoted items tracking
+  promotedItems?: {
+    serviceIds: string[];
+    productIds: string[];
+  };
+
+  // User interactions
+  userInteractions?: UserInteraction[];
+  stats?: BusinessStats;
 }

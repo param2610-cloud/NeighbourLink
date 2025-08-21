@@ -103,7 +103,6 @@ interface BusinessCollection {
 import { useStateContext } from "@/contexts/StateContext";
 import { UserInteractionCard } from "./components";
 import { useBusinessInteractions } from "./hooks/useBusinessInteractions";
-import { BusinessCollection, Review } from "./types";
 
 const StarRating: React.FC<{ rating: number; className?: string }> = ({
   rating,
