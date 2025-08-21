@@ -358,8 +358,8 @@ const Home: React.FC = () => {
                     className="absolute inset-0 rounded-full z-0"
                     style={{
                       background: 'conic-gradient(#3b82f6, #8b5cf6, #f59e0b, #3b82f6)',
-                      filter: 'blur(12px)',
-                      WebkitFilter: 'blur(6px)',
+                      filter: 'blur(22px)',
+                      WebkitFilter: 'blur(10px)',
                       animation: 'spinRing 3s linear infinite'
                     }}
                   />
