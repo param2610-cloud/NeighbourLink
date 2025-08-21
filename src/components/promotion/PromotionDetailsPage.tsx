@@ -1,17 +1,34 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { auth, db } from '../../firebase';
-import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHeart } from 'react-icons/ai';
-import { BiMessageDetail } from 'react-icons/bi';
-import { IoMdArrowBack } from 'react-icons/io';
-import { FiPhone, FiMail, FiMapPin, FiClock, FiUser } from 'react-icons/fi';
-import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
-import { onAuthStateChanged } from 'firebase/auth';
-import { toast } from 'react-toastify';
-import { getOrCreateConversationWithUser } from '../../services/messagingService';
-import { ImageDisplay, VideoDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
-
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  query,
+  collection,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { auth, db } from "../../firebase";
+import {
+  AiOutlineLoading3Quarters,
+  AiOutlineHeart,
+  AiOutlineShareAlt,
+  AiFillHeart,
+} from "react-icons/ai";
+import { BiMessageDetail } from "react-icons/bi";
+import { IoMdArrowBack } from "react-icons/io";
+import { FiPhone, FiMail, FiMapPin, FiClock, FiUser } from "react-icons/fi";
+import GoogleMapsViewer from "../../utils/google_map/GoogleMapsViewer";
+import { onAuthStateChanged } from "firebase/auth";
+import { toast } from "react-toastify";
+import { getOrCreateConversationWithUser } from "../../services/messagingService";
+import {
+  ImageDisplay,
+  VideoDisplay,
+} from "@/utils/cloudinary/CloudinaryDisplay";
 
 interface Promotion {
   id?: string;
@@ -42,6 +59,7 @@ interface UserInfo {
   photoURL: string;
   email: string;
   verified?: boolean;
+  businessProfileImage?: string; // Add this field
 }
 
 interface Media {
@@ -115,6 +133,20 @@ const PromotionDetailsPage = () => {
               doc(db, "Users", promotionData.userId)
             );
             console.log("User document exists:", userDoc.exists());
+
+            // Also fetch business info for profile image
+            const businessQuery = query(
+              collection(db, "business"),
+              where("ownerId", "==", promotionData.userId)
+            );
+            const businessSnapshot = await getDocs(businessQuery);
+
+            let businessData = null;
+            if (!businessSnapshot.empty) {
+              businessData = businessSnapshot.docs[0].data();
+              console.log("Business data loaded:", businessData);
+            }
+
             if (userDoc.exists()) {
               const userData = userDoc.data();
               console.log("User data loaded:", userData);
@@ -122,13 +154,17 @@ const PromotionDetailsPage = () => {
                 displayName:
                   `${userData.firstName.trim()} ${userData.lastName.trim()}` ||
                   "Anonymous",
-                photoURL: userData.photo || "",
+                photoURL:
+                  businessData?.businessProfileImage || userData.photo || "",
                 email: userData.email || "",
                 verified: userData.isVerified || false,
+                businessProfileImage: businessData?.businessProfileImage || "",
               });
               console.log("Provider info set:", {
                 displayName: userData.displayName || "Anonymous",
-                photoURL: Boolean(userData.photoURL),
+                photoURL: Boolean(
+                  businessData?.businessProfileImage || userData.photo
+                ),
                 email: userData.email || "",
                 verified: userData.isVerified || false,
               });
@@ -401,377 +437,454 @@ const PromotionDetailsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Back button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="fixed top-4 left-4 z-30 p-2 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors backdrop-blur-sm"
-      >
-        <IoMdArrowBack className="text-xl" />
-      </button>
-
-      {/* Main Container - Two Column Layout */}
-      <div className="flex h-screen">
-        
-        {/* Left Sidebar - Business Details (20%) - FIXED */}
-        <div className="w-1/5 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 fixed left-0 top-0 h-full overflow-y-auto z-10">
-          <div className="p-6 pt-20">
-            {/* Business Information */}
-            {providerInfo && (
-              <div className="space-y-6">
-                {/* Business Header */}
-                <div className="text-center pb-4 border-b border-gray-200 dark:border-gray-700">
-                  {providerInfo.photoURL && (
-                    <img
-                      src={providerInfo.photoURL}
-                      alt={providerInfo.displayName}
-                      className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-indigo-100 dark:border-indigo-900 shadow-lg"
-                    />
-                  )}
-                  <h3 className="font-bold text-gray-900 dark:text-white text-xl mb-2">
-                    {providerInfo.displayName}
-                  </h3>
-                  {providerInfo.verified && (
-                    <span className="inline-flex items-center bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200 text-sm px-3 py-1 rounded-full font-medium">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                      Verified Business
-                    </span>
-                  )}
-                </div>
-
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-lg">Contact Details</h4>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <FiUser className="mr-3 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Contact Person</p>
-                        <p className="text-gray-700 dark:text-gray-300 font-medium truncate">{promotion.contactInfo.name}</p>
-                      </div>
-                    </div>
-
-                    {promotion.contactInfo.contact && (
-                      <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <FiPhone className="mr-3 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Phone</p>
-                          <p className="text-gray-700 dark:text-gray-300 font-medium truncate">{promotion.contactInfo.contact}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {promotion.contactInfo.email && (
-                      <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <FiMail className="mr-3 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Email</p>
-                          <p className="text-gray-700 dark:text-gray-300 font-medium truncate">{promotion.contactInfo.email}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <FiClock className="mr-3 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Posted On</p>
-                        <p className="text-gray-700 dark:text-gray-300 font-medium">{formatDate(promotion.createdAt)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-3">
-                  <button
-                    onClick={handleViewBusiness}
-                    className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold text-sm shadow-sm"
-                  >
-                    View Business Profile
-                  </button>
-                  
-                  <button
-                    onClick={handleContact}
-                    className={`w-full py-3 px-4 ${firebaseUser
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-green-400 cursor-not-allowed"
-                      } text-white rounded-lg flex items-center justify-center font-semibold text-sm transition-colors shadow-sm`}
-                    disabled={!firebaseUser}
-                  >
-                    <BiMessageDetail className="mr-2 text-lg" /> Contact Business
-                  </button>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSavePromotion}
-                      disabled={!firebaseUser || saveLoading}
-                      className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg font-medium text-sm ${!firebaseUser
-                          ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700 text-gray-400"
-                          : isSaved
-                            ? "text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
-                            : "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        } transition-colors`}
-                      title={
-                        !firebaseUser
-                          ? "Login to save promotions"
-                          : isSaved
-                            ? "Remove from saved"
-                            : "Save promotion"
-                      }
-                    >
-                      {saveLoading ? (
-                        <AiOutlineLoading3Quarters className="animate-spin" />
-                      ) : isSaved ? (
-                        <AiFillHeart />
-                      ) : (
-                        <AiOutlineHeart />
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={handleSharePromotion}
-                      className="flex-1 flex items-center justify-center px-3 py-2 text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium text-sm"
-                    >
-                      <AiOutlineShareAlt />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Additional Info */}
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{promotion.duration}</p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Days Left</p>
-                    </div>
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
-                      <p className="text-sm font-bold text-purple-600 dark:text-purple-400">{promotion.visibilityRadius}</p>
-                      <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Radius</p>
-                    </div>
-                  </div>
-                </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Professional Header Bar */}
+      <div className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors font-medium"
+            >
+              <IoMdArrowBack className="text-lg" />
+              <span className="hidden sm:inline">Back to Listings</span>
+            </button>
+            <div className="flex-1 flex justify-center">
+              <div className="flex  items-center justify-center ">
+                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600 ">
+                Neighbour
+              </h1>
+              <h1 className="text-xl font-bold text-blue-600 dark:text-blue-500">
+              Link
+              </h1>
+              <span className="mx-2 text-blue-500">
+                |
+              </span>
+              <h2 className="text-xl font-bold text-green-600 dark:text-green-400">
+                Spotlight
+              </h2> 
               </div>
-            )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Right Content - Product/Service Details (80%) - SCROLLABLE */}
-        <div className="w-4/5 ml-[20%] bg-white dark:bg-gray-800 overflow-y-auto">
-          <div className="max-w-6xl mx-auto">
-            
-            {/* Media Gallery Section */}
-            <div className="bg-white dark:bg-gray-800">
-              {media.hasMedia ? (
-                <div className="w-full h-96 lg:h-[600px] relative bg-gray-100 dark:bg-gray-700">
-                  {media.mediaItems[currentImageIndex].type === "video" ? (
-                    <VideoDisplay
-                      publicId={media.mediaItems[currentImageIndex].url}
-                      className="w-full h-full object-contain"
-                      autoPlay={true}
-                      loop={true}
-                      muted={true}
-                      playsInline={true}
-                      controls={true}
-                    />
-                  ) : (
-                    <ImageDisplay
-                      publicId={media.mediaItems[currentImageIndex].url}
-                      className="w-full h-full object-contain"
-                    />
-                  )}
-
-                  {/* Navigation arrows */}
-                  {media.mediaItems.length > 1 && (
-                    <>
-                      <button
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors backdrop-blur-sm"
-                        onClick={() => navigateMedia("prev")}
-                      >
-                        <span className="text-xl font-bold text-gray-700 dark:text-gray-300">&lt;</span>
-                      </button>
-                      <button
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-colors backdrop-blur-sm"
-                        onClick={() => navigateMedia("next")}
-                      >
-                        <span className="text-xl font-bold text-gray-700 dark:text-gray-300">&gt;</span>
-                      </button>
-                    </>
-                  )}
-
-                  {/* Media type indicator */}
-                  <div className="absolute top-4 right-4 bg-black/80 text-white text-sm rounded-lg px-3 py-2 font-medium">
-                    {media.mediaItems[currentImageIndex].type === "video"
-                      ? "📹 Video"
-                      : `📷 Photo ${currentImageIndex + 1 - (promotion.videoUrl ? 1 : 0)} of ${media.mediaItems.length - (promotion.videoUrl ? 1 : 0)}`}
+      {/* Main Container - Full Width Responsive Layout */}
+      <div className="px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 lg:gap-6 max-w-[1600px] mx-auto">
+          {/* Left Sidebar - Business Information */}
+          <div className="xl:col-span-1 order-2 xl:order-1">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden xl:sticky xl:top-20">
+              {/* Business Profile Section */}
+              {providerInfo && (
+                <div className="p-4 lg:p-5">
+                  {/* Business Header */}
+                  <div className="text-center mb-5">
+                    {(providerInfo?.businessProfileImage ||
+                      providerInfo?.photoURL) && (
+                      <div className="w-16 h-16 lg:w-18 lg:h-18 rounded-xl mx-auto mb-3 border-2 border-slate-200 dark:border-slate-600 overflow-hidden bg-slate-100 dark:bg-slate-700">
+                        <ImageDisplay
+                          publicId={
+                            providerInfo.businessProfileImage ||
+                            providerInfo.photoURL
+                          }
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <h3 className="font-semibold text-slate-900 dark:text-white text-base lg:text-lg mb-2 line-clamp-1">
+                      {promotion.contactInfo.name}
+                    </h3>
+                    {providerInfo.verified && (
+                      <div className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-xs px-2 py-1 rounded-lg font-medium">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                        Verified
+                      </div>
+                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="w-full h-96 lg:h-[600px] flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-                  <div className="text-center">
-                    <div className="text-6xl mb-4">📷</div>
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">No media available</p>
+
+                  {/* Contact Information */}
+                  <div className="space-y-3 mb-5">
+                    <h4 className="font-medium text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wide">
+                      Contact Info
+                    </h4>
+
+                    <div className="space-y-2.5">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <FiUser className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            Representative
+                          </p>
+                          <p className="text-slate-700 dark:text-slate-300 font-medium text-sm line-clamp-1">
+                            {providerInfo.displayName}
+                          </p>
+                        </div>
+                      </div>
+
+                      {promotion.contactInfo.contact && (
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-7 h-7 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <FiPhone className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              Phone
+                            </p>
+                            <p className="text-slate-700 dark:text-slate-300 font-medium text-sm">
+                              {promotion.contactInfo.contact}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {promotion.contactInfo.email && (
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-7 h-7 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <FiMail className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              Email
+                            </p>
+                            <p className="text-slate-700 dark:text-slate-300 font-medium text-sm break-all">
+                              {promotion.contactInfo.email}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <FiClock className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            Published
+                          </p>
+                          <p className="text-slate-700 dark:text-slate-300 font-medium text-sm">
+                            {formatDate(promotion.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Professional Action Buttons */}
+                  <div className="space-y-2.5">
+                    <button
+                      onClick={handleViewBusiness}
+                      className="w-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 py-2.5 px-3 rounded-lg font-medium text-sm hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                    >
+                      View Business Profile
+                    </button>
+
+                    <button
+                      onClick={handleContact}
+                      className={`w-full py-2.5 px-3 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 ${
+                        firebaseUser
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
+                          : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                      }`}
+                      disabled={!firebaseUser}
+                    >
+                      <BiMessageDetail className="w-4 h-4" />
+                      Contact Business
+                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSavePromotion}
+                        disabled={!firebaseUser || saveLoading}
+                        className={`flex-1 flex items-center justify-center px-3 py-2 rounded-lg font-medium text-sm transition-colors ${
+                          !firebaseUser
+                            ? "bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+                            : isSaved
+                            ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                            : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600"
+                        }`}
+                        title={
+                          !firebaseUser
+                            ? "Login to save promotions"
+                            : isSaved
+                            ? "Remove from saved"
+                            : "Save promotion"
+                        }
+                      >
+                        {saveLoading ? (
+                          <AiOutlineLoading3Quarters className="w-4 h-4 animate-spin" />
+                        ) : isSaved ? (
+                          <AiFillHeart className="w-4 h-4" />
+                        ) : (
+                          <AiOutlineHeart className="w-4 h-4" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleSharePromotion}
+                        className="flex-1 flex items-center justify-center px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium text-sm"
+                      >
+                        <AiOutlineShareAlt className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Promotion Details */}
+                  <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-lg text-center">
+                        <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                          {promotion.duration}
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          Days
+                        </p>
+                      </div>
+                      <div className="bg-violet-50 dark:bg-violet-900/20 p-2.5 rounded-lg text-center">
+                        <p className="text-sm font-bold text-violet-700 dark:text-violet-400 line-clamp-1">
+                          {promotion.visibilityRadius}
+                        </p>
+                        <p className="text-xs text-violet-600 dark:text-violet-400 font-medium">
+                          Range
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
+            </div>
+          </div>
 
-              {/* Thumbnails for navigation */}
-              {media.mediaItems.length > 1 && (
-                <div className="p-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex space-x-3 overflow-x-auto">
-                    {media.mediaItems.map((item, i) => (
-                      <div
-                        key={i}
-                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden cursor-pointer border-2 ${i === currentImageIndex ? "border-indigo-500 shadow-lg" : "border-gray-200 dark:border-gray-600"
-                        } hover:border-indigo-400 transition-all duration-200`}
-                        onClick={() => setCurrentImageIndex(i)}
-                      >
-                        {item.type === "video" ? (
-                          <div className="relative w-full h-full">
-                            <VideoDisplay
-                              publicId={item.url}
-                              className="w-full h-full object-cover"
-                              controls={false}
-                            />
-                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                              <span className="bg-black/60 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                                ▶
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <ImageDisplay
-                            publicId={item.url}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+          {/* Main Content Area */}
+          <div className="xl:col-span-4 order-1 xl:order-2 space-y-4 lg:space-y-6">
+            {/* Media Gallery */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+              {media.hasMedia ? (
+                <>
+                  <div className="relative aspect-video lg:aspect-[21/9] bg-slate-100 dark:bg-slate-700">
+                    {media.mediaItems[currentImageIndex].type === "video" ? (
+                      <VideoDisplay
+                        publicId={media.mediaItems[currentImageIndex].url}
+                        className="w-full h-full object-contain"
+                        autoPlay={true}
+                        loop={true}
+                        muted={true}
+                        playsInline={true}
+                        controls={true}
+                      />
+                    ) : (
+                      <ImageDisplay
+                        publicId={media.mediaItems[currentImageIndex].url}
+                        className="w-full h-full object-contain"
+                      />
+                    )}
+
+                    {/* Navigation */}
+                    {media.mediaItems.length > 1 && (
+                      <>
+                        <button
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/95 dark:bg-slate-800/95 rounded-full shadow-lg hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center justify-center"
+                          onClick={() => navigateMedia("prev")}
+                        >
+                          <span className="text-slate-700 dark:text-slate-300 font-semibold">
+                            &lt;
+                          </span>
+                        </button>
+                        <button
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/95 dark:bg-slate-800/95 rounded-full shadow-lg hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center justify-center"
+                          onClick={() => navigateMedia("next")}
+                        >
+                          <span className="text-slate-700 dark:text-slate-300 font-semibold">
+                            &gt;
+                          </span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* Media Counter */}
+                    <div className="absolute top-3 right-3 bg-slate-900/80 text-white text-sm rounded-lg px-2.5 py-1 font-medium">
+                      {media.mediaItems[currentImageIndex].type === "video"
+                        ? "Video"
+                        : `${
+                            currentImageIndex + 1 - (promotion.videoUrl ? 1 : 0)
+                          } of ${
+                            media.mediaItems.length -
+                            (promotion.videoUrl ? 1 : 0)
+                          }`}
+                    </div>
+                  </div>
+
+                  {/* Thumbnails */}
+                  {media.mediaItems.length > 1 && (
+                    <div className="p-3 lg:p-4 bg-slate-50 dark:bg-slate-700/50 border-t border-slate-200 dark:border-slate-600">
+                      <div className="flex gap-2 overflow-x-auto">
+                        {media.mediaItems.map((item, i) => (
+                          <button
+                            key={i}
+                            className={`flex-shrink-0 w-14 h-14 lg:w-16 lg:h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                              i === currentImageIndex
+                                ? "border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800"
+                                : "border-slate-200 dark:border-slate-600"
+                            }`}
+                            onClick={() => setCurrentImageIndex(i)}
+                          >
+                            {item.type === "video" ? (
+                              <div className="relative w-full h-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center">
+                                <span className="text-slate-500 text-xs">
+                                  ▶
+                                </span>
+                              </div>
+                            ) : (
+                              <ImageDisplay
+                                publicId={item.url}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </button>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="aspect-video lg:aspect-[21/9] flex items-center justify-center bg-slate-100 dark:bg-slate-700">
+                  <div className="text-center">
+                    <div className="text-4xl mb-2">📷</div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      No media available
+                    </p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Product Details Section */}
-            <div className="p-8 space-y-8">
-              {/* Title and Status */}
-              <div>
-                <div className="flex flex-wrap gap-3 mb-4">
-                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300">
-                    🎯 Special Promotion
+            {/* Promotion Details */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 lg:p-6">
+              {/* Header */}
+              <div className="mb-6">
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+                    Special Promotion
                   </span>
-                  <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 dark:from-green-900/30 dark:to-emerald-900/30 dark:text-green-300">
-                    ⚡ Limited Time
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300">
+                    Limited Time
                   </span>
                 </div>
-                
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
+
+                <h1 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-slate-900 dark:text-white mb-3 leading-tight">
                   {promotion.title}
                 </h1>
 
-                <div className="flex items-center gap-4 text-lg">
-                  <div className="flex items-center text-green-600 dark:text-green-400 font-semibold">
-                    <FiClock className="mr-2" />
-                    {promotion.duration} days remaining
+                <div className="flex flex-wrap items-center gap-4 lg:gap-6 text-sm">
+                  <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                    <FiClock className="w-4 h-4" />
+                    <span className="font-medium">
+                      {promotion.duration} days remaining
+                    </span>
                   </div>
-                  <div className="flex items-center text-blue-600 dark:text-blue-400 font-semibold">
-                    <FiMapPin className="mr-2" />
-                    {promotion.visibilityRadius} radius
+                  <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                    <FiMapPin className="w-4 h-4" />
+                    <span className="font-medium">
+                      {promotion.visibilityRadius} coverage area
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Navigation dots for mobile */}
-              {media.mediaItems.length > 1 && (
-                <div className="flex justify-center gap-2 md:hidden">
-                  {media.mediaItems.map((_, i) => (
-                    <button
-                      key={i}
-                      className={`w-3 h-3 rounded-full transition-colors ${i === currentImageIndex ? "bg-indigo-500" : "bg-gray-300 dark:bg-gray-600"
-                        }`}
-                      onClick={() => setCurrentImageIndex(i)}
-                    />
-                  ))}
-                </div>
-              )}
-
               {/* Description */}
-              <div>
-                <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">
-                  About This Promotion
+              <div className="mb-6">
+                <h2 className="text-lg lg:text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+                  Promotion Details
                 </h2>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-8 border border-gray-200 dark:border-gray-600">
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg whitespace-pre-line">
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line text-sm lg:text-base">
                     {promotion.description}
                   </p>
                 </div>
               </div>
 
-              {/* Highlights */}
-              <div>
-                <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">
-                  Promotion Highlights
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center mb-3">
-                      <div className="p-2 bg-blue-500 rounded-lg mr-4">
-                        <FiClock className="text-white text-xl" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-blue-800 dark:text-blue-200 text-lg">Valid Duration</h3>
-                        <p className="text-blue-600 dark:text-blue-300 font-medium">{promotion.duration} days from today</p>
-                      </div>
+              {/* Key Information */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 lg:p-5 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FiClock className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1 text-sm lg:text-base">
+                        Validity Period
+                      </h3>
+                      <p className="text-blue-700 dark:text-blue-300 text-sm">
+                        {promotion.duration} days from publication date
+                      </p>
                     </div>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center mb-3">
-                      <div className="p-2 bg-purple-500 rounded-lg mr-4">
-                        <FiMapPin className="text-white text-xl" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-purple-800 dark:text-purple-200 text-lg">Service Area</h3>
-                        <p className="text-purple-600 dark:text-purple-300 font-medium">Within {promotion.visibilityRadius}</p>
-                      </div>
+                </div>
+
+                <div className="bg-violet-50 dark:bg-violet-900/20 p-4 lg:p-5 rounded-xl border border-violet-200 dark:border-violet-800">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 bg-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FiMapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-violet-900 dark:text-violet-100 mb-1 text-sm lg:text-base">
+                        Service Coverage
+                      </h3>
+                      <p className="text-violet-700 dark:text-violet-300 text-sm">
+                        Available within {promotion.visibilityRadius}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Location */}
-              {promotion.location && (
-                <div>
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-200 border-b border-gray-200 dark:border-gray-700 pb-2">
-                    Location & Directions
+            {/* Location Section */}
+            {promotion.location && (
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="p-4 lg:p-6">
+                  <h2 className="text-lg lg:text-xl font-semibold mb-4 lg:mb-5 text-slate-800 dark:text-slate-200">
+                    Business Location
                   </h2>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 mb-6 border border-gray-200 dark:border-gray-600">
-                    <div className="flex items-center">
-                      <FiMapPin className="mr-4 text-gray-500 dark:text-gray-400 text-2xl flex-shrink-0" />
+
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 lg:p-5 mb-4 lg:mb-5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 bg-slate-200 dark:bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <FiMapPin className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                      </div>
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm uppercase tracking-wide font-medium">Business Address</p>
-                        <p className="text-gray-800 dark:text-gray-200 font-semibold text-lg">{promotion.location.address}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wide mb-1">
+                          Business Address
+                        </p>
+                        <p className="text-slate-800 dark:text-slate-200 font-medium text-sm lg:text-base">
+                          {promotion.location.address}
+                        </p>
                       </div>
                     </div>
                   </div>
-                  <div className="h-96 rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-600">
+
+                  <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
                     <GoogleMapsViewer
                       center={{
                         lat: promotion.location.latitude,
-                        lng: promotion.location.longitude
+                        lng: promotion.location.longitude,
                       }}
                       zoom={15}
-                      height="384px"
-                      markers={[{
-                        position: {
-                          lat: promotion.location.latitude,
-                          lng: promotion.location.longitude
+                      height="350px"
+                      markers={[
+                        {
+                          position: {
+                            lat: promotion.location.latitude,
+                            lng: promotion.location.longitude,
+                          },
+                          color: "#6366f1",
+                          title: promotion.title,
+                          description: promotion.location.address,
+                          icon: undefined,
                         },
-                        color: '#8B5CF6',
-                        title: promotion.title,
-                        description: promotion.location.address,
-                        icon: undefined
-                      }]}
+                      ]}
                       showCurrentLocation={true}
                       enableGeolocation={true}
                       showDirectionsButton={true}
@@ -779,8 +892,8 @@ const PromotionDetailsPage = () => {
                     />
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
