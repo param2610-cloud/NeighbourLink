@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
@@ -6,7 +6,7 @@ import { IoMdNotifications } from "react-icons/io";
 import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import { Plus, BookOpen, Gift, Calendar, Bell } from 'lucide-react';
+import { BookOpen, Gift, Calendar, Bell } from 'lucide-react';
 import Feed from "./components/Feed";
 import NewPostForm from "@/components/Forms/NewPostForm";
 import { useMobileContext } from "@/contexts/MobileContext";
@@ -206,6 +206,55 @@ const Home: React.FC = () => {
     return deg * (Math.PI / 180);
   };
 
+  const RadiusDropdown: React.FC<{ radius: number; setRadius: React.Dispatch<React.SetStateAction<number>> }> = ({ radius, setRadius }) => {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const options = [1, 3, 5, 10];
+
+    const handleOutside = useCallback((e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }, []);
+
+    useEffect(() => {
+      document.addEventListener('mousedown', handleOutside);
+      return () => document.removeEventListener('mousedown', handleOutside);
+    }, [handleOutside]);
+
+    return (
+      <div ref={containerRef} className="relative">
+        <button
+          onClick={() => setOpen((s) => !s)}
+          className="flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-gray-800 text-sm shadow-sm"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+        >
+          <span className="text-xs text-gray-700 dark:text-gray-200">{radius} km</span>
+          <svg className="h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div
+          className={`absolute right-0 mt-2 w-36 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg z-50 overflow-hidden transform origin-top-right transition-all duration-200 ${open ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'}`}
+          role="listbox"
+          aria-hidden={!open}
+        >
+          {options.map((opt) => (
+            <button
+              key={opt}
+              onClick={() => { setRadius(opt); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm ${opt === radius ? 'bg-indigo-50 dark:bg-indigo-900/30 font-semibold' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+            >
+              {opt} km
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       {
@@ -233,8 +282,8 @@ const Home: React.FC = () => {
             {/* Main Content Area */}
             <div className="md:ml-64">
               {/* Top Navigation */}
-              <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 shadow-md">
-                <div className="flex  items-center justify-between p-4">
+              <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200/10">
+                <div className="flex items-center justify-between p-3 max-w-7xl mx-auto">
                   <div
                     className="flex items-center gap-5 space-x-2 cursor-pointer"
                     onClick={toggleSidebar}
@@ -257,11 +306,27 @@ const Home: React.FC = () => {
                     <h1 className="text-xl font-bold text-violet-800 dark:text-violet-700 ml-1">Link</h1>
                   </div>
 
-                  <div
-                    className="flex items-center space-x-2 cursor-pointer"
-                    onClick={() => navigate("/notifications")}
-                  >
-                    <IoMdNotifications className="text-2xl text-gray-700 dark:text-gray-200" />
+                  <div className="flex items-center space-x-3">
+                    {/* Radius selector merged into header (glassy) */}
+                    <div className="hidden sm:flex items-center space-x-3 px-3 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c1.656 0 3-1.567 3-3.5S13.656 4 12 4s-3 1.567-3 3.5S10.344 11 12 11z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s8-4.5 8-10.5S16.97 3 12 3 4 6.5 4 10.5 12 21 12 21z" />
+                        </svg>
+                        <span className="text-xs text-gray-600 dark:text-gray-300">Radius</span>
+                      </div>
+
+                      <RadiusDropdown radius={radius} setRadius={setRadius} />
+                    </div>
+
+                    <button
+                      onClick={() => navigate("/notifications")}
+                      aria-label="Open notifications"
+                      className="p-2 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 shadow-xl ring-1 ring-purple-300/30 hover:scale-105 transform transition-all duration-200"
+                    >
+                      <IoMdNotifications className="text-2xl text-white" />
+                    </button>
                   </div>
                 </div>
 
@@ -272,48 +337,46 @@ const Home: React.FC = () => {
               </div>
 
               {/* Quick Actions Grid */}
-              <div className="flex justify-center items-center">
+              <div className="flex justify-center items-center mt-3">
                 <QuickActionsButton openModal={openModal} setIsSidebarOpen={setIsSidebarOpen} />
               </div>
 
-              {/* Feed Section */}
-              <div className="fixed z-40 w-full flex-1 px-4 py-4 bg-neutral-100 dark:bg-slate-800 h-16">
-                <div className="fixed gap-5 flex items-center justify-between mb-7">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-600 dark:text-gray-300">Radius:</span>
-                    <select
-                      value={radius}
-                      onChange={(e) => setRadius(Number(e.target.value))}
-                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-xs text-black dark:text-white"
-                    >
-                      <option value={1}>1 km</option>
-                      <option value={3}>3 km</option>
-                      <option value={5}>5 km</option>
-                      <option value={10}>10 km</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
               <div className="flex-1 px-4 py-4 ">
                 <Feed />
               </div>
 
               {/* Floating Action Button */}
-              <FloatingActionMenu openModal={openModal} setIsSidebarOpen={setIsSidebarOpen}/>
+              <FloatingActionMenu openModal={openModal} />
 
               {/* Floating image for PujoGuide navigation (replaces previous FAB) */}
-              <button
-                onClick={() => navigate('/pujo-planner')}
-                aria-label="Go to PujoGuide"
-                className="fixed bottom-6 right-6 z-50 p-0 bg-transparent border-0 rounded-full overflow-hidden shadow-lg pulse-slow hover:cursor-pointer"
-                style={{ width: 72, height: 72 }}
-              >
-                <img
-                  src="/assets/dhak.jpg"
-                  alt="Pujo Guide"
-                  className="w-full h-full object-cover block"
-                />
-              </button>
+              {/* Animated gradient ring (conic) behind the button; keyframes defined inline below */}
+              <div className="fixed bottom-6 right-6 z-50">
+                {/* keyframes for the rotating ring */}
+                <style>{`@keyframes spinRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+                <div className="relative w-[78px] h-[78px]">
+                  <span
+                    className="absolute inset-0 rounded-full z-0"
+                    style={{
+                      background: 'conic-gradient(#3b82f6, #8b5cf6, #f59e0b, #3b82f6)',
+                      filter: 'blur(12px)',
+                      WebkitFilter: 'blur(6px)',
+                      animation: 'spinRing 3s linear infinite'
+                    }}
+                  />
+
+                  <button
+                    onClick={() => navigate('/pujo-planner')}
+                    aria-label="Go to PujoGuide"
+                    className="relative z-10 w-full h-full rounded-full bg-white overflow-hidden shadow-xl border-0 p-0 flex items-center justify-center"
+                  >
+                    <img
+                      src="/assets/dhak.jpg"
+                      alt="Pujo Guide"
+                      className="w-full h-full object-cover block rounded-full"
+                    />
+                  </button>
+                </div>
+              </div>
 
               <NewPostForm
                 isOpen={isModalOpen}
@@ -362,10 +425,8 @@ export default Home;
 
 export const FloatingActionMenu: React.FC<{ 
   openModal: (type?: 'resource' | 'event' | 'promotion' | 'update') => void;
-  setIsSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}> = ({ openModal, setIsSidebarOpen }) => {
+}> = ({ openModal }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { isMobile } = useMobileContext()
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
