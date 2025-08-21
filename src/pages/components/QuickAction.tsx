@@ -22,7 +22,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({ icon, label, onClick, 
         const startAngle = -45.7 - (angleRange / 2); // Start from left (-90 degrees is top)
         const angle = startAngle + (index * (angleRange / (totalItems - 1))) * (Math.PI / 180);
 
-        const radius = 120; // Distance from center
+        const radius = 80; // Distance from center
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius;
 
@@ -117,7 +117,7 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal, setI
     };
 
     return (
-        <div className={`fixed top-17.5 ${isMobile ? "right-5" : "right-8   "} z-50`}>
+        <div className={`fixed top-25.5 ${isMobile ? "right-5" : "right-8   "} z-50`}>
             {/* Main button */}
             
             <button
@@ -136,7 +136,7 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal, setI
                 >
                     {/* Actions container */}
                     <div
-                        className={`fixed top-10 ${isMobile ? "right-20" : "right-30"} inset-0 pointer-events-none flex items-center justify-center`}
+                        className={`fixed top-20 ${isMobile ? "right-20" : "right-30"} inset-0 pointer-events-none flex items-center justify-center`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="absolute pointer-events-auto" style={{ top: 'calc(2rem + 32px)', right: '2rem' }}>

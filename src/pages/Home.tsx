@@ -338,7 +338,7 @@ const Home: React.FC = () => {
               </div>
 
               {/* Quick Actions Grid */}
-              <div className="flex justify-center items-center mt-3">
+              <div className="flex justify-center items-center">
                 <QuickActionsButton openModal={openModal} setIsSidebarOpen={setIsSidebarOpen} />
               </div>
 
