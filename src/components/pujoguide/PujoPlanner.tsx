@@ -200,7 +200,7 @@ const PujoPlanner: React.FC = () => {
                             />
                         </div>
                     </div>
-                    <SplashCursor />
+                    {/* <SplashCursor /> */}
                 </div>
             )}
 
