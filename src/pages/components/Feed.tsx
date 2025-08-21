@@ -360,8 +360,8 @@ export const Feed: React.FC = () => {
   }
 
   return (
-    <div className="container w-full sm:w-[520px] mt-12 mx-auto px-4 py-6 bg-transparent">
-      <div className="space-y-4">
+    <div className="container w-full sm:w-[520px] mx-auto px-4 bg-transparent">
+      <div className="">
         {feedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mb-4">
@@ -467,7 +467,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
 
   return (
     <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden mb-4 border border-transparent hover:border-blue-200 dark:hover:border-blue-600">
+      className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-600">
       {/* Category indicator stripe */}
       {/* <div className={`absolute top-0 left-0 right-0 h-1 ${
         resource.urgency === "high" 
@@ -658,7 +658,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
 
   return (
     <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-purple-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden mb-4 border border-transparent hover:border-purple-200 dark:hover:border-purple-600">
+      className="group relative bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-purple-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-purple-200 dark:hover:border-purple-600">
       {/* Category indicator stripe */}
 
       <div className="p-4">
@@ -881,7 +881,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
 
   return (
     <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-green-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden mb-4 border border-transparent hover:border-green-200 dark:hover:border-green-600">
+      className="group relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-green-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-green-200 dark:hover:border-green-600">
       {/* Category indicator stripe */}
 
 
@@ -1078,7 +1078,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
 
   return (
     <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-900 dark:to-amber-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden mb-4 border border-transparent hover:border-amber-200 dark:hover:border-amber-600">
+      className="group relative bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-900 dark:to-amber-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-amber-200 dark:hover:border-amber-600">
       {/* Category indicator stripe */}
       <div className="p-4">
         <div className="flex justify-between items-start">
