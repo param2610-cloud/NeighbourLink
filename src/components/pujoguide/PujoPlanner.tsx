@@ -237,7 +237,7 @@ const PujoPlanner: React.FC = () => {
                                 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg"
                                 style={{ textShadow: '0 2px 8px rgba(0,0,0,0.85), 0 1px 2px rgba(0,0,0,0.6)' }}
                             >
-                                NeighbourLink | PujoGuide
+                                NeighbourLink | <span  className="text-3xl md:text-5xl font-bold text-yellow-300"> PujoGuide</span>
                             </h1>
                             <div className='flex justify-center items-center h-16 w-16'>
                                 <img src="./assets/dhaki.png" alt="dhaki" height={100} width={100} />

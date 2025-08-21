@@ -399,6 +399,22 @@ body {
   );
 }
 
+/* Subtle slow pulse animation for highlighting CTA elements */
+@keyframes pulse-slow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-slow { animation: none !important; }
+}
+
 .nl-gradient-dark {
   background: linear-gradient(
     to right,

@@ -32,17 +32,13 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
           </button>
         </div>
 
-        {/* Pandal Image Placeholder */}
-        <div className="w-full h-48 bg-gradient-to-br from-gray-400/20 to-gray-600/20 rounded-xl mb-4 flex items-center justify-center backdrop-blur-sm border border-white/10">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-2 opacity-40">
-              <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-white">
-                <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <p className="text-white/60 text-sm">Pandal Image</p>
-          </div>
+        {/* Pandal Image */}
+        <div className="w-full h-48 rounded-xl mb-4 overflow-hidden border border-white/10">
+          <img
+            src={pandal.image ?? 'https://i.cdn.newsbytesapp.com/images/l47920220926121122.jpeg'}
+            alt={pandal.name}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* Description */}
@@ -60,17 +56,19 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
 
         {/* Action Buttons */}
         <div className="flex space-x-3">
-          <button className="flex-1 backdrop-blur-sm bg-white/20 hover:bg-white/30 border border-white/30 hover:border-white/40 text-white text-sm font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2">
+          <button className="flex-1 backdrop-blur-sm hover:cursor-pointer bg-white/20 border border-white/30 hover:border-white/40 text-white text-sm font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
+          onClick={() => onContactClick?.(pandal)}
+          >
             <Eye className="h-4 w-4" />
             <span>View Details</span>
           </button>
           
           <button 
-            className="flex-1 backdrop-blur-sm bg-purple-500/30 hover:bg-purple-500/40 border border-purple-400/30 hover:border-purple-400/40 text-white text-sm font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
-            onClick={() => onContactClick?.(pandal)}
+            className="flex-1 backdrop-blur-sm bg-purple-500/90 hover:cursor-pointer hover:bg-purple-500 border border-purple-400/30 hover:border-purple-400/40 text-white text-sm font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
+            // onClick={() => onContactClick?.(pandal)}
           >
             <MessageCircle className="h-4 w-4" />
-            <span>Contact</span>
+            <span>View in map</span>
           </button>
         </div>
       </div>

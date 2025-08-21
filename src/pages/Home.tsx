@@ -301,17 +301,18 @@ const Home: React.FC = () => {
               {/* Floating Action Button */}
               <FloatingActionMenu openModal={openModal} setIsSidebarOpen={setIsSidebarOpen}/>
 
-              {/* Floating button for PujoGuide navigation */}
+              {/* Floating image for PujoGuide navigation (replaces previous FAB) */}
               <button
-                className="fixed bottom-8 right-8 z-50 bg-gradient-to-tr from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full shadow-lg p-4 flex items-center justify-center transition-all duration-300"
-                style={{ boxShadow: "0 4px 24px rgba(80,0,120,0.15)" }}
                 onClick={() => navigate('/pujo-planner')}
                 aria-label="Go to PujoGuide"
+                className="fixed bottom-6 right-6 z-50 p-0 bg-transparent border-0 rounded-full overflow-hidden shadow-lg pulse-slow hover:cursor-pointer"
+                style={{ width: 72, height: 72 }}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 12l2 2 4-4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
+                <img
+                  src="/assets/dhak.jpg"
+                  alt="Pujo Guide"
+                  className="w-full h-full object-cover block"
+                />
               </button>
 
               <NewPostForm
