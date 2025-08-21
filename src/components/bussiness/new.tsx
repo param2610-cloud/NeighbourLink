@@ -579,6 +579,7 @@ const NeighbourLinkBusiness: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showStatisticsModal, setShowStatisticsModal] = useState(false);
   const [showGalleryDrawer, setShowGalleryDrawer] = useState(false);
+  const [showVerificationDocModal, setShowVerificationDocModal] = useState(false);
   const [incompleteFields, setIncompleteFields] = useState<string[]>([]);
   const [showBusinessDetailsModal, setShowBusinessDetailsModal] = useState(false);
   const navigate = useNavigate();
@@ -732,6 +733,12 @@ const NeighbourLinkBusiness: React.FC = () => {
 
   const handleViewVerificationDocument = () => {
     console.log("View Verification Document clicked");
+    if (businessData?.verificationDocUrl) {
+      setShowVerificationDocModal(true);
+    } else {
+      // Show alert or toast that no verification document is available
+      alert("No verification document available. Please upload a verification document when creating or editing your business profile.");
+    }
   };
 
   const handleUpgradeToPremium = () => {
@@ -1567,6 +1574,62 @@ const NeighbourLinkBusiness: React.FC = () => {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Document Modal */}
+      {showVerificationDocModal && businessData?.verificationDocUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-purple-600" />
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                  Verification Document
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowVerificationDocModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[75vh]">
+              <div className="flex flex-col items-center">
+                <div className="w-full max-w-2xl">
+                  <ImageDisplay
+                    publicId={businessData.verificationDocUrl}
+                    className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg"
+                  />
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Business verification document
+                  </p>
+                  {businessData.isVerified && (
+                    <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm font-medium">Verified Business</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowVerificationDocModal(false)}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

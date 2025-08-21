@@ -17,12 +17,9 @@ import {
   QrCode,
   ArrowLeft,
   MapPin,
-  Camera,
-  Crown,
   MessageCircle,
   Clock,
   Package,
-  Truck,
   Shield,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,8 +56,16 @@ interface BusinessCollection {
   coverImage: string;
   deliverySupport: boolean;
   paymentSupport?: {
-    accountDetails?: string;
-    qrCodeUrl?: string;
+    mode?: "upi" | "bank" | null;
+    upi?: {
+      qrCodeUrl?: string;
+    };
+    bank?: {
+      accountHolderName?: string;
+      accountNumber?: string;
+      ifscCode?: string;
+      bankName?: string;
+    };
   };
   location: {
     latitude: number;
@@ -124,6 +129,7 @@ const BusinessViewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   // Sample reviews data - replace with actual reviews from Firebase
   const reviews: Review[] = [
@@ -211,7 +217,23 @@ const BusinessViewPage: React.FC = () => {
   };
 
   const handleViewQRCode = () => {
-    toast.info("QR Code feature coming soon");
+    if (businessData?.paymentSupport?.mode === "upi" && businessData?.paymentSupport?.upi?.qrCodeUrl) {
+      setShowQrModal(true);
+    } else {
+      toast.info("QR Code not available");
+    }
+  };
+
+  const getPaymentInfo = () => {
+    const payment = businessData?.paymentSupport;
+    if (!payment || !payment.mode) return "Cash only";
+    
+    if (payment.mode === "upi") {
+      return "UPI + Cash";
+    } else if (payment.mode === "bank") {
+      return "Bank Transfer + Cash";
+    }
+    return "Cash only";
   };
 
   const calculateAverageRating = () => {
@@ -426,9 +448,7 @@ const BusinessViewPage: React.FC = () => {
                       Payment
                     </div>
                     <div className="text-gray-600 dark:text-gray-400">
-                      {businessData.paymentSupport?.accountDetails
-                        ? "Digital + Cash"
-                        : "Cash only"}
+                      {getPaymentInfo()}
                     </div>
                   </div>
                 </div>
@@ -443,17 +463,69 @@ const BusinessViewPage: React.FC = () => {
                   <MessageCircle className="w-5 h-5" />
                   Contact Business
                 </button>
-                <button
-                  onClick={handleViewQRCode}
-                  className="w-full flex items-center justify-center gap-2 py-3 md:py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm md:text-base font-medium"
-                >
-                  <QrCode className="w-5 h-5" />
-                  View QR Code
-                </button>
+                {businessData.paymentSupport?.mode === "upi" && businessData.paymentSupport?.upi?.qrCodeUrl && (
+                  <button
+                    onClick={handleViewQRCode}
+                    className="w-full flex items-center justify-center gap-2 py-3 md:py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm md:text-base font-medium"
+                  >
+                    <QrCode className="w-5 h-5" />
+                    View QR Code
+                  </button>
+                )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Payment Details Section */}
+        {businessData.paymentSupport?.mode === "bank" && businessData.paymentSupport?.bank && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-6 overflow-hidden">
+            <div className="p-4 md:p-6">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-green-600" />
+                Bank Details
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Holder Name
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200">
+                    {businessData.paymentSupport.bank.accountHolderName}
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Number
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200 font-mono">
+                    {businessData.paymentSupport.bank.accountNumber}
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    IFSC Code
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200 font-mono">
+                    {businessData.paymentSupport.bank.ifscCode}
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Bank Name
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200">
+                    {businessData.paymentSupport.bank.bankName}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Services Section */}
         {businessData.services && businessData.services.length > 0 && (
@@ -702,6 +774,37 @@ const BusinessViewPage: React.FC = () => {
 
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
               {currentGalleryIndex + 1} / {businessData.gallery.length}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {showQrModal && businessData?.paymentSupport?.mode === "upi" && businessData?.paymentSupport?.upi?.qrCodeUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50 p-4">
+          <div className="relative bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <button
+              onClick={() => setShowQrModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-xl"
+            >
+              ×
+            </button>
+            
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+                UPI Payment QR Code
+              </h3>
+              
+              <div className="bg-white p-4 rounded-lg shadow-md inline-block">
+                <ImageDisplay
+                  publicId={businessData.paymentSupport.upi.qrCodeUrl}
+                  className="w-64 h-64 object-contain"
+                />
+              </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+                Scan this QR code with any UPI app to make payment
+              </p>
             </div>
           </div>
         </div>

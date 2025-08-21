@@ -127,8 +127,16 @@ export interface BusinessCollection {
   coverImage: string;
   deliverySupport: boolean;
   paymentSupport?: {
-    accountDetails?: string;
-    qrCodeUrl?: string;
+    mode?: "upi" | "bank" | null;
+    upi?: {
+      qrCodeUrl?: string;
+    };
+    bank?: {
+      accountHolderName?: string;
+      accountNumber?: string;
+      ifscCode?: string;
+      bankName?: string;
+    };
   };
   location: {
     latitude: number;
@@ -138,6 +146,7 @@ export interface BusinessCollection {
   services: {
     id: string;
     name: string;
+    itemId?: string;
     description?: string;
     price?: number;
     duration?: string;
@@ -147,6 +156,7 @@ export interface BusinessCollection {
   products: {
     id: string;
     name: string;
+    itemId?: string;
     description?: string;
     price?: number;
     stock?: number; 
