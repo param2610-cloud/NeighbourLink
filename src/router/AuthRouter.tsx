@@ -29,6 +29,7 @@ import NeighbourLinkLoader from "@/components/common/NeighbourLinkLoader";
 import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
 import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusinessModular";
 import BusinessViewPage from "@/components/bussiness/BusinessViewPage";
+import PujoPlannerPage from "@/pages/PujoPlannerPage";
 
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
 const ResourceForm = lazy(() => import("@/components/Forms/ResourceForm"));
@@ -128,6 +129,7 @@ const AuthRouter: React.FC = () => {
             path="/business/view/:businessId"
             element={<BusinessViewPage />}
           />
+          <Route path="/pujo-planner" element={<PujoPlannerPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>

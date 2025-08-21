@@ -4,6 +4,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Glassmorphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Text overflow for line clamp fallback */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-synthesis: none;
@@ -374,6 +397,22 @@ body {
     var(--blue-gradient-from),
     var(--teal-gradient-to)
   );
+}
+
+/* Subtle slow pulse animation for highlighting CTA elements */
+@keyframes pulse-slow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+.pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-slow { animation: none !important; }
 }
 
 .nl-gradient-dark {

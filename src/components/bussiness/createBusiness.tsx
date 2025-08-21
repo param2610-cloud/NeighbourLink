@@ -36,7 +36,35 @@ const CreateBusiness: React.FC = () => {
   const [businessProfileImage, setBusinessProfileImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Payment related states
+  const [paymentMode, setPaymentMode] = useState<"upi" | "bank" | "">("");
+  const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
+  const [qrCodePreview, setQrCodePreview] = useState<string | null>(null);
+  const [bankDetails, setBankDetails] = useState({
+    accountHolderName: "",
+    accountNumber: "",
+    ifscCode: "",
+    bankName: "",
+  });
+
+  // Handle QR code upload
+  const handleQrCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setQrCodeFile(e.target.files[0]);
+      setQrCodePreview(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+
+  // Upload QR code
+  async function uploadQrCode() {
+    if (qrCodeFile) {
+      return await uploadFileToCloudinary(qrCodeFile, `qr_${qrCodeFile.name}_${Date.now()}`);
+    }
+  }
+
   const navigate = useNavigate();
+
 
   // Handle verification doc upload
   const handleVerificationDocChange = (
@@ -131,8 +159,29 @@ const CreateBusiness: React.FC = () => {
 
       const businessProfileImagePublicId =await uploadImage();
       const verificationDocPublicId = await uploadVerificationDoc();
+      const qrCodePublicId = paymentMode === "upi" ? await uploadQrCode() : null;
       console.log("after image upload but before form data ")
 
+      // Prepare payment support data
+      let paymentSupportData = {};
+      if (paymentMode === "upi" && qrCodePublicId) {
+        paymentSupportData = {
+          mode: "upi" as const,
+          upi: {
+            qrCodeUrl: qrCodePublicId,
+          },
+        };
+      } else if (paymentMode === "bank") {
+        paymentSupportData = {
+          mode: "bank" as const,
+          bank: {
+            accountHolderName: bankDetails.accountHolderName,
+            accountNumber: bankDetails.accountNumber,
+            ifscCode: bankDetails.ifscCode,
+            bankName: bankDetails.bankName,
+          },
+        };
+      }
 
       // Prepare business data for Firebase
       const businessData: Omit<BusinessCollection, "id"> = {
@@ -151,10 +200,7 @@ const CreateBusiness: React.FC = () => {
         businessProfileImage: businessProfileImagePublicId?businessProfileImagePublicId: "",
         coverImage: "",
         deliverySupport: false,
-        paymentSupport: {
-          accountDetails: "",
-          qrCodeUrl: "",
-        },
+        paymentSupport: paymentSupportData,
         location: {
           latitude: location.lat,
           longitude: location.lng,
@@ -182,6 +228,15 @@ const CreateBusiness: React.FC = () => {
       setLocation(null);
       setBusinessProfileImage(null);
       setProfilePreview(null);
+      setPaymentMode("");
+      setQrCodeFile(null);
+      setQrCodePreview(null);
+      setBankDetails({
+        accountHolderName: "",
+        accountNumber: "",
+        ifscCode: "",
+        bankName: "",
+      });
 
       console.log("Business created with ID:", docRef.id);
       navigate("/business")
@@ -396,7 +451,131 @@ const CreateBusiness: React.FC = () => {
             </div>
           </div>
 
-          <div className="md:col-span-2 flex justify-center mt-4">
+          {/* Payment Support Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+              Payment Support (Optional)
+            </h3>
+            
+            {/* Payment Mode Dropdown */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Payment Mode
+              </label>
+              <select
+                value={paymentMode}
+                onChange={(e) => setPaymentMode(e.target.value as "upi" | "bank" | "")}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 dark:focus:ring-yellow-500 dark:focus:border-yellow-500 text-sm transition-all duration-200"
+              >
+                <option value="">-- Select Payment Mode --</option>
+                <option value="upi">UPI</option>
+                <option value="bank">Bank Account</option>
+              </select>
+            </div>
+
+            {/* UPI QR Code Upload */}
+            {paymentMode === "upi" && (
+              <div className="transition-all duration-300">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Upload UPI QR Code
+                </label>
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-yellow-300 dark:border-yellow-600 rounded-lg cursor-pointer hover:border-yellow-400 dark:hover:border-yellow-500 transition-colors duration-200">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleQrCodeChange}
+                  />
+                  {qrCodePreview ? (
+                    <img
+                      src={qrCodePreview}
+                      alt="QR Code Preview"
+                      className="h-full w-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center text-yellow-400 dark:text-yellow-500">
+                      <svg
+                        className="w-10 h-10 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">Upload QR Code</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        PNG, JPG, JPEG up to 10MB
+                      </span>
+                    </div>
+                  )}
+                </label>
+              </div>
+            )}
+
+            {/* Bank Details Form */}
+            {paymentMode === "bank" && (
+              <div className="transition-all duration-300 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Account Holder Name
+                  </label>
+                  <input
+                    type="text"
+                    value={bankDetails.accountHolderName}
+                    onChange={(e) => setBankDetails({...bankDetails, accountHolderName: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 dark:focus:ring-yellow-500 dark:focus:border-yellow-500 text-sm transition-all duration-200"
+                    placeholder="Enter account holder name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    value={bankDetails.accountNumber}
+                    onChange={(e) => setBankDetails({...bankDetails, accountNumber: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 dark:focus:ring-yellow-500 dark:focus:border-yellow-500 text-sm transition-all duration-200"
+                    placeholder="Enter account number"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    IFSC Code
+                  </label>
+                  <input
+                    type="text"
+                    value={bankDetails.ifscCode}
+                    onChange={(e) => setBankDetails({...bankDetails, ifscCode: e.target.value.toUpperCase()})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 dark:focus:ring-yellow-500 dark:focus:border-yellow-500 text-sm transition-all duration-200"
+                    placeholder="Enter IFSC code"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Bank Name
+                  </label>
+                  <input
+                    type="text"
+                    value={bankDetails.bankName}
+                    onChange={(e) => setBankDetails({...bankDetails, bankName: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 dark:focus:ring-yellow-500 dark:focus:border-yellow-500 text-sm transition-all duration-200"
+                    placeholder="Enter bank name"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="md:col-span-2 flex justify-center mt-6">
             <button
               type="submit"
               disabled={isSubmitting}
