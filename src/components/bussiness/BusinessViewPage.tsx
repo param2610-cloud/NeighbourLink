@@ -100,6 +100,10 @@ interface BusinessCollection {
     productIds: string[];
   };
 }
+import { useStateContext } from "@/contexts/StateContext";
+import { UserInteractionCard } from "./components";
+import { useBusinessInteractions } from "./hooks/useBusinessInteractions";
+import { BusinessCollection, Review } from "./types";
 
 const StarRating: React.FC<{ rating: number; className?: string }> = ({
   rating,
@@ -122,6 +126,7 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({
 const BusinessViewPage: React.FC = () => {
   const { businessId } = useParams();
   const navigate = useNavigate();
+  const { user } = useStateContext();
   const [businessData, setBusinessData] = useState<BusinessCollection | null>(
     null
   );
@@ -130,6 +135,19 @@ const BusinessViewPage: React.FC = () => {
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [showQrModal, setShowQrModal] = useState(false);
+
+  // Use business interactions hook
+  const {
+    stats,
+    userInteractions,
+    handleLike,
+    handleRate,
+    handleFeedback,
+    incrementViews,
+  } = useBusinessInteractions({
+    businessId: businessId || '',
+    currentUserId: user?.uid,
+  });
 
   // Sample reviews data - replace with actual reviews from Firebase
   const reviews: Review[] = [
@@ -197,6 +215,9 @@ const BusinessViewPage: React.FC = () => {
 
         setBusinessData(business);
         setError(null);
+        
+        // Increment view count
+        incrementViews();
       } catch (err) {
         setError("Failed to load business data. Please try again.");
         console.error("Error fetching business data:", err);
@@ -206,7 +227,7 @@ const BusinessViewPage: React.FC = () => {
     };
 
     fetchBusinessData();
-  }, [businessId]);
+  }, [businessId, incrementViews]);
 
   const handleContactBusiness = () => {
     if (businessData?.contact?.phone) {
@@ -234,12 +255,6 @@ const BusinessViewPage: React.FC = () => {
       return "Bank Transfer + Cash";
     }
     return "Cash only";
-  };
-
-  const calculateAverageRating = () => {
-    if (reviews.length === 0) return 0;
-    const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
-    return (sum / reviews.length).toFixed(1);
   };
 
   if (loading) {
@@ -357,11 +372,11 @@ const BusinessViewPage: React.FC = () => {
 
                   <div className="flex items-center gap-2">
                     <StarRating
-                      rating={Number(calculateAverageRating())}
+                      rating={Number(stats?.averageRating || 0)}
                       className="gap-1"
                     />
                     <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {calculateAverageRating()} ({reviews.length} reviews)
+                      {(stats?.averageRating || 0).toFixed(1)} ({stats?.totalRatings || 0} ratings)
                     </span>
                   </div>
                 </div>
@@ -387,33 +402,45 @@ const BusinessViewPage: React.FC = () => {
 
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 md:p-4 text-center">
                 <div className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-200">
-                  {reviews.length}
+                  {stats?.totalViews || 0}
                 </div>
                 <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                  Reviews
+                  Views
                 </div>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 md:p-4 text-center">
-                <div className="text-lg md:text-xl font-bold text-green-600 dark:text-green-400">
-                  {businessData.deliverySupport ? "✓" : "—"}
+                <div className="text-lg md:text-xl font-bold text-red-600 dark:text-red-400">
+                  {stats?.totalLikes || 0}
                 </div>
                 <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                  Delivery
+                  Likes
                 </div>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 md:p-4 text-center">
-                <div className="text-lg md:text-xl font-bold text-slate-800 dark:text-slate-200">
-                  {businessData.gallery?.length || 0}
+                <div className="text-lg md:text-xl font-bold text-yellow-600 dark:text-yellow-400">
+                  {stats?.averageRating?.toFixed(1) || '0.0'}
                 </div>
                 <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                  Photos
+                  Rating
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* User Interaction Card */}
+        <UserInteractionCard
+          businessId={businessData.id}
+          currentUserId={user?.uid}
+          stats={stats}
+          userInteractions={userInteractions}
+          onLike={handleLike}
+          onRate={handleRate}
+          onFeedback={handleFeedback}
+          className="mb-6"
+        />
 
         {/* Contact Section */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-6 overflow-hidden">
