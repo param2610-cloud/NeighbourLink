@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { pandalData, Pandal } from './data/pandalData';
+import { Pandal } from './data/pandalData';
+import { PandelService } from '../../services/pandelService';
 import SearchBar, { SearchType } from './SearchBar';
 import PandalGrid from './PandalGrid';
 import PandalDetailsPanel from './PandalDetailsPanel';
@@ -25,100 +26,144 @@ const PujoPlanner: React.FC = () => {
     const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
     const [isLocationBased, setIsLocationBased] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [allPandals, setAllPandals] = useState<Pandal[]>([]); // Store all pandals data
     // Poster modal state (opens on page visit)
     const [isPosterOpen, setIsPosterOpen] = useState(false);
     const [isPosterMinimized, setIsPosterMinimized] = useState(false);
 
-    const availableDistricts = getAvailableDistricts(pandalData);
+    const availableDistricts = getAvailableDistricts(allPandals);
 
-    // Initialize with user's location and nearest pandals
+    // Initialize with backend data and user's location
     useEffect(() => {
-        const initializeLocation = async () => {
+        const initializeData = async () => {
             try {
                 setIsLoading(true);
+                
+                // Get user location
                 const location = await getCurrentLocation();
                 setUserLocation(location);
 
-                // Sort pandals by distance from user's location
-                const nearestPandals = sortByDistance(location.lat, location.lng, pandalData);
-                setFilteredPandals(nearestPandals);
-                setIsLocationBased(true);
+                // Fetch pandals from backend based on location
+                let pandals: Pandal[] = [];
+                
+                if (location) {
+                    // Get pandals near user location (5km radius)
+                    const nearbyPandelsData = await PandelService.getPandelsByLocation(
+                        location.lat, 
+                        location.lng, 
+                        4
+                    );
+                    
+                    // Convert backend format to frontend format
+                    console.log(nearbyPandelsData);
+                    
+                    pandals = nearbyPandelsData.map(PandelService.convertToLegacyFormat);
+                    setIsLocationBased(true);
+                } else {
+                    // Fallback: get all pandals
+                    const allPandelsData = await PandelService.getAllPandels();
+                    pandals = allPandelsData.map(PandelService.convertToLegacyFormat);
+                    setIsLocationBased(false);
+                }
+
+                // Store all pandals and set filtered results
+                setAllPandals(pandals);
+                
+                if (location && pandals.length > 0) {
+                    // Sort by distance if we have location
+                    const sortedPandals = sortByDistance(location.lat, location.lng, pandals);
+                    setFilteredPandals(sortedPandals);
+                } else {
+                    // Sort by popularity as fallback
+                    setFilteredPandals(sortByPopularity(pandals));
+                }
+
             } catch (error) {
-                console.error('Error getting location:', error);
-                // Fallback to all pandals sorted by popularity
-                setFilteredPandals(sortByPopularity(pandalData));
+                console.error('Error initializing data:', error);
+                // Fallback to empty array
+                setFilteredPandals([]);
+                setAllPandals([]);
                 setIsLocationBased(false);
             } finally {
                 setIsLoading(false);
             }
         };
 
-        initializeLocation();
-    // open the greeting poster when the page mounts
-    setTimeout(() => setIsPosterOpen(true), 300);
+        initializeData();
+        // open the greeting poster when the page mounts
+        setTimeout(() => setIsPosterOpen(true), 300);
     }, []);
 
-    const handleSearch = (query: string, type: SearchType) => {
+    const handleSearch = async (query: string, type: SearchType) => {
         setSearchQuery(query);
         setSearchType(type);
         setIsLocationBased(false);
 
         if (!query.trim()) {
             // If no query, show location-based results or all pandals
-            if (userLocation) {
-                const nearestPandals = sortByDistance(userLocation.lat, userLocation.lng, pandalData);
+            if (userLocation && allPandals.length > 0) {
+                const nearestPandals = sortByDistance(userLocation.lat, userLocation.lng, allPandals);
                 setFilteredPandals(nearestPandals);
                 setIsLocationBased(true);
             } else {
-                setFilteredPandals(sortByPopularity(pandalData));
+                setFilteredPandals(sortByPopularity(allPandals));
             }
             return;
         }
 
-        let results: Pandal[] = [];
+        try {
+            let results: Pandal[] = [];
 
-        switch (type) {
-            case 'district':
-                // Filter by district and sort by popularity
-                const districtPandals = filterByDistrict(pandalData, query);
-                results = sortByPopularity(districtPandals);
-                break;
+            switch (type) {
+                case 'district':
+                    // Use backend API for district search
+                    const districtPandals = await PandelService.getPandelsByDistrict(query);
+                    results = districtPandals.map(PandelService.convertToLegacyFormat);
+                    results = sortByPopularity(results);
+                    break;
 
-            case 'pandal':
-                // Search for specific pandal name
-                const exactMatches = pandalData.filter(pandal =>
-                    pandal.name.toLowerCase().includes(query.toLowerCase())
-                );
-                // Sort exact matches by popularity, then add location-based suggestions
-                const sortedExactMatches = sortByPopularity(exactMatches);
+                case 'pandal':
+                    // Use backend API for name search
+                    const searchResults = await PandelService.searchPandels(query);
+                    const exactMatches = searchResults.map(PandelService.convertToLegacyFormat);
+                    
+                    // Sort exact matches by popularity, then add location-based suggestions
+                    const sortedExactMatches = sortByPopularity(exactMatches);
 
-                if (sortedExactMatches.length > 0 && userLocation) {
-                    // Find nearby pandals to the first search result
-                    const targetPandal = sortedExactMatches[0];
-                    const nearby = findNearbyPandals(targetPandal, pandalData, 15);
-                    // Combine exact matches with nearby suggestions, avoiding duplicates
-                    const nearbyFiltered = nearby.filter(np =>
-                        !sortedExactMatches.some(em => em.id === np.id)
-                    );
-                    results = [...sortedExactMatches, ...nearbyFiltered];
-                } else {
-                    results = sortedExactMatches;
-                }
-                break;
+                    if (sortedExactMatches.length > 0 && userLocation) {
+                        // Find nearby pandals to the first search result
+                        const targetPandal = sortedExactMatches[0];
+                        const nearby = findNearbyPandals(targetPandal, allPandals, 15);
+                        // Combine exact matches with nearby suggestions, avoiding duplicates
+                        const nearbyFiltered = nearby.filter(np =>
+                            !sortedExactMatches.some(em => em.id === np.id)
+                        );
+                        results = [...sortedExactMatches, ...nearbyFiltered];
+                    } else {
+                        results = sortedExactMatches;
+                    }
+                    break;
 
-            default:
-                // General search across all fields
-                results = pandalData.filter(pandal =>
-                    pandal.name.toLowerCase().includes(query.toLowerCase()) ||
-                    pandal.location.toLowerCase().includes(query.toLowerCase()) ||
-                    pandal.district.toLowerCase().includes(query.toLowerCase()) ||
-                    pandal.description.toLowerCase().includes(query.toLowerCase())
-                );
-                results = sortByPopularity(results);
-                break;
+                default:
+                    // Use backend API for general search
+                    const generalSearchResults = await PandelService.searchPandels(query);
+                    results = generalSearchResults.map(PandelService.convertToLegacyFormat);
+                    results = sortByPopularity(results);
+                    break;
+            }
+
+            setFilteredPandals(results);
+        } catch (error) {
+            console.error('Error searching pandals:', error);
+            // Fallback to client-side search on cached data
+            const clientResults = allPandals.filter(pandal =>
+                pandal.name.toLowerCase().includes(query.toLowerCase()) ||
+                (pandal.location && pandal.location.toLowerCase().includes(query.toLowerCase())) ||
+                (pandal.district && pandal.district.toLowerCase().includes(query.toLowerCase())) ||
+                pandal.description.toLowerCase().includes(query.toLowerCase())
+            );
+            setFilteredPandals(sortByPopularity(clientResults));
         }
-
-        setFilteredPandals(results);
     };
 
     const handlePandalSelect = (pandal: Pandal) => {
@@ -126,7 +171,7 @@ const PujoPlanner: React.FC = () => {
         setIsPanelOpen(true);
 
         // Find nearby pandals for the selected pandal
-        const nearby = findNearbyPandals(pandal, pandalData, 12);
+        const nearby = findNearbyPandals(pandal, allPandals, 12);
         setNearbyPandals(nearby);
     };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { getCloudinaryUrl } from '@/utils/cloudinary/cloudinary';
+import { getCloudinaryUrl } from './cloudinary';
 
 export interface ImageDisplayProps {
   publicId: string;

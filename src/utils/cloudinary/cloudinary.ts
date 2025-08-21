@@ -49,6 +49,9 @@ export const getCloudinaryUrl = (publicId: string, options: CloudinaryOptions = 
   const cloudName = 'dqd7ywrxm';
   const resourceType = options.resource_type || 'image';
   const transformations = options.transformations || '';
+  if(publicId.startsWith("pandal_images")){
+    return `https://res.cloudinary.com/dqd7ywrxm/image/upload/${publicId}.jpg`
+  }
   
   // URL encode the publicId to handle spaces and special characters
   const encodedId = encodeURIComponent(publicId);

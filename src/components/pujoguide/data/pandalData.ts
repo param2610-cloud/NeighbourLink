@@ -3,7 +3,7 @@ export interface Pandal {
   name: string;
   description: string;
   location: string;
-  district: string;
+  district?: string;
   coordinates: {
     lat: number;
     lng: number;
@@ -12,6 +12,15 @@ export interface Pandal {
   avatar: string;
   popularity: number; // 1-10 scale for famous pandals
   category: 'traditional' | 'modern' | 'heritage' | 'community';
+  // Additional fields from backend (optional for backward compatibility)
+  average_rating?: number;
+  banner_image?: string;
+  created_at?: string;
+  updated_at?: string;
+  images?: string[];
+  avatar_image?: string;
+  address?: string;
+  reviews?: any[];
 }
 
 export const pandalData: Pandal[] = [

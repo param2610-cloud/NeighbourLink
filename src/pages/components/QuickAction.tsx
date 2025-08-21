@@ -101,14 +101,14 @@ const QuickActionsButton: React.FC<QuickActionsButtonProps> = ({ openModal, setI
         // { icon: <Bell size={20} />, label: 'Promote', action: () => openModal('promotion') },
         { icon: <Calendar size={20} />, label: 'Event', action: () => openModal('event') },
         { icon: <Users size={20} />, label: 'Update', action: () => openModal('update') },
-        {
-            icon: <MessageSquare size={20} />,
-            label: 'New Update',
-            action: () => {
-                toggleMenu();
-                navigate('/update/new');
-            },
-        },
+        // {
+        //     icon: <MessageSquare size={20} />,
+        //     label: 'New Update',
+        //     action: () => {
+        //         toggleMenu();
+        //         navigate('/update/new');
+        //     },
+        // },
     ];
 
     const handleActionClick = (action: () => void) => {

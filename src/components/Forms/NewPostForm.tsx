@@ -156,9 +156,9 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   onClose = () => {}, 
   initialPostType = null,
   onSuccess = () => {},
-  userData = null, // Accept user data from parent
-  parentUpdateId = undefined, // Default to undefined if not provided
-  threadDepth = 0 // Default to 0 for top-level updates
+  userData = null,
+  parentUpdateId = undefined,
+  threadDepth = 0 
 }) => {
   const { user: currentUser } = useStateContext();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(userData); // Initialize with passed data
@@ -2157,7 +2157,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-100 flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         {!formState.postType ? (
           <Card className="w-full border-border">

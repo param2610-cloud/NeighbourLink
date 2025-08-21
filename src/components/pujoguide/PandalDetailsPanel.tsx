@@ -1,6 +1,8 @@
-import React from 'react';
-import { X, MapPin, Star, Calendar, Clock, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, MapPin, Star, Calendar, Clock, Users, Navigation } from 'lucide-react';
 import { Pandal } from './data/pandalData';
+import { AddressManager } from '../../services/addressManager';
+import ImageCarousel from './ImageCarousel';
 
 interface PandalDetailsPanelProps {
   pandal: Pandal | null;
@@ -17,15 +19,84 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
   nearbyPandals = [], 
   onPandalSelect 
 }) => {
+  const [currentAddress, setCurrentAddress] = useState<string>('');
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+
+  // Update address when pandal changes
+  useEffect(() => {
+    const updateAddressIfNeeded = async () => {
+      if (!pandal || !isOpen) return;
+
+      const displayAddress = pandal.address || pandal.location;
+      setCurrentAddress(displayAddress || '');
+
+      // Only fetch address if we don't have a detailed one and we have coordinates
+      if (!displayAddress || displayAddress.length < 20) {
+        setIsLoadingAddress(true);
+        try {
+          const result = await AddressManager.getAndUpdateAddress(
+            parseInt(pandal.id),
+            pandal.coordinates.lat,
+            pandal.coordinates.lng,
+            displayAddress
+          );
+          
+          if (result.success && result.address) {
+            setCurrentAddress(result.address);
+          }
+        } catch (error) {
+          console.error('Error updating address:', error);
+        } finally {
+          setIsLoadingAddress(false);
+        }
+      }
+    };
+
+    updateAddressIfNeeded();
+  }, [pandal, isOpen]);
+
   if (!pandal) return null;
 
-  const mockReviews = [
+  // Use reviews from pandal or create mock reviews
+  const reviews = pandal.reviews || [
     { id: 1, name: "Rahul S.", rating: 5, comment: "Amazing decorations and peaceful atmosphere!", date: "2 days ago" },
     { id: 2, name: "Priya M.", rating: 4, comment: "Beautiful pandal with traditional touch.", date: "1 week ago" },
     { id: 3, name: "Amit K.", rating: 5, comment: "Must visit! Great cultural programs.", date: "1 week ago" }
   ];
 
-  const averageRating = mockReviews.reduce((sum, review) => sum + review.rating, 0) / mockReviews.length;
+  const averageRating = pandal.average_rating || 
+    (reviews.length > 0 ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : pandal.popularity || 5);
+
+  // Get images array for carousel
+  const getImagesArray = () => {
+    const images: string[] = [];
+    
+    // Add all available images to the array
+    if (pandal.banner_image) images.push(pandal.banner_image);
+    if (pandal.avatar && pandal.avatar !== pandal.banner_image) images.push(pandal.avatar);
+    if (pandal.image && pandal.image !== pandal.banner_image && pandal.image !== pandal.avatar) images.push(pandal.image);
+    if (pandal.images && pandal.images.length > 0) {
+      pandal.images.forEach(img => {
+        if (!images.includes(img)) images.push(img);
+      });
+    }
+    
+    // If no images found, add default
+    if (images.length === 0) {
+      images.push('l47920220926121122.jpeg');
+    }
+    
+    return images;
+  };
+
+  const imagesArray = getImagesArray();
+
+  const handleGetDirections = () => {
+    const lat = pandal.coordinates.lat;
+    const lng = pandal.coordinates.lng;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(mapsUrl, '_blank');
+  };
 
   return (
     <>
@@ -58,7 +129,9 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
             <h3 className="text-lg font-bold text-gray-800 mb-1">{pandal.name}</h3>
             <div className="flex items-center justify-center space-x-1 text-gray-600">
               <MapPin className="h-3 w-3" />
-              <span className="text-xs">{pandal.location}</span>
+              <span className="text-xs">
+                {isLoadingAddress ? 'Loading address...' : (currentAddress || pandal.location)}
+              </span>
             </div>
           </div>
 
@@ -69,7 +142,7 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
               <div className="flex items-center space-x-1">
                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
                 <span className="font-bold text-gray-800 text-sm">{averageRating.toFixed(1)}</span>
-                <span className="text-gray-600 text-xs">({mockReviews.length})</span>
+                <span className="text-gray-600 text-xs">({reviews.length})</span>
               </div>
             </div>
             <div className="flex space-x-1">
@@ -84,6 +157,28 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
             </div>
           </div>
 
+          {/* Image Gallery Carousel */}
+          {imagesArray.length > 0 && (
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2 text-sm">Gallery</h4>
+              <div className="w-full h-48 rounded-lg overflow-hidden">
+                <ImageCarousel
+                  images={imagesArray}
+                  name={pandal.name}
+                  autoSlide={true}
+                  autoSlideInterval={5000}
+                  className="w-full h-full"
+                  showIndicators={imagesArray.length > 1}
+                  showControls={imagesArray.length > 1}
+                  aspectRatio="wide"
+                  baseWidth={320}
+                  pauseOnHover={true}
+                  loop={true}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Compact Description */}
           <div>
             <h4 className="font-semibold text-gray-800 mb-2 text-sm">About</h4>
@@ -95,12 +190,23 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
           {/* Compact Map Section */}
           <div>
             <h4 className="font-semibold text-gray-800 mb-2 text-sm">Location</h4>
-            <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg h-32 flex items-center justify-center border border-gray-300">
+            <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg h-32 flex items-center justify-center border border-gray-300 relative">
               <div className="text-center text-gray-500">
                 <MapPin className="h-6 w-6 mx-auto mb-1" />
-                <p className="text-xs">Map view coming soon</p>
-                <p className="text-xs text-gray-400">{pandal.location}</p>
+                <p className="text-xs">Coordinates: {pandal.coordinates.lat.toFixed(4)}, {pandal.coordinates.lng.toFixed(4)}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {isLoadingAddress ? 'Loading address...' : (currentAddress || pandal.location)}
+                </p>
               </div>
+              {/* Overlay button for opening maps */}
+              <button
+                onClick={handleGetDirections}
+                className="absolute inset-0 hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center opacity-0 hover:opacity-100"
+              >
+                <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                  Open in Maps
+                </div>
+              </button>
             </div>
           </div>
 
@@ -126,7 +232,7 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
           <div>
             <h4 className="font-semibold text-gray-800 mb-2 text-sm">Recent Reviews</h4>
             <div className="space-y-2">
-              {mockReviews.slice(0, 2).map((review) => (
+              {reviews.slice(0, 2).map((review: any) => (
                 <div key={review.id} className="bg-white/60 rounded-lg p-2 border border-white/40">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-1">
@@ -208,7 +314,10 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
           {/* Compact Action Buttons */}
           <div className="sticky bottom-0 bg-white/80 backdrop-blur-sm p-2 -mx-4 -mb-4 border-t border-white/30">
             <div className="space-y-2">
-              <button className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium py-2 px-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1">
+              <button 
+                onClick={handleGetDirections}
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium py-2 px-3 rounded-lg transition-all duration-200 flex items-center justify-center space-x-1"
+              >
                 <MapPin className="h-4 w-4" />
                 <span className="text-sm">Get Directions</span>
               </button>

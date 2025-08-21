@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { collection, query, where, orderBy, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '@/firebase';
 import { UpdateWithUserData } from '@/interface/main';
@@ -13,6 +13,7 @@ import { Skeleton } from '../ui/skeleton';
 import Sidebar from "../authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
 import { useMobileContext } from '@/contexts/MobileContext';
+import NewPostForm from '../Forms/NewPostForm';
 
 const UpdatesPage: React.FC = () => {
     const [updates, setUpdates] = useState<UpdateWithUserData[]>([]);
@@ -20,8 +21,15 @@ const UpdatesPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [firebaseUser, setFirebaseUser] = useState<any>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    // added modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const navigate = useNavigate();
     const { isMobile } = useMobileContext();
+
+    // modal helpers
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -38,6 +46,82 @@ const UpdatesPage: React.FC = () => {
         }
     }
 
+    // Extracted fetch logic so it can be reused after creating a new update
+    const fetchUpdates = useCallback(async () => {
+        try {
+            console.log("Starting updates fetch...");
+            setLoading(true);
+            setError(null);
+
+            const updatesQuery = query(
+                collection(db, 'updates'),
+                where('parentId', '==', null),
+                orderBy('createdAt', 'desc')
+            );
+
+            console.log("Executing updates query...");
+            const updatesSnapshot = await getDocs(updatesQuery);
+            console.log(updatesSnapshot.docs);
+            console.log(`Found ${updatesSnapshot.size} top-level updates`);
+            const updatesData: UpdateWithUserData[] = [];
+
+            const dataPromises = updatesSnapshot.docs.map(async (updateDoc, index) => {
+                const updateData = { id: updateDoc.id, ...updateDoc.data() } as UpdateWithUserData;
+                console.log(`Processing update ${index + 1}/${updatesSnapshot.size}:`, updateDoc.id);
+
+                if (updateData.userId) {
+                    console.log(`Fetching user data for update ${updateDoc.id}, user: ${updateData.userId}`);
+                    const userRef = doc(db, 'Users', updateData.userId);
+                    const userSnap = await getDoc(userRef);
+
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        console.log(`Found user data:`, userData.firstName, userData.lastName);
+                        updateData.userData = {
+                            firstName: userData.firstName,
+                            lastName: userData.lastName,
+                            photoURL: userData.photo
+                        };
+                    } else {
+                        console.warn(`User ${updateData.userId} data not found`);
+                    }
+                } else {
+                    console.warn(`Update ${updateDoc.id} has no userId`);
+                }
+
+                console.log(`Counting replies for update ${updateDoc.id}`);
+                const replyCountQuery = query(
+                    collection(db, 'updates'),
+                    where('parentId', '==', updateDoc.id)
+                );
+                const replyCountSnapshot = await getDocs(replyCountQuery);
+                updateData.replyCount = replyCountSnapshot.size;
+                console.log(`Found ${replyCountSnapshot.size} replies for update ${updateDoc.id}`);
+
+                updatesData.push(updateData);
+                return updateData;
+            });
+
+            console.log("Waiting for all update data promises to resolve...");
+            const results = await Promise.all(dataPromises);
+            console.log("All updates processed successfully:", results.length);
+
+            setUpdates(updatesData);
+            console.log("Updates state set with data:", updatesData);
+        } catch (error) {
+            console.error('Error fetching updates:', error);
+            setError('Failed to load updates');
+        } finally {
+            setLoading(false);
+            console.log("Update fetch completed");
+        }
+    }, []); // no external deps needed here
+
+    // call fetch on mount
+    useEffect(() => {
+        fetchUpdates();
+    }, [fetchUpdates]);
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setFirebaseUser(user);
@@ -45,85 +129,19 @@ const UpdatesPage: React.FC = () => {
         return () => unsubscribe();
     }, []);
 
-    useEffect(() => {
-        const fetchUpdates = async () => {
-            try {
-                console.log("Starting updates fetch...");
-                setLoading(true);
-                
-                const updatesQuery = query(
-                    collection(db, 'updates'),
-                    where('parentId', '==', null),
-                    orderBy('createdAt', 'desc')
-                );
-                
-                console.log("Executing updates query...");
-                const updatesSnapshot = await getDocs(updatesQuery);
-                console.log(updatesSnapshot.docs);
-                console.log(`Found ${updatesSnapshot.size} top-level updates`);
-                const updatesData: UpdateWithUserData[] = [];
-                
-                const dataPromises = updatesSnapshot.docs.map(async (updateDoc, index) => {
-                    const updateData = { id: updateDoc.id, ...updateDoc.data() } as UpdateWithUserData;
-                    console.log(`Processing update ${index + 1}/${updatesSnapshot.size}:`, updateDoc.id);
-                    
-                    if (updateData.userId) {
-                        console.log(`Fetching user data for update ${updateDoc.id}, user: ${updateData.userId}`);
-                        const userRef = doc(db, 'Users', updateData.userId);
-                        const userSnap = await getDoc(userRef);
-                        
-                        if (userSnap.exists()) {
-                            const userData = userSnap.data();
-                            console.log(`Found user data:`, userData.firstName, userData.lastName);
-                            updateData.userData = {
-                                firstName: userData.firstName,
-                                lastName: userData.lastName,
-                                photoURL: userData.photo
-                            };
-                        } else {
-                            console.warn(`User ${updateData.userId} data not found`);
-                        }
-                    } else {
-                        console.warn(`Update ${updateDoc.id} has no userId`);
-                    }
-                    
-                    console.log(`Counting replies for update ${updateDoc.id}`);
-                    const replyCountQuery = query(
-                        collection(db, 'updates'),
-                        where('parentId', '==', updateDoc.id)
-                    );
-                    const replyCountSnapshot = await getDocs(replyCountQuery);
-                    updateData.replyCount = replyCountSnapshot.size;
-                    console.log(`Found ${replyCountSnapshot.size} replies for update ${updateDoc.id}`);
-                    
-                    updatesData.push(updateData);
-                    return updateData;
-                });
-                
-                console.log("Waiting for all update data promises to resolve...");
-                const results = await Promise.all(dataPromises);
-                console.log("All updates processed successfully:", results.length);
-                
-                setUpdates(updatesData);
-                console.log("Updates state set with data:", updatesData);
-            } catch (error) {
-                console.error('Error fetching updates:', error);
-                setError('Failed to load updates');
-            } finally {
-                setLoading(false);
-                console.log("Update fetch completed");
-            }
-        };
-        
-        fetchUpdates();
-    }, []);
-
+    // replace previous navigation-based new-update handler with modal open
     const handleNewUpdate = () => {
         if (firebaseUser) {
-            navigate('/update/new');
+            openModal();
         } else {
             toast.error("Please log in to create an update", { position: "top-center" });
         }
+    };
+
+    // called after successful post creation to refresh feed
+    const handleSuccess = async () => {
+        closeModal();
+        await fetchUpdates();
     };
 
     if (loading) {
@@ -304,6 +322,12 @@ const UpdatesPage: React.FC = () => {
                                 <AiOutlinePlus /> New
                             </button>
                         </div>
+                        <NewPostForm
+                            isOpen={isModalOpen}
+                            onClose={closeModal}
+                            initialPostType='update'
+                            onSuccess={handleSuccess}
+                        />
                         
                         {updates.length > 0 ? (
                             <div className="space-y-4">

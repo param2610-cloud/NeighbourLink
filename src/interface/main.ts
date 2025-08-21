@@ -204,3 +204,51 @@ export interface BusinessCollection {
   userInteractions?: UserInteraction[];
   stats?: BusinessStats;
 }
+
+
+export interface Pandel {
+  id: number;
+  name: string;
+  description: string;
+  average_rating: number;
+  coordinates: {
+    lat: number;
+    long: number;
+  };
+  banner_image: string;
+  created_at: string;
+  updated_at: string;
+  images: string[];
+  category: string;
+  popularity: number;
+  avatar_image: string;
+  address: string;
+  reviews: Review[];
+}
+
+// Legacy interface for backward compatibility
+export interface Pandal {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  district?: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  image?: string;
+  avatar: string;
+  popularity: number;
+  category: 'traditional' | 'modern' | 'heritage' | 'community';
+  // Additional fields from backend
+  average_rating?: number;
+  banner_image?: string;
+  created_at?: string;
+  updated_at?: string;
+  images?: string[];
+  avatar_image?: string;
+  address?: string;
+  reviews?: Review[];
+}
+
