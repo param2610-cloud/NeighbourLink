@@ -12,9 +12,9 @@ interface PandalGridProps {
 const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect, isPanelOpen }) => {
   return (
     <div className="mb-8">
-      <h2 className="text-xl md:text-2xl font-semibold text-white mb-6 drop-shadow-lg px-2">
+      {/* <h2 className="text-xl md:text-2xl font-semibold text-white mb-6 drop-shadow-lg px-2">
         Pandals near you
-      </h2>
+      </h2> */}
       
       {pandals.length === 0 ? (
         <div className="text-center py-12">
@@ -26,7 +26,7 @@ const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect, isPane
       ) : (
         <div className={`grid gap-4 md:gap-6 transition-all duration-500 ease-out ${
           isPanelOpen 
-            ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-2' 
+            ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 px-14' 
             : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
         }`}>
           {pandals.map((pandal, index) => (
