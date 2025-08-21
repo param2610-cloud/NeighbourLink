@@ -12,6 +12,7 @@ import NewPostForm from "@/components/Forms/NewPostForm";
 import { useMobileContext } from "@/contexts/MobileContext";
 import QuickActionsButton from "./components/QuickAction";
 import { Skeleton } from "@/components/ui/skeleton";
+import Stories from "@/components/Stories/Stories";
 
 // type FilterType = "all" | "need" | "offer";
 
@@ -259,8 +260,8 @@ const Home: React.FC = () => {
     <>
       {
         userDetails ? (
-          <div className={`flex flex-col min-h-screen ${isMobile ? "mb-16" : ""} bg-gray-50 dark:bg-gray-900`}>
-            {/* Responsive Sidebar */}
+          <div className={`flex flex-col min-h-screen ${isMobile ? "mb-16" : ""} bg-purple-50 dark:bg-gray-900`}>
+            {/* Responsive Sideb</div>ar */}
             <div
               className={`fixed inset-y-0 left-0 w-64 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 transition-transform duration-300 z-100`}
             >
@@ -341,7 +342,10 @@ const Home: React.FC = () => {
                 <QuickActionsButton openModal={openModal} setIsSidebarOpen={setIsSidebarOpen} />
               </div>
 
-              <div className="flex-1 px-4 py-4 ">
+              {/* Stories Section */}
+              <Stories onStoryOpen={() => setIsSidebarOpen(false)} />
+
+              <div className="flex-1 px-4 py-2 ">
                 <Feed />
               </div>
 
@@ -358,8 +362,8 @@ const Home: React.FC = () => {
                     className="absolute inset-0 rounded-full z-0"
                     style={{
                       background: 'conic-gradient(#3b82f6, #8b5cf6, #f59e0b, #3b82f6)',
-                      filter: 'blur(12px)',
-                      WebkitFilter: 'blur(6px)',
+                      filter: 'blur(22px)',
+                      WebkitFilter: 'blur(10px)',
                       animation: 'spinRing 3s linear infinite'
                     }}
                   />

@@ -15,6 +15,8 @@ import {
     getAvailableDistricts
 } from './utils/locationUtils';
 import SplashCursor from '../ui/SplashCursor';
+import { FaArrowAltCircleLeft } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const PujoPlanner: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +34,7 @@ const PujoPlanner: React.FC = () => {
     const [isPosterMinimized, setIsPosterMinimized] = useState(false);
 
     const availableDistricts = getAvailableDistricts(allPandals);
+      const navigate = useNavigate();
 
     // Initialize with backend data and user's location
     useEffect(() => {
@@ -209,6 +212,7 @@ const PujoPlanner: React.FC = () => {
 
     return (
         <div className="min-h-screen relative">
+            
             {/* Fixed Background Image */}
             <div
                 className="fixed inset-0 bg-cover bg-center bg-no-repeat bg-fixed"
@@ -264,6 +268,12 @@ const PujoPlanner: React.FC = () => {
             {/* Scrollable Content */}
             <div className={`relative z-10 min-h-screen transition-all duration-500 ease-out ${isPanelOpen ? 'pr-80 md:pr-96' : 'pr-0'
                 }`}>
+                    <button
+                    className="absolute flex justify-center items-center gap-3 top-6 left-6 px-4 py-2 text-white font-medium rounded-md shadow-sm focus:outline-none hover:bg-black/20 transition-colors"
+                    onClick={() => navigate("/")}
+                  >
+                    <FaArrowAltCircleLeft size={22} /> Back to Home
+                  </button>
                 <div className={`mx-auto px-2 py-4 transition-all duration-500 ease-out ${isPanelOpen ? 'max-w-none ml-2' : 'max-w-6xl mx-auto'
                     }`}>
                     {/* Compact Header */}

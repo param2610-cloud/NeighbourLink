@@ -1,17 +1,16 @@
 import React from 'react';
 import { getCloudinaryUrl } from './cloudinary';
 
-export interface ImageDisplayProps {
+export interface ImageDisplayProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   publicId: string;
-  className?: string;
 }
 
-export const ImageDisplay: React.FC<ImageDisplayProps> = ({ publicId, className = '' }) => {
+export const ImageDisplay: React.FC<ImageDisplayProps> = ({ publicId, className = '', onLoad, ...rest }) => {
   if (!publicId) return <div className="error">No image ID provided</div>;
-  
+
   const imageUrl = getCloudinaryUrl(publicId);
-  
-  return <img src={imageUrl} alt="Image" className={`cloudinary-image ${className}`} />;
+
+  return <img src={imageUrl} alt={rest.alt || 'Image'} className={`cloudinary-image ${className}`} onLoad={onLoad} {...rest} />;
 };
 
 export interface VideoDisplayProps {
