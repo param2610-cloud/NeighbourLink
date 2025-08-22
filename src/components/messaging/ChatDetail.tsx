@@ -234,7 +234,15 @@ const ChatDetail = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div
+        className="flex-1 p-4 overflow-y-auto"
+        style={{
+          backgroundImage: "url('/assets/chat-bg.jpeg')",
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center'
+        }}
+      >
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
