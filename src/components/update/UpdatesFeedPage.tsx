@@ -160,32 +160,26 @@ const UpdatesPage: React.FC = () => {
                 
                 <div className="md:ml-64">
                     <div className="sticky top-0 z-10 bg-white dark:bg-slate-800 shadow-md">
-                        <div className="flex items-center justify-between p-4">
-                            <div
-                                className="flex items-center space-x-2 cursor-pointer"
-                                onClick={toggleSidebar}
-                            >
-                                <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+                        <div className="relative">
+                            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 md:left-6">
+                                <div
+                                    className="flex items-center space-x-2 cursor-pointer"
+                                    onClick={toggleSidebar}
+                                >
+                                    <GiHamburgerMenu className="text-2xl text-gray-700 dark:text-gray-200" />
+                                </div>
                             </div>
 
-                            <div className="flex items-center">
-                                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
-                                    Neighbour
-                                </h1>
-                                <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                                Link
-                                </h1>
-                                <span className="mx-2 text-blue-500 dark:text-gray-400">
-                                    |
-                                </span>
-                                <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
-                                    Updates
-                                </h2>
+                            <div className="p-4 max-w-5xl mx-auto">
+                                <div className="flex items-center justify-center">
+                                    <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">Neighbour</h1>
+                                    <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">Link</h1>
+                                    <span className="mx-2 text-blue-500 dark:text-gray-400">|</span>
+                                    <h2 className="text-xl font-bold text-green-600 dark:text-green-600">Updates</h2>
+                                </div>
                             </div>
 
-                            <div className="opacity-0 w-8 h-8">
-                                {/* Empty div for layout balance */}
-                            </div>
+                            <div className="absolute right-4 top-1/2 transform -translate-y-1/2 md:right-6 opacity-0 w-8 h-8" />
                         </div>
                     </div>
 
@@ -222,7 +216,7 @@ const UpdatesPage: React.FC = () => {
 
     if (error) {
         return (
-            <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950">
                 <div
                     className={`fixed inset-y-0 left-0 w-64 transform ${
                         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -270,8 +264,8 @@ const UpdatesPage: React.FC = () => {
             )}
 
             <div className="md:ml-64">
-                <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 shadow-md">
-                    <div className="flex items-center justify-between p-4">
+            <div className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/80 to-slate-800/60 backdrop-blur-sm shadow-sm border-b border-slate-700/40">
+                <div className="flex items-center justify-between p-4 max-w-5xl ">
                         <div
                             className="flex items-center space-x-2 cursor-pointer"
                             onClick={toggleSidebar}
@@ -280,18 +274,10 @@ const UpdatesPage: React.FC = () => {
                         </div>
 
                         <div className="flex items-center">
-                            <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">
-                                Neighbour
-                            </h1>
-                            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">
-                            Link
-                            </h1>
-                            <span className="mx-2 text-blue-500 dark:text-gray-400">
-                                |
-                            </span>
-                            <h2 className="text-xl font-bold text-green-600 dark:text-green-600">
-                                Updates
-                            </h2>
+                            <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-600">Neighbour</h1>
+                            <h1 className="text-xl font-bold text-blue-600 dark:text-blue-700">Link</h1>
+                            <span className="mx-2 text-blue-500 dark:text-gray-400">|</span>
+                            <h2 className="text-xl font-bold text-green-600 dark:text-green-600">Updates</h2>
                         </div>
 
                         <div className="opacity-0 w-8 h-8">
@@ -300,8 +286,8 @@ const UpdatesPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="py-8 px-4 sm:px-6 lg:px-8 pb-24">
-                    <div className="max-w-3xl mx-auto">
+                <div className="py-10 px-4 sm:px-6 lg:px-8 pb-24">
+                    <div className="max-w-3xl mx-auto space-y-6">
                         <div className="flex justify-between items-center mb-6">
                             <div 
                                 className="flex gap-2 items-center text-blue-600 dark:text-blue-400 cursor-pointer"
@@ -309,7 +295,7 @@ const UpdatesPage: React.FC = () => {
                             >
                                 <FaArrowLeft /> Back
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Updates</h1>
+                            <h1 className="text-2xl font-bold text-white">Updates</h1>
                             <button
                                 onClick={handleNewUpdate}
                                 className={`flex items-center gap-1 px-3 py-1 rounded-full ${
