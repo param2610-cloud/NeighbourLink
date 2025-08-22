@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { FiMapPin, FiClock, FiCheck, FiX } from 'react-icons/fi';
+import { FiMapPin } from 'react-icons/fi';
 import { sendMessage } from '../../services/messagingService';
 import GoogleMapsViewer from '../../utils/google_map/GoogleMapsViewer';
 
@@ -158,93 +158,58 @@ const ExchangeDetails: React.FC<ExchangeDetailsProps> = ({
   const isAccepted = exchange.status === 'accepted';
   const isRejected = exchange.status === 'rejected';
   const isCompleted = exchange.status === 'completed';
-
   return (
-    <div className={`p-4 rounded-md mb-4 ${
-      isRejected 
-        ? 'bg-red-50 dark:bg-red-900/30' 
-        : isCompleted 
-          ? 'bg-green-50 dark:bg-green-900/30'
-          : 'bg-blue-50 dark:bg-blue-900/30'
-    }`}>
-      <div className="mb-2">
-        <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-          isRejected 
-            ? 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-200' 
-            : isCompleted 
-              ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200'
-              : isAccepted 
-                ? 'bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200'
-                : 'bg-yellow-100 dark:bg-yellow-800 text-yellow-700 dark:text-yellow-200'
-        }`}>
-          {exchange.exchangeType.charAt(0).toUpperCase() + exchange.exchangeType.slice(1)} {exchange.status}
-        </span>
-      </div>
-      
+    <div className={`flex mb-4 ${isCreator ? 'justify-end' : 'justify-start'}`}>
+      <div className={`max-w-md w-full rounded-xl shadow-md overflow-hidden ${
+        isRejected ? 'bg-red-900/10' : isCompleted ? 'bg-green-900/8' : 'bg-indigo-900/8'
+      }`}>
+        <div className="flex items-start justify-between p-3 gap-3">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-md bg-white/6 flex items-center justify-center">
+              <FiMapPin className="text-yellow-300 w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-white">{exchange.location.name}</div>
+              <div className="text-xs text-indigo-200/60">{exchange.location.address}</div>
+              {exchange.location.isSafe && <div className="text-xs text-yellow-300 mt-1">Safe Exchange Location</div>}
+            </div>
+          </div>
 
+          <div className="text-right">
+            <div className="text-xs text-yellow-300 font-semibold">{exchange.exchangeType.charAt(0).toUpperCase() + exchange.exchangeType.slice(1)}</div>
+            <div className="text-sm text-indigo-100">{formatDateTime(exchange.dateTime)}</div>
+            <div className="mt-1 text-xs text-indigo-200/60">Status: <span className="font-medium text-white">{exchange.status}</span></div>
+          </div>
+        </div>
 
-      {/* Display map if coordinates are available */}
-      {exchange.location.coordinates && (
-        <div className="mb-4">
-          <GoogleMapsViewer
-            center={exchange.location.coordinates}
-            zoom={16}
-            markers={[{
-              position: exchange.location.coordinates,
-              color: '#4CAF50',
-              title: exchange.location.name
-            }]}
-            height="180px"
-          />
-        </div>
-      )}
-      
-      <div className="flex items-start mb-2">
-        <FiMapPin className="mt-1 mr-2 text-gray-500 dark:text-gray-400" />
-        <div>
-          <div className="font-medium text-gray-900 dark:text-white">{exchange.location.name}</div>
-          {exchange.location.address && (
-            <div className="text-xs text-gray-500 dark:text-gray-400">{exchange.location.address}</div>
-          )}
-          {exchange.location.isSafe && (
-            <div className="text-xs text-green-600 dark:text-green-400 mt-1">Safe Exchange Location</div>
+        {exchange.location.coordinates && (
+          <div className="px-3 pb-3">
+            <GoogleMapsViewer
+              center={exchange.location.coordinates}
+              zoom={15}
+              markers={[{
+                position: exchange.location.coordinates,
+                color: '#FFD54F',
+                title: exchange.location.name
+              }]}
+              height="120px"
+            />
+          </div>
+        )}
+
+        <div className="p-3 border-t border-white/6 bg-black/10 flex items-center gap-3">
+          {isPending && !isCreator ? (
+            <>
+              <button onClick={handleAccept} disabled={updating} className="flex-1 py-2 rounded-md bg-yellow-400 text-black text-sm font-semibold disabled:opacity-50">Accept</button>
+              <button onClick={handleReject} disabled={updating} className="py-2 px-3 rounded-md bg-transparent border border-white/6 text-sm text-indigo-100 disabled:opacity-50">Decline</button>
+            </>
+          ) : isAccepted && !isCompleted ? (
+            <button onClick={handleComplete} disabled={updating} className="w-full py-2 rounded-md bg-blue-600 text-white text-sm font-medium disabled:opacity-50">Mark as Completed</button>
+          ) : (
+            <div className="text-xs text-indigo-200">{isCompleted ? 'Completed' : exchange.status}</div>
           )}
         </div>
       </div>
-      
-      <div className="flex items-center mb-4">
-        <FiClock className="mr-2 text-gray-500 dark:text-gray-400" />
-        <div className="text-gray-900 dark:text-white">{formatDateTime(exchange.dateTime)}</div>
-      </div>
-      
-      {isPending && !isCreator && (
-        <div className="flex space-x-2">
-          <button 
-            onClick={handleAccept}
-            disabled={updating}
-            className="flex-1 py-2 px-3 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center justify-center disabled:opacity-50"
-          >
-            <FiCheck className="mr-1" /> Accept
-          </button>
-          <button
-            onClick={handleReject}
-            disabled={updating}
-            className="flex-1 py-2 px-3 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center justify-center disabled:opacity-50"
-          >
-            <FiX className="mr-1" /> Decline
-          </button>
-        </div>
-      )}
-      
-      {isAccepted && !isCompleted && (
-        <button
-          onClick={handleComplete}
-          disabled={updating}
-          className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center justify-center disabled:opacity-50"
-        >
-          <FiCheck className="mr-1" /> Mark as Completed
-        </button>
-      )}
     </div>
   );
 };

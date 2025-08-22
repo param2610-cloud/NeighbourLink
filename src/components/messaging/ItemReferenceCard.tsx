@@ -29,8 +29,15 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
     const fetchPostDetails = async () => {
       try {
         setLoading(true);
-        const postRef = doc(db, 'posts', postId);
-        const postSnap = await getDoc(postRef);
+        // Try resources collection first (your actual collection)
+        let postRef = doc(db, 'resources', postId);
+        let postSnap = await getDoc(postRef);
+        
+        // If not found in resources, try posts collection as fallback
+        if (!postSnap.exists()) {
+          postRef = doc(db, 'posts', postId);
+          postSnap = await getDoc(postRef);
+        }
         
         if (postSnap.exists()) {
           setPost({
@@ -58,7 +65,7 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
 
   return (
     <Link 
-      to={`/post/${postId}`}
+      to={`/resource/${postId}`}
       className="block bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 p-3 relative"
     >
       <div className="flex items-center">

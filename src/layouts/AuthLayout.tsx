@@ -14,8 +14,8 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
   return (
     <>
-      <div className={`flex w-full ${theme === 'dark' ? 'dark' : ''}`}>
-        <div className='w-full'>
+      <div className={`flex w-full max-w-full overflow-hidden ${theme === 'dark' ? 'dark' : ''}`}>
+        <div className='w-full max-w-full overflow-hidden'>
           {children}
         </div>
       </div>
