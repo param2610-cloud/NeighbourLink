@@ -12,7 +12,7 @@ import {
   arrayRemove,
   getDoc,
 } from "firebase/firestore";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { MoreVertical, MapPin, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -32,23 +32,35 @@ function useImageHeightManager() {
 
   const onImgLoad = (e: React.SyntheticEvent<HTMLImageElement>, id: string) => {
     const img = e.currentTarget as HTMLImageElement;
-    natural.current[id] = { w: img.naturalWidth || 1, h: img.naturalHeight || 1 };
+    natural.current[id] = {
+      w: img.naturalWidth || 1,
+      h: img.naturalHeight || 1,
+    };
     const containerW = containerRef.current?.clientWidth || 520;
-    const allScaled = Object.values(natural.current).map(n => (containerW / n.w) * n.h);
+    const allScaled = Object.values(natural.current).map(
+      (n) => (containerW / n.w) * n.h
+    );
     const maxScaled = allScaled.length ? Math.max(...allScaled) : 0;
-    setHeight(Math.min(getMaxAllowed(containerW), maxScaled || getMaxAllowed(containerW)));
+    setHeight(
+      Math.min(
+        getMaxAllowed(containerW),
+        maxScaled || getMaxAllowed(containerW)
+      )
+    );
   };
 
   useEffect(() => {
     const onResize = () => {
       const containerW = containerRef.current?.clientWidth || 520;
       const maxAllowed = getMaxAllowed(containerW);
-      const allScaled = Object.values(natural.current).map(n => (containerW / n.w) * n.h);
+      const allScaled = Object.values(natural.current).map(
+        (n) => (containerW / n.w) * n.h
+      );
       const maxScaled = allScaled.length ? Math.max(...allScaled) : maxAllowed;
       setHeight(Math.min(maxAllowed, maxScaled));
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   return { containerRef, onImgLoad, height, getMaxAllowed };
@@ -280,11 +292,155 @@ const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
+// Add session-based shuffle that persists until page refresh
+const getSessionSeed = () => {
+  let seed = sessionStorage.getItem("feedShuffleSeed");
+  if (!seed) {
+    seed = Date.now().toString();
+    sessionStorage.setItem("feedShuffleSeed", seed);
+  }
+  return seed;
+};
+
+// Deterministic shuffle using session seed
+const deterministicShuffle = <T,>(array: T[], seed: string): T[] => {
+  const arr = [...array];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    hash = (hash * 9301 + 49297) % 233280;
+    const j = Math.floor((hash / 233280) * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+// Simplified intersection observer that doesn't affect feed order
+const useIntersectionObserver = () => {
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const postRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  useEffect(() => {
+    // Create intersection observer only for analytics/tracking
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
+            const postId = entry.target.getAttribute("data-post-id");
+            if (postId) {
+              // Track view without affecting state
+              setTimeout(() => {
+                const viewedPosts = JSON.parse(
+                  localStorage.getItem("viewedPosts") || "[]"
+                );
+                if (!viewedPosts.includes(postId)) {
+                  viewedPosts.push(postId);
+                  localStorage.setItem(
+                    "viewedPosts",
+                    JSON.stringify(viewedPosts)
+                  );
+                }
+              }, 2000); // 2 second delay for genuine views
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.8,
+        rootMargin: "0px 0px -10% 0px",
+      }
+    );
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  const observePost = useCallback(
+    (postId: string, element: HTMLElement | null) => {
+      if (!observerRef.current) return;
+
+      // Remove previous observation
+      const prevElement = postRefs.current.get(postId);
+      if (prevElement) {
+        observerRef.current.unobserve(prevElement);
+      }
+
+      // Add new observation
+      if (element) {
+        element.setAttribute("data-post-id", postId);
+        postRefs.current.set(postId, element);
+        observerRef.current.observe(element);
+      } else {
+        postRefs.current.delete(postId);
+      }
+    },
+    []
+  );
+
+  return { observePost };
+};
+
+// Smart sorting algorithm that only runs once per session
+const smartSortFeedItems = (items: FeedItem[]): FeedItem[] => {
+  const now = new Date();
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const sessionSeed = getSessionSeed();
+
+  // Get viewed posts from localStorage (don't use reactive state)
+  const viewedPostsArray = JSON.parse(
+    localStorage.getItem("viewedPosts") || "[]"
+  );
+  const viewedPosts = new Set(viewedPostsArray);
+
+  // Separate items into categories
+  const veryRecentPosts = items.filter((item) => {
+    const postDate = new Date(item.createdAt);
+    return postDate > twoHoursAgo;
+  });
+
+  const recentUnviewedPosts = items.filter((item) => {
+    const postDate = new Date(item.createdAt);
+    return (
+      postDate <= twoHoursAgo &&
+      postDate > oneDayAgo &&
+      !viewedPosts.has(item.id || "")
+    );
+  });
+
+  const olderPosts = items.filter((item) => {
+    const postDate = new Date(item.createdAt);
+    return postDate <= oneDayAgo || viewedPosts.has(item.id || "");
+  });
+
+  // Sort each category
+  veryRecentPosts.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  recentUnviewedPosts.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  // Use deterministic shuffle for older posts
+  const shuffledOlderPosts = deterministicShuffle(olderPosts, sessionSeed);
+
+  return [...veryRecentPosts, ...recentUnviewedPosts, ...shuffledOlderPosts];
+};
+
 export const Feed: React.FC = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { observePost } = useIntersectionObserver();
 
   const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {
     try {
@@ -329,17 +485,35 @@ export const Feed: React.FC = () => {
     loadFeedItems();
   }, []);
 
+  // Apply smart sorting only when feedItems change (not when views change)
+  const sortedFeedItems = React.useMemo(() => {
+    if (feedItems.length === 0) return [];
+    return smartSortFeedItems(feedItems);
+  }, [feedItems]); // Only depend on feedItems, not viewedPosts
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen dark:bg-gray-900">
         <div className="flex flex-col mt-12 space-y-4 w-full sm:w-[520px]">
-          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28 }}
+          >
             <Skeleton className="w-full h-56 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-md" />
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.32 }}
+          >
             <Skeleton className="w-full h-56 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-700 rounded-md" />
           </motion.div>
-          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36 }}
+          >
             <Skeleton className="w-full h-56 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700 rounded-md" />
           </motion.div>
         </div>
@@ -362,60 +536,82 @@ export const Feed: React.FC = () => {
   return (
     <div className="container w-full sm:w-[520px] mx-auto px-4 bg-transparent">
       <div className="">
-        {feedItems.length === 0 ? (
+        {sortedFeedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mb-4">
-              <svg className="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              <svg
+                className="w-12 h-12 text-gray-400 dark:text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.5"
+                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No posts yet</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No posts yet
+            </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-sm">
-              Be the first to share something with your community. Create a resource, event, promotion, or update!
+              Be the first to share something with your community. Create a
+              resource, event, promotion, or update!
             </p>
           </div>
         ) : (
-          feedItems.map((item) => {
-            switch (item.type) {
-              case "resource":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
+          sortedFeedItems.map((item) => {
+            const CardComponent = () => {
+              switch (item.type) {
+                case "resource":
+                  return (
                     <ResourceCard
                       resource={item as Resource}
                       onDelete={handleDeleteItem}
+                      observePost={observePost}
                     />
-                  </motion.div>
-                );
-              case "promotion":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
+                  );
+                case "promotion":
+                  return (
                     <PromotionCard
                       promotion={item as Promotion}
                       onDelete={handleDeleteItem}
+                      observePost={observePost}
                     />
-                  </motion.div>
-                );
-              case "event":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
+                  );
+                case "event":
+                  return (
                     <EventCard
                       event={item as Event}
                       onDelete={handleDeleteItem}
+                      observePost={observePost}
                     />
-                  </motion.div>
-                );
-              case "update":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
+                  );
+                case "update":
+                  return (
                     <UpdateCard
                       update={item as Update}
                       onDelete={handleDeleteItem}
+                      observePost={observePost}
                     />
-                  </motion.div>
-                );
-              default:
-                return null;
-            }
+                  );
+                default:
+                  return null;
+              }
+            };
+
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.32 }}
+              >
+                <CardComponent />
+              </motion.div>
+            );
           })
         )}
       </div>
@@ -425,6 +621,7 @@ export const Feed: React.FC = () => {
 
 interface CardBaseProps {
   onDelete: (id: string, type: FeedItem["type"]) => void;
+  observePost?: (postId: string, element: HTMLElement | null) => void;
 }
 
 interface ResourceCardProps extends CardBaseProps {
@@ -434,15 +631,30 @@ interface ResourceCardProps extends CardBaseProps {
 export const ResourceCard: React.FC<ResourceCardProps> = ({
   resource,
   onDelete,
+  observePost,
 }) => {
   const user = auth.currentUser;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const totalImages = resource.images?.length || 0;
   const isOwner = user?.uid === resource.userId;
   const navigate = useNavigate();
-  const { containerRef, onImgLoad, height, getMaxAllowed } = useImageHeightManager();
+  const { containerRef, onImgLoad, height, getMaxAllowed } =
+    useImageHeightManager();
+
+  // Set up intersection observer for this card
+  useEffect(() => {
+    if (observePost && resource.id && cardRef.current) {
+      observePost(resource.id, cardRef.current);
+    }
+    return () => {
+      if (observePost && resource.id) {
+        observePost(resource.id, null);
+      }
+    };
+  }, [observePost, resource.id]);
 
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -466,8 +678,14 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-600">
+    <motion.div
+      ref={cardRef}
+      initial={{ scale: 0.95 }}
+      animate={{ scale: 0.95 }}
+      whileHover={{ y: -6, scale: 0.99 }}
+      transition={{ duration: 0.22 }}
+      className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-600"
+    >
       {/* Category indicator stripe */}
       {/* <div className={`absolute top-0 left-0 right-0 h-1 ${
         resource.urgency === "high" 
@@ -478,7 +696,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
       <div className="p-4">
         <div className="flex justify-between items-start ">
           <UserInfoDisplay userId={resource.userId} />
-
 
           <div className="relative cursor-pointer" ref={menuRef}>
             <button
@@ -509,22 +726,38 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
             )}
           </div>
         </div>
-
       </div>
       {resource.images && resource.images.length > 0 && (
-        <div ref={containerRef} className="relative w-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-700 dark:to-gray-800 overflow-hidden " style={{ height: height ? `${height}px` : undefined, maxHeight: `${getMaxAllowed(containerRef.current?.clientWidth || 520)}px` }}>
+        <div
+          ref={containerRef}
+          className="relative w-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-700 dark:to-gray-800 overflow-hidden "
+          style={{
+            height: height ? `${height}px` : undefined,
+            maxHeight: `${getMaxAllowed(
+              containerRef.current?.clientWidth || 520
+            )}px`,
+          }}
+        >
           <div className="w-full overflow-hidden flex justify-center items-center">
             <ImageDisplay
               publicId={resource.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onImgLoad(e, resource.images![currentImageIndex])}
-              style={{ width: '100%', height: height ? `${height}px` : 'auto', objectFit: height ? 'cover' : 'contain' }}
+              style={{
+                width: "100%",
+                height: height ? `${height}px` : "auto",
+                objectFit: height ? "cover" : "contain",
+              }}
             />
           </div>
           {/* hidden loaders to measure all images for height calculation */}
           <div className="hidden">
             {resource.images.map((img) => (
-              <ImageDisplay key={img} publicId={img} onLoad={(e) => onImgLoad(e, img)} />
+              <ImageDisplay
+                key={img}
+                publicId={img}
+                onLoad={(e) => onImgLoad(e, img)}
+              />
             ))}
           </div>
           {totalImages > 1 && (
@@ -533,24 +766,47 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
                 onClick={handlePrev}
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <button
                 onClick={handleNext}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
                 {resource.images.map((_, index) => (
                   <div
                     key={index}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImageIndex ? "bg-white scale-125" : "bg-white/50"
-                      }`}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? "bg-white scale-125"
+                        : "bg-white/50"
+                    }`}
                   />
                 ))}
               </div>
@@ -560,26 +816,40 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
       )}
       {/* subtle gradient band below image to match UpdateCard style */}
       {resource.images && resource.images.length > 0 && (
-        <div className="w-full h-6 bg-gradient-to-t from-transparent to-blue-50 dark:to-blue-900/10" aria-hidden />
+        <div
+          className="w-full h-6 bg-gradient-to-t from-transparent to-blue-50 dark:to-blue-900/10"
+          aria-hidden
+        />
       )}
       <div className="p-4">
-
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <span
-              className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full ${resource.urgency === "high"
-                ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700"
-                : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700"
-                }`}
+              className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full ${
+                resource.urgency === "high"
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-700"
+                  : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700"
+              }`}
             >
-              <div className={`w-2 h-2 rounded-full mr-2 ${resource.urgency === "high" ? "bg-red-500" : "bg-blue-500"
-                }`}></div>
+              <div
+                className={`w-2 h-2 rounded-full mr-2 ${
+                  resource.urgency === "high" ? "bg-red-500" : "bg-blue-500"
+                }`}
+              ></div>
               {resource.category}
             </span>
             {resource.urgency === "high" && (
               <span className="inline-flex items-center px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full border border-red-200 dark:border-red-700">
-                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 mr-1"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 Emergency
               </span>
@@ -597,8 +867,18 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
         <div className="flex items-center justify-between pt-4 border-t border-transparent dark:border-transparent">
           <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">
             <div className="flex items-center">
-              <svg className="w-4 h-4 mr-1.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <svg
+                className="w-4 h-4 mr-1.5 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
               </svg>
               <span className="font-medium">{resource.duration}</span>
             </div>
@@ -620,15 +900,30 @@ interface PromotionCardProps extends CardBaseProps {
 export const PromotionCard: React.FC<PromotionCardProps> = ({
   promotion,
   onDelete,
+  observePost,
 }) => {
   const user = auth.currentUser;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const totalImages = promotion.images?.length || 0;
   const isOwner = user?.uid === promotion.userId;
   const navigate = useNavigate();
-  const { containerRef, onImgLoad, height, getMaxAllowed } = useImageHeightManager();
+  const { containerRef, onImgLoad, height, getMaxAllowed } =
+    useImageHeightManager();
+
+  // Set up intersection observer for this card
+  useEffect(() => {
+    if (observePost && promotion.id && cardRef.current) {
+      observePost(promotion.id, cardRef.current);
+    }
+    return () => {
+      if (observePost && promotion.id) {
+        observePost(promotion.id, null);
+      }
+    };
+  }, [observePost, promotion.id]);
 
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -657,8 +952,14 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-purple-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-purple-200 dark:hover:border-purple-600">
+    <motion.div
+      ref={cardRef}
+      initial={{ scale: 0.95 }}
+      animate={{ scale: 0.95 }}
+      whileHover={{ y: -6, scale: 0.99 }}
+      transition={{ duration: 0.22 }}
+      className="group relative bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-purple-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-purple-200 dark:hover:border-purple-600"
+    >
       {/* Category indicator stripe */}
 
       <div className="p-4">
@@ -703,13 +1004,31 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
       </div>
 
       {promotion.images && promotion.images.length > 0 && (
-        <div ref={containerRef} className="relative w-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 overflow-hidden">
-          <div style={{ height: height ? `${height}px` : undefined, maxHeight: getMaxAllowed(containerRef.current?.clientWidth || 520) }} className="w-full overflow-hidden flex justify-center items-center">
-            <ImageDisplay publicId={promotion.images[currentImageIndex]} className="w-full h-full" style={{ objectFit: height ? 'cover' : 'contain' }} />
+        <div
+          ref={containerRef}
+          className="relative w-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 overflow-hidden"
+        >
+          <div
+            style={{
+              height: height ? `${height}px` : undefined,
+              maxHeight: getMaxAllowed(
+                containerRef.current?.clientWidth || 520
+              ),
+            }}
+            className="w-full overflow-hidden flex justify-center items-center"
+          >
+            <ImageDisplay
+              publicId={promotion.images[currentImageIndex]}
+              className="w-full h-full"
+              style={{ objectFit: height ? "cover" : "contain" }}
+            />
           </div>
           {promotion.images.map((imgId, idx) => (
             <div key={`loader-${idx}`} className="hidden" aria-hidden>
-              <ImageDisplay publicId={imgId} onLoad={(e) => onImgLoad(e, imgId)} />
+              <ImageDisplay
+                publicId={imgId}
+                onLoad={(e) => onImgLoad(e, imgId)}
+              />
             </div>
           ))}
           {totalImages > 1 && (
@@ -718,24 +1037,47 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
                 onClick={handlePrev}
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <button
                 onClick={handleNext}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
                 {promotion.images.map((_, index) => (
                   <div
                     key={index}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImageIndex ? "bg-white scale-125" : "bg-white/50"
-                      }`}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? "bg-white scale-125"
+                        : "bg-white/50"
+                    }`}
                   />
                 ))}
               </div>
@@ -745,11 +1087,12 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
       )}
       {/* subtle gradient band below image to match UpdateCard style */}
       {promotion.images && promotion.images.length > 0 && (
-        <div className="w-full h-6 bg-gradient-to-t from-transparent to-purple-50 dark:to-purple-900/10" aria-hidden />
+        <div
+          className="w-full h-6 bg-gradient-to-t from-transparent to-purple-50 dark:to-purple-900/10"
+          aria-hidden
+        />
       )}
       <div className="p-4">
-
-
         <div className="flex justify-between items-center mb-3">
           <span className="inline-flex items-center px-3 py-1.5 text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full border border-purple-200 dark:border-purple-700">
             <div className="w-2 h-2 rounded-full mr-2 bg-purple-500"></div>
@@ -765,23 +1108,43 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
         </p>
 
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 mb-4 border border-purple-100 dark:border-purple-800">
-          <h4 className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide mb-2">Contact Information</h4>
+          <h4 className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide mb-2">
+            Contact Information
+          </h4>
           <div className="space-y-1 text-xs">
             <p className="text-gray-700 dark:text-gray-300 flex items-center">
-              <svg className="w-3 h-3 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 mr-2 text-purple-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                  clipRule="evenodd"
+                />
               </svg>
               {promotion.contactInfo?.name}
             </p>
             <p className="text-gray-700 dark:text-gray-300 flex items-center">
-              <svg className="w-3 h-3 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              <svg
+                className="w-3 h-3 mr-2 text-purple-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               {promotion.contactInfo?.email}
             </p>
             <p className="text-gray-700 dark:text-gray-300 flex items-center">
-              <svg className="w-3 h-3 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-3 h-3 mr-2 text-purple-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
               </svg>
               {promotion.contactInfo?.contact}
@@ -804,28 +1167,39 @@ interface EventCardProps extends CardBaseProps {
   event: Event;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
+export const EventCard: React.FC<EventCardProps> = ({
+  event,
+  onDelete,
+  observePost,
+}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const totalImages = event.images?.length || 0;
-  const { user } = useStateContext(); // Use StateContext instead of auth.currentUser
+  const { user } = useStateContext();
   const isOwner = user?.uid === event.userId;
   const [isRSVPed, setIsRSVPed] = useState(false);
   const [isRSVPing, setIsRSVPing] = useState(false);
   const navigate = useNavigate();
-  const { containerRef: eventImgRef, onImgLoad: onEventImgLoad, height: eventHeight, getMaxAllowed: getEventMax } = useImageHeightManager();
+  const {
+    containerRef: eventImgRef,
+    onImgLoad: onEventImgLoad,
+    height: eventHeight,
+    getMaxAllowed: getEventMax,
+  } = useImageHeightManager();
 
-  const handleClickOutside = (event: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-      setShowMenu(false);
-    }
-  };
-
+  // Set up intersection observer for this card
   useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    if (observePost && event.id && cardRef.current) {
+      observePost(event.id, cardRef.current);
+    }
+    return () => {
+      if (observePost && event.id) {
+        observePost(event.id, null);
+      }
+    };
+  }, [observePost, event.id]);
 
   useEffect(() => {
     // Check if the current user has already RSVPed
@@ -879,11 +1253,27 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
     }
   };
 
-  return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-green-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-green-200 dark:hover:border-green-600">
-      {/* Category indicator stripe */}
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setShowMenu(false);
+    }
+  };
 
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <motion.div
+      ref={cardRef}
+      initial={{ scale: 0.95 }}
+      animate={{ scale: 0.95 }}
+      whileHover={{ y: -6, scale: 0.99 }}
+      transition={{ duration: 0.22 }}
+      className="group relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-green-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-green-200 dark:hover:border-green-600"
+    >
+      {/* Category indicator stripe */}
 
       <div className="p-4">
         <div className="flex justify-between items-start">
@@ -921,18 +1311,37 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
       </div>
 
       {event.images && event.images.length > 0 && (
-        <div ref={eventImgRef} className="relative w-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 overflow-hidden" style={{ height: eventHeight ? `${eventHeight}px` : undefined, maxHeight: `${getEventMax(eventImgRef.current?.clientWidth || 520)}px` }}>
+        <div
+          ref={eventImgRef}
+          className="relative w-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 overflow-hidden"
+          style={{
+            height: eventHeight ? `${eventHeight}px` : undefined,
+            maxHeight: `${getEventMax(
+              eventImgRef.current?.clientWidth || 520
+            )}px`,
+          }}
+        >
           <div className="w-full overflow-hidden flex justify-center items-center">
             <ImageDisplay
               publicId={event.images[currentImageIndex]}
               className="w-full"
-              onLoad={(e) => onEventImgLoad(e, event.images![currentImageIndex])}
-              style={{ width: '100%', height: eventHeight ? `${eventHeight}px` : 'auto', objectFit: eventHeight ? 'cover' : 'contain' }}
+              onLoad={(e) =>
+                onEventImgLoad(e, event.images![currentImageIndex])
+              }
+              style={{
+                width: "100%",
+                height: eventHeight ? `${eventHeight}px` : "auto",
+                objectFit: eventHeight ? "cover" : "contain",
+              }}
             />
           </div>
           <div className="hidden">
             {event.images.map((img) => (
-              <ImageDisplay key={img} publicId={img} onLoad={(e) => onEventImgLoad(e, img)} />
+              <ImageDisplay
+                key={img}
+                publicId={img}
+                onLoad={(e) => onEventImgLoad(e, img)}
+              />
             ))}
           </div>
           {totalImages > 1 && (
@@ -941,24 +1350,47 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
                 onClick={handlePrev}
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <button
                 onClick={handleNext}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
                 {event.images.map((_, index) => (
                   <div
                     key={index}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImageIndex ? "bg-white scale-125" : "bg-white/50"
-                      }`}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? "bg-white scale-125"
+                        : "bg-white/50"
+                    }`}
                   />
                 ))}
               </div>
@@ -968,11 +1400,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
       )}
       {/* subtle gradient band below image to match UpdateCard style */}
       {event.images && event.images.length > 0 && (
-        <div className="w-full h-6 bg-gradient-to-t from-transparent to-green-50 dark:to-green-900/10" aria-hidden />
+        <div
+          className="w-full h-6 bg-gradient-to-t from-transparent to-green-50 dark:to-green-900/10"
+          aria-hidden
+        />
       )}
       <div className="p-4">
-
-
         <div className="flex justify-between items-center mb-3">
           <span className="inline-flex items-center px-3 py-1.5 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full border border-green-200 dark:border-green-700">
             <div className="w-2 h-2 rounded-full mr-2 bg-green-500"></div>
@@ -988,23 +1421,57 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
         </p>
 
         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-4 border border-green-100 dark:border-green-800">
-          <h4 className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-2">Event Details</h4>
+          <h4 className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-2">
+            Event Details
+          </h4>
           <div className="space-y-2 text-xs">
             <div className="flex items-center text-gray-700 dark:text-gray-300">
-              <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              <svg
+                className="w-4 h-4 mr-2 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                ></path>
               </svg>
-              <span className="font-medium">{event.timingInfo?.date} at {event.timingInfo?.time}</span>
+              <span className="font-medium">
+                {event.timingInfo?.date} at {event.timingInfo?.time}
+              </span>
             </div>
             <div className="flex items-center text-gray-700 dark:text-gray-300">
-              <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <svg
+                className="w-4 h-4 mr-2 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
               </svg>
               <span>Duration: {event.timingInfo?.duration}</span>
             </div>
             <div className="flex items-center text-gray-700 dark:text-gray-300">
-              <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              <svg
+                className="w-4 h-4 mr-2 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                ></path>
               </svg>
               <span>Organizer: {event.organizerDetails?.name}</span>
             </div>
@@ -1027,10 +1494,13 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
             <button
               onClick={handleRSVP}
               disabled={isRSVPing}
-              className={`px-4 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${isRSVPed
-                ? "bg-green-500 text-white hover:bg-green-600 shadow-lg"
-                : "bg-blue-500 text-white hover:bg-blue-600 shadow-lg hover:shadow-xl"
-                } ${isRSVPing ? "opacity-70 cursor-not-allowed" : "hover:scale-105"}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-full transition-all duration-200 ${
+                isRSVPed
+                  ? "bg-green-500 text-white hover:bg-green-600 shadow-lg"
+                  : "bg-blue-500 text-white hover:bg-blue-600 shadow-lg hover:shadow-xl"
+              } ${
+                isRSVPing ? "opacity-70 cursor-not-allowed" : "hover:scale-105"
+              }`}
             >
               {isRSVPing ? "..." : isRSVPed ? "Attending ✓" : "RSVP"}
             </button>
@@ -1045,15 +1515,37 @@ interface UpdateCardProps extends CardBaseProps {
   update: Update;
 }
 
-export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
+export const UpdateCard: React.FC<UpdateCardProps> = ({
+  update,
+  onDelete,
+  observePost,
+}) => {
   const user = auth.currentUser;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const totalImages = update.images?.length || 0;
   const isOwner = user?.uid === update.userId;
   const navigate = useNavigate();
-  const { containerRef: updRef, onImgLoad: onUpdLoad, height: updHeight, getMaxAllowed: getUpdMax } = useImageHeightManager();
+  const {
+    containerRef: updRef,
+    onImgLoad: onUpdLoad,
+    height: updHeight,
+    getMaxAllowed: getUpdMax,
+  } = useImageHeightManager();
+
+  // Set up intersection observer for this card
+  useEffect(() => {
+    if (observePost && update.id && cardRef.current) {
+      observePost(update.id, cardRef.current);
+    }
+    return () => {
+      if (observePost && update.id) {
+        observePost(update.id, null);
+      }
+    };
+  }, [observePost, update.id]);
 
   const handleClickOutside = (event: MouseEvent) => {
     if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -1077,8 +1569,14 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
-      className="group relative bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-900 dark:to-amber-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-amber-200 dark:hover:border-amber-600">
+    <motion.div
+      ref={cardRef}
+      initial={{ scale: 0.95 }}
+      animate={{ scale: 0.95 }}
+      whileHover={{ y: -6, scale: 0.99 }}
+      transition={{ duration: 0.22 }}
+      className="group relative bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-900 dark:to-amber-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-amber-200 dark:hover:border-amber-600"
+    >
       {/* Category indicator stripe */}
       <div className="p-4">
         <div className="flex justify-between items-start">
@@ -1115,18 +1613,33 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
         </div>
       </div>
       {update.images && update.images.length > 0 && (
-        <div ref={updRef} className="relative w-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20 overflow-hidden" style={{ height: updHeight ? `${updHeight}px` : undefined, maxHeight: `${getUpdMax(updRef.current?.clientWidth || 520)}px` }}>
+        <div
+          ref={updRef}
+          className="relative w-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20 overflow-hidden"
+          style={{
+            height: updHeight ? `${updHeight}px` : undefined,
+            maxHeight: `${getUpdMax(updRef.current?.clientWidth || 520)}px`,
+          }}
+        >
           <div className="w-full overflow-hidden flex justify-center items-center">
             <ImageDisplay
               publicId={update.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onUpdLoad(e, update.images![currentImageIndex])}
-              style={{ width: '100%', height: updHeight ? `${updHeight}px` : 'auto', objectFit: updHeight ? 'cover' : 'contain' }}
+              style={{
+                width: "100%",
+                height: updHeight ? `${updHeight}px` : "auto",
+                objectFit: updHeight ? "cover" : "contain",
+              }}
             />
           </div>
           <div className="hidden">
             {update.images.map((img) => (
-              <ImageDisplay key={img} publicId={img} onLoad={(e) => onUpdLoad(e, img)} />
+              <ImageDisplay
+                key={img}
+                publicId={img}
+                onLoad={(e) => onUpdLoad(e, img)}
+              />
             ))}
           </div>
           {totalImages > 1 && (
@@ -1135,24 +1648,47 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
                 onClick={handlePrev}
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 19l-7-7 7-7"
+                  />
                 </svg>
               </button>
               <button
                 onClick={handleNext}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-black/40 transition-all duration-200 z-10 hover:scale-110"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </button>
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
                 {update.images.map((_, index) => (
                   <div
                     key={index}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImageIndex ? "bg-white scale-125" : "bg-white/50"
-                      }`}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? "bg-white scale-125"
+                        : "bg-white/50"
+                    }`}
                   />
                 ))}
               </div>
@@ -1161,8 +1697,6 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
         </div>
       )}
       <div className="p-4">
-
-
         <div className="flex justify-between items-center mb-3">
           <span className="inline-flex items-center px-3 py-1.5 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full border border-amber-200 dark:border-amber-700">
             <div className="w-2 h-2 rounded-full mr-2 bg-amber-500"></div>
@@ -1181,10 +1715,22 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
           <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">
             {update.date && (
               <div className="flex items-center">
-                <svg className="w-4 h-4 mr-1.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                <svg
+                  className="w-4 h-4 mr-1.5 text-amber-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
                 </svg>
-                <span className="font-medium">{new Date(update.date).toLocaleDateString()}</span>
+                <span className="font-medium">
+                  {new Date(update.date).toLocaleDateString()}
+                </span>
               </div>
             )}
             <div className="flex items-center">
@@ -1196,10 +1742,19 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
           {/* Show reply count if available */}
           {update.childUpdates && update.childUpdates.length > 0 && (
             <div className="flex items-center text-xs text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+              <svg
+                className="w-3 h-3 mr-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                  clipRule="evenodd"
+                />
               </svg>
-              {update.childUpdates.length} {update.childUpdates.length === 1 ? "reply" : "replies"}
+              {update.childUpdates.length}{" "}
+              {update.childUpdates.length === 1 ? "reply" : "replies"}
             </div>
           )}
         </div>
@@ -1207,5 +1762,4 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
     </motion.div>
   );
 };
-
 export default Feed;
