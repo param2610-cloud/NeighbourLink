@@ -10,6 +10,8 @@ interface PandalGridProps {
 }
 
 const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect, isPanelOpen }) => {
+  
+  
   return (
     <div className="mb-8">
       {/* <h2 className="text-xl md:text-2xl font-semibold text-white mb-6 drop-shadow-lg px-2">

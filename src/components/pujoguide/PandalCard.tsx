@@ -8,48 +8,34 @@ interface PandalCardProps {
   onContactClick?: (pandal: Pandal) => void;
 }
 
+interface PandalCardProps {
+  pandal: Pandal;
+  onContactClick?: (pandal: Pandal) => void;
+}
+
 const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
 
-  // Get images array for carousel
+  // Get images array for carousel (Cloudinary URLs)
   const getImagesArray = () => {
     const images: string[] = [];
     
     if (pandal.images && pandal.images.length > 0) {
-      pandal.images.forEach(img => {
-        console.log(img);
-
+      pandal.images.forEach((img: string) => {
+        // console.log(img);
         if (!images.includes(img)) images.push(img);
       });
     }
-    // Add all available images to the array
-    // if (pandal.banner_image) images.push(pandal.banner_image);
-    // if (pandal.avatar && pandal.avatar !== pandal.banner_image) images.push(pandal.avatar);
-    // if (pandal.image && pandal.image !== pandal.banner_image && pandal.image !== pandal.avatar) images.push(pandal.image);
-    
-    // If no images found, add default
-    // if (images.length === 0) {
-    //   images.push('l47920220926121122.jpeg');
-    // }
+    console.log(images);
     
     return images;
   };
 
   const imagesArray = getImagesArray();
 
-  // Get the image to display with fallback hierarchy
-  const getImageSrc = () => {
-    let imageId = '';
-    console.log(pandal);
-
-    // Priority: avatar > image > first image from images array > default
-    if (pandal.avatar) imageId = pandal.avatar;
-    else if (pandal.image) imageId = pandal.image;
-    else if (pandal.images && pandal.images.length > 0) imageId = pandal.images[0];
-    else imageId = 'l47920220926121122.jpeg';
-
+  const getAvatarImageSrc = () => {
+    const imageId = pandal.avatar_image || pandal.banner_image || 'l47920220926121122';
     return `https://geobums.com/photos/thumbs/${imageId}.jpg`;
   };
-
 
 
   // Get the location text with fallback
@@ -76,12 +62,12 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
             <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-lg">
                 <img
-            src={getImageSrc()}
+            src={getAvatarImageSrc()}
             alt={pandal.name}
             className="w-full h-full object-cover rounded-full"
             onError={(e) => {
               // Fallback if image fails to load
-              e.currentTarget.src = 'https://i.cdn.newsbytesapp.com/images/l47920220926121122.jpeg';
+              e.currentTarget.src = 'https://geobums.com/photos/thumbs/l47920220926121122.jpg';
             }}
           />
               </span>

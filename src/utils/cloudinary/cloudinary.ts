@@ -68,3 +68,7 @@ export const createUniqueFileName = (originalName: string): string => {
   // const extension = originalName.split('.').pop() || '';
   return `${uuidv4()}`;
 };
+
+export const getPandelGalleryImageUrl = (publicId: string): string => {
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`;
+};

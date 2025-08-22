@@ -71,19 +71,26 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
   const getImagesArray = () => {
     const images: string[] = [];
     
-    // Add all available images to the array
-    if (pandal.banner_image) images.push(pandal.banner_image);
-    if (pandal.avatar && pandal.avatar !== pandal.banner_image) images.push(pandal.avatar);
-    if (pandal.image && pandal.image !== pandal.banner_image && pandal.image !== pandal.avatar) images.push(pandal.image);
+    // Add gallery images (Cloudinary) first
     if (pandal.images && pandal.images.length > 0) {
-      pandal.images.forEach(img => {
+      pandal.images.forEach((img: string) => {
         if (!images.includes(img)) images.push(img);
       });
     }
     
+    // Add banner image (geobums) if available
+    if (pandal.banner_image && !images.includes(pandal.banner_image)) {
+      images.push(pandal.banner_image);
+    }
+    
+    // Add avatar image (geobums) if available and different from banner
+    if (pandal.avatar_image && pandal.avatar_image !== pandal.banner_image && !images.includes(pandal.avatar_image)) {
+      images.push(pandal.avatar_image);
+    }
+    
     // If no images found, add default
     if (images.length === 0) {
-      images.push('l47920220926121122.jpeg');
+      images.push('l47920220926121122');
     }
     
     return images;
@@ -121,8 +128,20 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
           
           {/* Compact Pandal Header */}
           <div className="text-center">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-lg mx-auto mb-2">
-              <span className="text-white font-bold text-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center shadow-lg mx-auto mb-2 overflow-hidden">
+              <img
+                src={`https://geobums.com/photos/thumbs/${pandal.avatar_image || pandal.banner_image || 'l47920220926121122'}.jpg`}
+                alt={pandal.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to letter avatar if image fails
+                  e.currentTarget.style.display = 'none';
+                  if (e.currentTarget.nextElementSibling) {
+                    (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                  }
+                }}
+              />
+              <span className="text-white font-bold text-lg hidden items-center justify-center w-full h-full">
                 {pandal.avatar}
               </span>
             </div>
@@ -273,8 +292,20 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
                     className="bg-white/60 rounded-lg p-2 border border-white/40 cursor-pointer hover:bg-white/80 hover:border-purple-300 transition-all duration-200"
                   >
                     <div className="flex items-start space-x-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-semibold text-xs">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <img
+                          src={`https://geobums.com/photos/thumbs/${nearbyPandal.avatar_image || nearbyPandal.banner_image || 'l47920220926121122'}.jpg`}
+                          alt={nearbyPandal.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to letter avatar if image fails
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.nextElementSibling) {
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                            }
+                          }}
+                        />
+                        <span className="text-white font-semibold text-xs hidden items-center justify-center w-full h-full">
                           {nearbyPandal.avatar}
                         </span>
                       </div>

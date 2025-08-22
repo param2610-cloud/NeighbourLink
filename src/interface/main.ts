@@ -206,6 +206,8 @@ export interface BusinessCollection {
 }
 
 
+
+// Main Pandel interface matching backend exactly
 export interface Pandel {
   id: number;
   name: string;
@@ -213,15 +215,15 @@ export interface Pandel {
   average_rating: number;
   coordinates: {
     lat: number;
-    long: number;
+    lng: number;
   };
-  banner_image: string;
+  banner_image: string; // Use geobums URL format
   created_at: string;
   updated_at: string;
-  images: string[];
+  images: string[]; // Array of Cloudinary public IDs
   category: string;
   popularity: number;
-  avatar_image: string;
+  avatar_image: string; // Use geobums URL format
   address: string;
   reviews: Review[];
 }
@@ -237,18 +239,54 @@ export interface Pandal {
     lat: number;
     lng: number;
   };
-  image?: string;
   avatar: string;
   popularity: number;
   category: 'traditional' | 'modern' | 'heritage' | 'community';
-  // Additional fields from backend
   average_rating?: number;
   banner_image?: string;
   created_at?: string;
   updated_at?: string;
   images?: string[];
-  avatar_image?: string;
+  avatar_image?: string; // Added this field
   address?: string;
   reviews?: Review[];
+}
+
+// Image utility functions
+export class PandelImageUtils {
+  // Get banner/avatar image URL (use geobums)
+  static getBannerImageUrl(imageId: string): string {
+    if (!imageId) return 'https://geobums.com/photos/thumbs/l47920220926121122.jpg';
+    return `https://geobums.com/photos/thumbs/${imageId}.jpg`;
+  }
+
+  // Get avatar image URL with fallback to banner
+  static getAvatarImageUrl(avatarImage: string, bannerImage: string): string {
+    const imageId = avatarImage || bannerImage || 'l47920220926121122';
+    return `https://geobums.com/photos/thumbs/${imageId}.jpg`;
+  }
+
+  // Get Cloudinary image URL for gallery images
+  static getCloudinaryImageUrl(publicId: string): string {
+    if (!publicId) return '';
+    return `https://res.cloudinary.com/dqd7ywrxm/image/upload/${publicId}`;
+  }
+
+  // Get all gallery image URLs
+  static getGalleryImageUrls(images: string[]): string[] {
+    return images.map(publicId => this.getCloudinaryImageUrl(publicId)).filter(url => url);
+  }
+
+  // Convert backend Pandel to display format with processed URLs
+  static processImageUrls(pandel: Pandel): Pandel & { processedImageUrls: { banner: string; avatar: string; gallery: string[] } } {
+    return {
+      ...pandel,
+      processedImageUrls: {
+        banner: this.getBannerImageUrl(pandel.banner_image),
+        avatar: this.getAvatarImageUrl(pandel.avatar_image, pandel.banner_image),
+        gallery: this.getGalleryImageUrls(pandel.images)
+      }
+    };
+  }
 }
 
