@@ -45,8 +45,15 @@ export const useBusinessInteractions = ({
       try {
         setLoading(true);
         await BusinessInteractionService.initializeStats(businessId);
-        const interactions = await BusinessInteractionService.getUserInteractions(businessId);
+        
+        // Load stats and interactions after initialization
+        const [interactions, businessStats] = await Promise.all([
+          BusinessInteractionService.getUserInteractions(businessId),
+          BusinessInteractionService.getBusinessStats(businessId)
+        ]);
+        
         setUserInteractions(interactions);
+        setStats(businessStats);
       } catch (error) {
         console.error('Error loading business interactions:', error);
         toast.error('Failed to load business data');
