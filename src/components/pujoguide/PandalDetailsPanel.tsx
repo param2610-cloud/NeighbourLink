@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { X, MapPin, Star, Calendar, Clock, Users, Navigation } from 'lucide-react';
+import { X, MapPin, Star, Calendar, Clock, Users } from 'lucide-react';
 import { Pandal } from './data/pandalData';
+import { Review } from '../../interface/main';
 import { AddressManager } from '../../services/addressManager';
+import { ReviewService } from '../../services/reviewService';
 import ImageCarousel from './ImageCarousel';
+import ReviewSection from './ReviewSection';
 
 interface PandalDetailsPanelProps {
   pandal: Pandal | null;
@@ -21,14 +24,54 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
 }) => {
   const [currentAddress, setCurrentAddress] = useState<string>('');
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState<number>(0);
 
-  // Update address when pandal changes
+  // Update address and reviews when pandal changes
   useEffect(() => {
-    const updateAddressIfNeeded = async () => {
+    const updateData = async () => {
       if (!pandal || !isOpen) return;
 
+      // Update address
       const displayAddress = pandal.address || pandal.location;
       setCurrentAddress(displayAddress || '');
+
+      // Initialize reviews and rating
+      const initialReviews: Review[] = pandal.reviews && pandal.reviews.length > 0 
+        ? pandal.reviews 
+        : [
+            { 
+              id: "1", 
+              title: "Amazing decorations!", 
+              body: "The decorations were absolutely stunning and the atmosphere was very peaceful. Great cultural programs too.",
+              reviewerName: "Rahul S.", 
+              rating: 5, 
+              date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            { 
+              id: "2", 
+              title: "Beautiful traditional pandal", 
+              body: "Loved the traditional touch and authentic Bengali decorations. The daily aarti was very spiritual.",
+              reviewerName: "Priya M.", 
+              rating: 4, 
+              date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            { 
+              id: "3", 
+              title: "Must visit for culture lovers", 
+              body: "Great cultural programs and community feeling. The volunteer service was excellent.",
+              reviewerName: "Amit K.", 
+              rating: 5, 
+              date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+            }
+          ];
+
+      setReviews(initialReviews);
+      
+      const calculatedRating = pandal.average_rating || 
+        (initialReviews.length > 0 ? initialReviews.reduce((sum: number, review: any) => sum + review.rating, 0) / initialReviews.length : pandal.popularity || 5);
+      
+      setAverageRating(calculatedRating);
 
       // Only fetch address if we don't have a detailed one and we have coordinates
       if (!displayAddress || displayAddress.length < 20) {
@@ -52,20 +95,10 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
       }
     };
 
-    updateAddressIfNeeded();
+    updateData();
   }, [pandal, isOpen]);
 
   if (!pandal) return null;
-
-  // Use reviews from pandal or create mock reviews
-  const reviews = pandal.reviews || [
-    { id: 1, name: "Rahul S.", rating: 5, comment: "Amazing decorations and peaceful atmosphere!", date: "2 days ago" },
-    { id: 2, name: "Priya M.", rating: 4, comment: "Beautiful pandal with traditional touch.", date: "1 week ago" },
-    { id: 3, name: "Amit K.", rating: 5, comment: "Must visit! Great cultural programs.", date: "1 week ago" }
-  ];
-
-  const averageRating = pandal.average_rating || 
-    (reviews.length > 0 ? reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / reviews.length : pandal.popularity || 5);
 
   // Get images array for carousel
   const getImagesArray = () => {
@@ -74,7 +107,10 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
     // Add gallery images (Cloudinary) first
     if (pandal.images && pandal.images.length > 0) {
       pandal.images.forEach((img: string) => {
-        if (!images.includes(img)) images.push(img);
+        // Only add if it's not a placeholder or invalid image
+        if (img && !images.includes(img) && img !== 'pandal_1_gallery_1' && img !== 'pandal_2_gallery_1') {
+          images.push(img);
+        }
       });
     }
     
@@ -142,7 +178,7 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
                 }}
               />
               <span className="text-white font-bold text-lg hidden items-center justify-center w-full h-full">
-                {pandal.avatar}
+                {pandal.avatar || pandal.name?.charAt(0) || 'P'}
               </span>
             </div>
             <h3 className="text-lg font-bold text-gray-800 mb-1">{pandal.name}</h3>
@@ -251,27 +287,67 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
           <div>
             <h4 className="font-semibold text-gray-800 mb-2 text-sm">Recent Reviews</h4>
             <div className="space-y-2">
-              {reviews.slice(0, 2).map((review: any) => (
+              {reviews.slice(0, 2).map((review) => (
                 <div key={review.id} className="bg-white/60 rounded-lg p-2 border border-white/40">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-1">
                       <div className="w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-semibold">
-                          {review.name.charAt(0)}
+                          {review.reviewerName?.charAt(0) || 'U'}
                         </span>
                       </div>
-                      <span className="font-medium text-gray-800 text-xs">{review.name}</span>
+                      <span className="font-medium text-gray-800 text-xs">{review.reviewerName}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Star className="h-3 w-3 text-yellow-500 fill-current" />
                       <span className="text-xs font-medium text-gray-700">{review.rating}</span>
                     </div>
                   </div>
-                  <p className="text-gray-700 text-xs mb-1">{review.comment}</p>
-                  <span className="text-gray-500 text-xs">{review.date}</span>
+                  <p className="text-gray-700 text-xs mb-1">{review.body}</p>
+                  <span className="text-gray-500 text-xs">
+                    {new Date(review.date).toLocaleDateString()}
+                  </span>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div>
+            <ReviewSection
+              reviews={reviews}
+              pandalName={pandal.name}
+              averageRating={averageRating}
+              onAddReview={async (reviewData) => {
+                try {
+                  // In a real app, this would make an API call
+                  const newReview: Review = {
+                    id: Date.now().toString(),
+                    title: reviewData.title,
+                    body: reviewData.body,
+                    reviewerName: reviewData.reviewerName,
+                    date: new Date().toISOString(),
+                    rating: reviewData.rating
+                  };
+
+                  // Update local state
+                  const updatedReviews = [...reviews, newReview];
+                  setReviews(updatedReviews);
+                  
+                  // Recalculate average rating
+                  const newAverageRating = updatedReviews.reduce((sum, review) => sum + review.rating, 0) / updatedReviews.length;
+                  setAverageRating(newAverageRating);
+
+                  console.log('Review added successfully:', newReview);
+                  
+                  // TODO: Implement actual API call using ReviewService
+                  // await ReviewService.addReview(pandal.id, reviewData);
+                } catch (error) {
+                  console.error('Error adding review:', error);
+                  throw error;
+                }
+              }}
+            />
           </div>
 
           {/* Compact Nearby Pandals */}
@@ -306,7 +382,7 @@ const PandalDetailsPanel: React.FC<PandalDetailsPanelProps> = ({
                           }}
                         />
                         <span className="text-white font-semibold text-xs hidden items-center justify-center w-full h-full">
-                          {nearbyPandal.avatar}
+                          {nearbyPandal.avatar || nearbyPandal.name?.charAt(0) || 'P'}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">

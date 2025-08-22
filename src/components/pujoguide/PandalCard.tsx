@@ -1,19 +1,17 @@
 import React from 'react';
-import { MapPin, Eye, MessageCircle, MoreVertical, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Eye, MessageCircle, MoreVertical } from 'lucide-react';
 import { Pandal } from './data/pandalData';
 import ImageCarousel from './ImageCarousel';
+import RatingDisplay from './RatingDisplay';
 
 interface PandalCardProps {
   pandal: Pandal;
-  onContactClick?: (pandal: Pandal) => void;
+  onWriteReview?: (pandal: Pandal) => void;
 }
 
-interface PandalCardProps {
-  pandal: Pandal;
-  onContactClick?: (pandal: Pandal) => void;
-}
-
-const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
+const PandalCard: React.FC<PandalCardProps> = ({ pandal, onWriteReview }) => {
+  const navigate = useNavigate();
 
   // Get images array for carousel (Cloudinary URLs)
   const getImagesArray = () => {
@@ -79,10 +77,11 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
               </h3>
               {/* Rating Display */}
               <div className="flex items-center space-x-1 mt-1">
-                <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                <span className="text-white/80 text-sm">
-                  {getRating().toFixed(1)}
-                </span>
+                <RatingDisplay 
+                  rating={getRating()}
+                  size="small"
+                  showNumber={true}
+                />
                 {pandal.reviews && pandal.reviews.length > 0 && (
                   <span className="text-white/60 text-xs">
                     ({pandal.reviews.length} reviews)
@@ -168,17 +167,17 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
           <button 
-            className="flex-1 backdrop-blur-sm hover:cursor-pointer bg-white/20 border border-white/30 hover:border-white/40 text-white text-sm font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
-            onClick={() => onContactClick?.(pandal)}
+            className="flex-1 backdrop-blur-sm hover:cursor-pointer bg-white/20 border border-white/30 hover:border-white/40 text-white text-sm font-medium py-3 px-3 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
+            onClick={() => navigate(`/pujo-planner/pandal/${pandal.id}`)}
           >
             <Eye className="h-4 w-4" />
-            <span>View Details</span>
+            <span>Details</span>
           </button>
           
           <button 
-            className="flex-1 backdrop-blur-sm bg-purple-500/90 hover:cursor-pointer hover:bg-purple-500 border border-purple-400/30 hover:border-purple-400/40 text-white text-sm font-medium py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
+            className="flex-1 backdrop-blur-sm bg-purple-500/90 hover:cursor-pointer hover:bg-purple-500 border border-purple-400/30 hover:border-purple-400/40 text-white text-sm font-medium py-3 px-3 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
             onClick={() => {
               // Open Google Maps with coordinates
               const lat = pandal.coordinates.lat;
@@ -189,6 +188,15 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onContactClick }) => {
           >
             <MessageCircle className="h-4 w-4" />
             <span>Directions</span>
+          </button>
+
+          {/* Add Review Button */}
+          <button 
+            className="backdrop-blur-sm bg-green-500/90 hover:cursor-pointer hover:bg-green-500 border border-green-400/30 hover:border-green-400/40 text-white text-sm font-medium py-3 px-3 rounded-xl transition-all duration-200 flex items-center justify-center"
+            onClick={() => onWriteReview?.(pandal)}
+            title="Write a review"
+          >
+            ⭐
           </button>
         </div>
       </div>

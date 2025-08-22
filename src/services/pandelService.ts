@@ -94,6 +94,20 @@ export class PandelService {
         }
     }
 
+    // Create new pandel -> POST /pandel/
+    static async createPandel(pandelData: Partial<Pandel>): Promise<Pandel> {
+        const response = await fetch(`${API_BASE_URL}/pandel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(pandelData),
+        });
+        
+        const data = await this.handleResponse(response);
+        return this.convertToPandel(data);
+    }
+
     // Convert backend data to frontend Pandel type
     static convertToPandel(serverItem: any): Pandel {
         // Handle coordinates conversion

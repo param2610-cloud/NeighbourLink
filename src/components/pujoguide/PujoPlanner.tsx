@@ -3,18 +3,16 @@ import { Pandal } from './data/pandalData';
 import { PandelService } from '../../services/pandelService';
 import SearchBar, { SearchType } from './SearchBar';
 import PandalGrid from './PandalGrid';
-import PandalDetailsPanel from './PandalDetailsPanel';
 import SearchResultHeader from './SearchResultHeader';
+import CreatePandalSection from './CreatePandalSection';
+import { Pandel } from '../../interface/main';
 
 import {
     getCurrentLocation,
     sortByDistance,
     sortByPopularity,
-    filterByDistrict,
-    findNearbyPandals,
     getAvailableDistricts
 } from './utils/locationUtils';
-import SplashCursor from '../ui/SplashCursor';
 import { FaArrowAltCircleLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,9 +20,6 @@ const PujoPlanner: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchType, setSearchType] = useState<SearchType>('all');
     const [filteredPandals, setFilteredPandals] = useState<Pandal[]>([]);
-    const [selectedPandal, setSelectedPandal] = useState<Pandal | null>(null);
-    const [nearbyPandals, setNearbyPandals] = useState<Pandal[]>([]);
-    const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
     const [isLocationBased, setIsLocationBased] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +29,20 @@ const PujoPlanner: React.FC = () => {
     const [isPosterMinimized, setIsPosterMinimized] = useState(false);
 
     const availableDistricts = getAvailableDistricts(allPandals);
-      const navigate = useNavigate();
+    const navigate = useNavigate();
+
+    // Handle new pandal creation
+    const handlePandalCreated = (newPandel: Pandel) => {
+        // Convert new Pandel to legacy Pandal format
+        const newPandal = PandelService.convertToLegacyFormat(newPandel);
+        
+        // Add to the lists
+        setAllPandals(prev => [newPandal, ...prev]);
+        setFilteredPandals(prev => [newPandal, ...prev]);
+        
+        // Show success message or refresh data
+        console.log('New pandal created:', newPandal.name);
+    };
 
     // Initialize with backend data and user's location
     useEffect(() => {
@@ -129,17 +137,7 @@ const PujoPlanner: React.FC = () => {
                     const exactMatches = searchResults.map(PandelService.convertToLegacyFormat);
                     
                     const sortedExactMatches = sortByPopularity(exactMatches);
-
-                    if (sortedExactMatches.length > 0 && userLocation) {
-                        const targetPandal = sortedExactMatches[0];
-                        const nearby = findNearbyPandals(targetPandal, allPandals, 15);
-                        const nearbyFiltered = nearby.filter(np =>
-                            !sortedExactMatches.some(em => em.id === np.id)
-                        );
-                        results = [...sortedExactMatches, ...nearbyFiltered];
-                    } else {
-                        results = sortedExactMatches;
-                    }
+                    results = sortedExactMatches;
                     break;
 
                 default:
@@ -160,22 +158,6 @@ const PujoPlanner: React.FC = () => {
             );
             setFilteredPandals(sortByPopularity(clientResults));
         }
-    };
-
-    const handlePandalSelect = (pandal: Pandal) => {
-        setSelectedPandal(pandal);
-        setIsPanelOpen(true);
-
-        const nearby = findNearbyPandals(pandal, allPandals, 12);
-        setNearbyPandals(nearby);
-    };
-
-    const handleClosePanel = () => {
-        setIsPanelOpen(false);
-        setTimeout(() => {
-            setSelectedPandal(null);
-            setNearbyPandals([]);
-        }, 300);
     };
 
     if (isLoading) {
@@ -253,16 +235,14 @@ const PujoPlanner: React.FC = () => {
             )}
 
             
-            <div className={`relative z-10 min-h-screen transition-all duration-500 ease-out ${isPanelOpen ? 'pr-80 md:pr-96' : 'pr-0'
-                }`}>
+            <div className="relative z-10 min-h-screen">
                     <button
                     className="absolute flex justify-center items-center gap-3 top-6 left-6 px-4 py-2 text-white font-medium rounded-md shadow-sm focus:outline-none hover:bg-black/20 transition-colors"
                     onClick={() => navigate("/")}
                   >
                     <FaArrowAltCircleLeft size={22} /> Back to Home
                   </button>
-                <div className={`mx-auto px-2 py-4 transition-all duration-500 ease-out ${isPanelOpen ? 'max-w-none ml-2' : 'max-w-6xl mx-auto'
-                    }`}>
+                <div className="max-w-6xl mx-auto px-2 py-4">
                     
                     <div className="text-center mb-5 mt-4">
                         <div className='flex justify-center items-center gap-2'>
@@ -308,8 +288,6 @@ const PujoPlanner: React.FC = () => {
 
                     <PandalGrid
                         pandals={filteredPandals}
-                        onPandalSelect={handlePandalSelect}
-                        isPanelOpen={isPanelOpen}
                     />
 
                     {filteredPandals.length === 0 && !isLoading && (
@@ -322,16 +300,11 @@ const PujoPlanner: React.FC = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Create Pandal Section - Always show at bottom */}
+                    <CreatePandalSection onPandalCreated={handlePandalCreated} />
                 </div>
             </div>
-
-            <PandalDetailsPanel
-                pandal={selectedPandal}
-                isOpen={isPanelOpen}
-                onClose={handleClosePanel}
-                nearbyPandals={nearbyPandals}
-                onPandalSelect={handlePandalSelect}
-            />
         </div>
     );
 };

@@ -30,6 +30,7 @@ import PromotionDetailsPage from "@/components/promotion/PromotionDetailsPage";
 import NeighbourLinkBusiness from "@/components/bussiness/NeighbourLinkBusinessModular";
 import BusinessViewPage from "@/components/bussiness/BusinessViewPage";
 import PujoPlannerPage from "@/pages/PujoPlannerPage";
+import PandalDetailsPage from "@/pages/PandalDetailsPage";
 
 const ProfileCard = lazy(() => import("@/components/ProfileCard/ProfileCard"));
 const ResourceForm = lazy(() => import("@/components/Forms/ResourceForm"));
@@ -130,6 +131,7 @@ const AuthRouter: React.FC = () => {
             element={<BusinessViewPage />}
           />
           <Route path="/pujo-planner" element={<PujoPlannerPage />} />
+          <Route path="/pujo-planner/pandal/:id" element={<PandalDetailsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
