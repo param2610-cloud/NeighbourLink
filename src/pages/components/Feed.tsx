@@ -447,7 +447,7 @@ export const Feed: React.FC = () => {
       console.error("Cannot delete item: ID is missing");
       return;
     }
-    
+
     try {
       let collectionName: string;
       switch (type) {
@@ -567,63 +567,65 @@ export const Feed: React.FC = () => {
             </p>
           </div>
         ) : (
-          sortedFeedItems.map((item) => {
-            // Add safety check for item and item.id
-            if (!item || !item.id) {
-              console.warn("Skipping item with missing data:", item);
-              return null;
-            }
-
-            const CardComponent = () => {
-              switch (item.type) {
-                case "resource":
-                  return (
-                    <ResourceCard
-                      resource={item as Resource}
-                      onDelete={handleDeleteItem}
-                      observePost={observePost}
-                    />
-                  );
-                case "promotion":
-                  return (
-                    <PromotionCard
-                      promotion={item as Promotion}
-                      onDelete={handleDeleteItem}
-                      observePost={observePost}
-                    />
-                  );
-                case "event":
-                  return (
-                    <EventCard
-                      event={item as Event}
-                      onDelete={handleDeleteItem}
-                      observePost={observePost}
-                    />
-                  );
-                case "update":
-                  return (
-                    <UpdateCard
-                      update={item as Update}
-                      onDelete={handleDeleteItem}
-                      observePost={observePost}
-                    />
-                  );
-                default:
-                  return null;
+          sortedFeedItems
+            .map((item) => {
+              // Add safety check for item and item.id
+              if (!item || !item.id) {
+                console.warn("Skipping item with missing data:", item);
+                return null;
               }
-            };
 
-            return (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.32 }}
-              >
-                <CardComponent />
-              </motion.div>
-            );
-          }).filter(Boolean) // Remove null items
+              const CardComponent = () => {
+                switch (item.type) {
+                  case "resource":
+                    return (
+                      <ResourceCard
+                        resource={item as Resource}
+                        onDelete={handleDeleteItem}
+                        observePost={observePost}
+                      />
+                    );
+                  case "promotion":
+                    return (
+                      <PromotionCard
+                        promotion={item as Promotion}
+                        onDelete={handleDeleteItem}
+                        observePost={observePost}
+                      />
+                    );
+                  case "event":
+                    return (
+                      <EventCard
+                        event={item as Event}
+                        onDelete={handleDeleteItem}
+                        observePost={observePost}
+                      />
+                    );
+                  case "update":
+                    return (
+                      <UpdateCard
+                        update={item as Update}
+                        onDelete={handleDeleteItem}
+                        observePost={observePost}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              };
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32 }}
+                >
+                  <CardComponent />
+                </motion.div>
+              );
+            })
+            .filter(Boolean) // Remove null items
         )}
       </div>
     </div>
