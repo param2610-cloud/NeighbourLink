@@ -443,6 +443,11 @@ export const Feed: React.FC = () => {
   const { observePost } = useIntersectionObserver();
 
   const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {
+    if (!id) {
+      console.error("Cannot delete item: ID is missing");
+      return;
+    }
+    
     try {
       let collectionName: string;
       switch (type) {
@@ -563,6 +568,12 @@ export const Feed: React.FC = () => {
           </div>
         ) : (
           sortedFeedItems.map((item) => {
+            // Add safety check for item and item.id
+            if (!item || !item.id) {
+              console.warn("Skipping item with missing data:", item);
+              return null;
+            }
+
             const CardComponent = () => {
               switch (item.type) {
                 case "resource":
@@ -612,7 +623,7 @@ export const Feed: React.FC = () => {
                 <CardComponent />
               </motion.div>
             );
-          })
+          }).filter(Boolean) // Remove null items
         )}
       </div>
     </div>
@@ -1177,7 +1188,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const totalImages = event.images?.length || 0;
-  const { user } = useStateContext();
+  const user = auth.currentUser; // Use auth.currentUser instead of useStateContext
   const isOwner = user?.uid === event.userId;
   const [isRSVPed, setIsRSVPed] = useState(false);
   const [isRSVPing, setIsRSVPing] = useState(false);
@@ -1203,10 +1214,10 @@ export const EventCard: React.FC<EventCardProps> = ({
 
   useEffect(() => {
     // Check if the current user has already RSVPed
-    if (user && event.responders?.users) {
+    if (user?.uid && event.responders?.users) {
       setIsRSVPed(event.responders.users.includes(user.uid));
     }
-  }, [user, event.responders]);
+  }, [user?.uid, event.responders]);
 
   const handleNext = () => {
     setCurrentImageIndex((prev) => (prev + 1) % totalImages);
@@ -1222,7 +1233,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   };
 
   const handleRSVP = async () => {
-    if (!user) {
+    if (!user?.uid) {
       // Handle not logged in state
       alert("Please log in to RSVP for this event");
       return;
