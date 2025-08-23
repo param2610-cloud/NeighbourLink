@@ -27,6 +27,7 @@ const GoogleTranslate = () => {
   const [, setScriptLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<string>("en");
+  const [blocked, setBlocked] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -49,11 +50,15 @@ const GoogleTranslate = () => {
       return;
     }
 
-  const script = document.createElement("script");
+    const script = document.createElement("script");
   script.id = "google-translate-script";
   // use explicit https to avoid protocol/CSP issues in production
   script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
     script.async = true;
+    // detect load error (blocked by extension/CSP)
+    script.onerror = () => {
+      setBlocked(true);
+    };
     document.body.appendChild(script);
 
     // expose callback
@@ -74,13 +79,21 @@ const GoogleTranslate = () => {
       setScriptLoaded(true);
     };
 
+    // If google object never appears shortly after load, treat as blocked
+    const checkTimer = setTimeout(() => {
+      if (!(window as any).google) setBlocked(true);
+    }, 3000);
+
     // close menu on outside click
     const onDoc = (e: MouseEvent) => {
       if (!containerRef.current) return;
       if (!containerRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("click", onDoc);
-    return () => document.removeEventListener("click", onDoc);
+    return () => {
+      clearTimeout(checkTimer);
+      document.removeEventListener("click", onDoc);
+    };
   }, []);
 
   const changeLang = (lang: string) => {
@@ -137,7 +150,7 @@ const GoogleTranslate = () => {
         </svg>
       </button>
 
-      {open && (
+  {open && (
         <div className="absolute left-0 bottom-full mb-2 w-full rounded-md bg-white/98 dark:bg-slate-900/95 shadow-lg ring-1 ring-black/5 z-50">
           <div className="py-1 max-h-48 overflow-auto">
             {Object.entries(LANGS).map(([code, label]) => (
@@ -154,6 +167,11 @@ const GoogleTranslate = () => {
           </div>
         </div>
       )}
+        {blocked && (
+          <div className="mt-2 text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-50/70 p-2 rounded">
+            Translation appears to be blocked by your browser or an extension. Try disabling ad/privacy extensions or allow third-party cookies for this site.
+          </div>
+        )}
     </div>
   );
 };
