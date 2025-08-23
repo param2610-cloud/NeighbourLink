@@ -49,9 +49,10 @@ const GoogleTranslate = () => {
       return;
     }
 
-    const script = document.createElement("script");
-    script.id = "google-translate-script";
-    script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+  const script = document.createElement("script");
+  script.id = "google-translate-script";
+  // use explicit https to avoid protocol/CSP issues in production
+  script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
     script.async = true;
     document.body.appendChild(script);
 
@@ -87,11 +88,26 @@ const GoogleTranslate = () => {
     try {
       const cookieVal = `/en/${lang}`;
       setCookie("googtrans", cookieVal);
-      // also set host-level cookie to be safe
+
+      // also attempt a host-level cookie when appropriate.
+      // Avoid setting a domain like `.localhost` (invalid) and only add
+      // Secure/SameSite when on HTTPS to satisfy modern browsers.
       try {
         const host = location.hostname;
-        document.cookie = `googtrans=${encodeURIComponent(cookieVal)};domain=.${host};path=/`;
-      } catch {}
+        const isHttps = location.protocol === 'https:';
+        const secureAttrs = isHttps ? '; Secure; SameSite=None' : '';
+
+        if (host && host.indexOf('.') > -1) {
+          // host contains a dot (likely a real domain) — set domain cookie
+          const domain = '.' + host;
+          document.cookie = `googtrans=${encodeURIComponent(cookieVal)};domain=${domain};path=/${secureAttrs}`;
+        } else {
+          // likely localhost or an IP — set cookie without domain attribute
+          document.cookie = `googtrans=${encodeURIComponent(cookieVal)};path=/${secureAttrs}`;
+        }
+      } catch (e) {
+        // ignore cookie-setting errors
+      }
     } catch (e) {}
     setCurrent(lang);
     // small delay to ensure cookie is written
