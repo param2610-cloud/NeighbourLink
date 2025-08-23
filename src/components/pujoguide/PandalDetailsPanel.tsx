@@ -3,7 +3,7 @@ import { X, MapPin, Star, Calendar, Clock, Users } from 'lucide-react';
 import { Pandal } from './data/pandalData';
 import { Review } from '../../interface/main';
 import { AddressManager } from '../../services/addressManager';
-import { ReviewService } from '../../services/reviewService';
+// import { ReviewService } from '../../services/reviewService';
 import ImageCarousel from './ImageCarousel';
 import ReviewSection from './ReviewSection';
 

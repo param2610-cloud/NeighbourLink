@@ -1,5 +1,18 @@
 import { Pandal } from '../data/pandalData';
 
+// Interface for reverse geocoding result
+interface ReverseGeocodeResult {
+  district?: string;
+  state?: string;
+  city?: string;
+  fullAddress?: string;
+}
+
+// Interface for enhanced Pandal with dynamic district
+interface PandalWithDistrict extends Pandal {
+  dynamicDistrict?: string;
+}
+
 // Haversine formula to calculate distance between two coordinates
 export function calculateDistance(
   lat1: number,
@@ -65,7 +78,7 @@ export function sortByPopularity(pandals: Pandal[]): Pandal[] {
 // Filter pandals by district
 export function filterByDistrict(pandals: Pandal[], district: string): Pandal[] {
   return pandals.filter(
-    (pandal) => pandal.district.toLowerCase() === district.toLowerCase()
+    (pandal) => pandal?.district?.toLowerCase() === district.toLowerCase()
   );
 }
 
@@ -81,7 +94,6 @@ export function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
           });
         },
         () => {
-          // Fallback to Kolkata coordinates if location access denied
           resolve({ lat: 22.5726, lng: 88.3639 });
         }
       );
@@ -94,6 +106,148 @@ export function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
 
 // Get available districts from pandal data
 export function getAvailableDistricts(pandals: Pandal[]): string[] {
-  const districts = [...new Set(pandals.map(pandal => pandal.district))];
+  const districts = [...new Set(
+    pandals
+      .map(pandal => pandal.district)
+      .filter((district): district is string => Boolean(district))
+  )];
   return districts.sort();
+}
+
+// **NEW FUNCTIONS FOR GOOGLE MAPS INTEGRATION**
+
+/**
+ * Get district information from coordinates using Google Maps Reverse Geocoding
+ */
+export async function getDistrictFromCoordinates(
+  lat: number,
+  lng: number
+): Promise<ReverseGeocodeResult | null> {
+  try {
+    if (!window.google || !window.google.maps) {
+      console.error('Google Maps API not loaded');
+      return null;
+    }
+
+    const geocoder = new window.google.maps.Geocoder();
+    
+    return new Promise((resolve) => {
+      geocoder.geocode(
+        { location: { lat, lng } },
+        (results: google.maps.GeocoderResult[], status: google.maps.GeocoderStatus) => {
+          if (status === 'OK' && results && results.length > 0) {
+            const result = results[0];
+            const addressComponents = result.address_components;
+            
+            let district = '';
+            let state = '';
+            let city = '';
+            
+            // Parse address components to find district/administrative area
+            for (const component of addressComponents) {
+              const types = component.types;
+              
+              // Look for administrative area level 2 (usually district)
+              if (types.includes('administrative_area_level_2')) {
+                district = component.long_name;
+              }
+              // Look for administrative area level 1 (usually state)
+              else if (types.includes('administrative_area_level_1')) {
+                state = component.long_name;
+              }
+              // Look for locality (city)
+              else if (types.includes('locality')) {
+                city = component.long_name;
+              }
+            }
+            
+            resolve({
+              district: district || city, // Fallback to city if district not found
+              state,
+              city,
+              fullAddress: result.formatted_address
+            });
+          } else {
+            console.error('Reverse geocoding failed:', status);
+            resolve(null);
+          }
+        }
+      );
+    });
+  } catch (error) {
+    console.error('Error getting district from coordinates:', error);
+    return null;
+  }
+}
+
+/**
+ * Get districts for all pandals using reverse geocoding
+ * This function can be used to populate district data for pandals
+ */
+export async function enrichPandalsWithDistricts(
+  pandals: Pandal[]
+): Promise<PandalWithDistrict[]> {
+  const enrichedPandals: PandalWithDistrict[] = [];
+  
+  for (const pandal of pandals) {
+    const districtInfo = await getDistrictFromCoordinates(
+      pandal.coordinates.lat,
+      pandal.coordinates.lng
+    );
+    
+    enrichedPandals.push({
+      ...pandal,
+      dynamicDistrict: districtInfo?.district || pandal.district || 'Unknown'
+    });
+    
+    // Add small delay to avoid hitting API rate limits
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  return enrichedPandals;
+}
+
+/**
+ * Filter pandals by district using Google Maps reverse geocoding
+ * This is the main function you'll use for filtering
+ */
+export async function filterByDistrictWithGeocoding(
+  pandals: Pandal[], 
+  targetDistrict: string
+): Promise<Pandal[]> {
+  const enrichedPandals = await enrichPandalsWithDistricts(pandals);
+  
+  return enrichedPandals.filter(pandal => 
+    pandal.dynamicDistrict?.toLowerCase() === targetDistrict.toLowerCase()
+  );
+}
+
+/**
+ * Get available districts from pandals using reverse geocoding
+ */
+export async function getAvailableDistrictsWithGeocoding(
+  pandals: Pandal[]
+): Promise<string[]> {
+  const enrichedPandals = await enrichPandalsWithDistricts(pandals);
+  const districts = [...new Set(
+    enrichedPandals
+      .map(pandal => pandal.dynamicDistrict)
+      .filter((district): district is string => Boolean(district))
+  )];
+  return districts.sort();
+}
+
+/**
+ * Enhanced filter function that works with both static and dynamic district data
+ */
+export async function smartDistrictFilter(
+  pandals: Pandal[],
+  targetDistrict: string,
+  useGeocoding: boolean = true
+): Promise<Pandal[]> {
+  if (useGeocoding) {
+    return await filterByDistrictWithGeocoding(pandals, targetDistrict);
+  } else {
+    return filterByDistrict(pandals, targetDistrict);
+  }
 }

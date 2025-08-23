@@ -1,5 +1,5 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
@@ -39,7 +39,7 @@ function Register() {
   const [fetchingLocation, setFetchingLocation] = useState<boolean>(false);
   const [selectedLocation, setSelectedLocation] = useState<Coordinates | null>(null);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
-  const mapRef = useRef<any>(null);
+  
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
@@ -290,12 +290,7 @@ function Register() {
     }
   };
 
-  const handleLocationPermissionDenied = () => {
-    setLocationPermission('denied');
-    toast.warn("Please manually select your location on the map.", {
-      position: "bottom-center",
-    });
-  };
+
 
   const clearLocationSelection = () => {
     setLocationSelected(false);

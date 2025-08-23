@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Bell, Users, BookOpen, Calendar, MessageSquare, Shapes } from 'lucide-react';
+import { Search, Users, BookOpen, Calendar, Shapes } from 'lucide-react';
 import { useMobileContext } from '@/contexts/MobileContext';
 import { useNavigate } from 'react-router-dom';
 

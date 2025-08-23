@@ -358,15 +358,15 @@ const NeighbourLinkBusiness: React.FC = () => {
     return incompleteFields.length === 0;
   };
 
-  const handleNewAnnouncement = () => {
-    if (!isProfileComplete()) {
-      // For now, alert, but can improve to highlight incomplete sections
-      alert("Please complete your profile first");
-      return;
-    }
-    console.log("New announcement clicked");
-    // Navigate to announcement creation page
-  };
+  // const handleNewAnnouncement = () => {
+  //   if (!isProfileComplete()) {
+  //     // For now, alert, but can improve to highlight incomplete sections
+  //     alert("Please complete your profile first");
+  //     return;
+  //   }
+  //   console.log("New announcement clicked");
+  //   // Navigate to announcement creation page
+  // };
 
   async function handleLogout() {
     try {
@@ -633,7 +633,7 @@ const NeighbourLinkBusiness: React.FC = () => {
 
   // Helper functions to check specific incomplete fields
   const isContactIncomplete = () => !businessData?.contact?.phone;
-  const isLocationIncomplete = () =>
+  // const isLocationIncomplete = () =>
     !businessData?.location?.address ||
     !businessData?.location?.latitude ||
     !businessData?.location?.longitude;
