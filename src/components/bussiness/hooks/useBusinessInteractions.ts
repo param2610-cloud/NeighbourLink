@@ -186,6 +186,7 @@ export const useBusinessInteractions = ({
   // Handle view increment
   const incrementViews = useCallback(async () => {
     try {
+      console.log(businessId)
       await BusinessInteractionService.incrementViews(businessId);
       setStats(prev => prev ? { 
         ...prev, 

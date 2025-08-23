@@ -157,6 +157,8 @@ export class BusinessInteractionService {
   static async incrementViews(businessId: string): Promise<void> {
     try {
       const businessRef = doc(db, 'business', businessId);
+      console.log(businessId);
+      
       await updateDoc(businessRef, {
         'stats.totalViews': increment(1),
         'stats.monthlyViews': increment(1),

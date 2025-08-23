@@ -9,7 +9,7 @@ interface Coordinates {
 
 interface SearchResult {
   id: string;
-  type: 'post' | 'resource';
+  type: 'resource' | 'promotion' | 'event' | 'update' | 'business' | 'post';
   title: string;
   category: string;
   coordinates: Coordinates;
@@ -98,7 +98,19 @@ const SearchResultMap: React.FC<SearchResultMapProps> = ({
 
   // Create marker description with HTML content
   const createMarkerDescription = (result: SearchResult): string => {
-    const typeLabel = result.type === 'post' ? 'Request' : 'Resource';
+    const getTypeLabel = (type: string) => {
+      switch (type) {
+        case 'resource': return 'Resource';
+        case 'promotion': return 'Promotion';
+        case 'event': return 'Event';
+        case 'update': return 'Update';
+        case 'business': return 'Business';
+        case 'post': return 'Request';
+        default: return 'Item';
+      }
+    };
+
+    const typeLabel = getTypeLabel(result.type);
     const urgencyBadge = result.urgencyLevel ? 
       `<div style="margin-top: 8px;">
         <span style="
@@ -127,8 +139,8 @@ const SearchResultMap: React.FC<SearchResultMapProps> = ({
             ${result.category || 'Uncategorized'}
           </span>
           <span style="
-            background-color: ${result.type === 'post' ? '#dbeafe' : '#dcfce7'}; 
-            color: ${result.type === 'post' ? '#1e40af' : '#166534'}; 
+            background-color: ${getTypeColor(result.type)}; 
+            color: ${getTypeTextColor(result.type)}; 
             padding: 2px 6px; 
             border-radius: 12px; 
             font-size: 12px;
@@ -151,25 +163,55 @@ const SearchResultMap: React.FC<SearchResultMapProps> = ({
     `;
   };
 
+  // Helper functions for type colors
+  const getTypeColor = (type: string): string => {
+    switch (type) {
+      case 'resource': return '#dcfce7';
+      case 'promotion': return '#fef3c7';
+      case 'event': return '#e0e7ff';
+      case 'update': return '#f3e8ff';
+      case 'business': return '#fed7d7';
+      case 'post': return '#dbeafe';
+      default: return '#f3f4f6';
+    }
+  };
+
+  const getTypeTextColor = (type: string): string => {
+    switch (type) {
+      case 'resource': return '#166534';
+      case 'promotion': return '#92400e';
+      case 'event': return '#3730a3';
+      case 'update': return '#6b21a8';
+      case 'business': return '#dc2626';
+      case 'post': return '#1e40af';
+      default: return '#374151';
+    }
+  };
+
   // Get marker color based on result type and category
   const getMarkerColor = (result: SearchResult): string => {
-    if (result.type === 'post') {
-      // Color coding for different categories of requests
-      switch (result.category) {
-        case 'Medical': return '#dc2626'; // Red
-        case 'Food': return '#ea580c'; // Orange
-        case 'Transportation': return '#2563eb'; // Blue
-        case 'Childcare': return '#7c3aed'; // Purple
-        case 'Pet Care': return '#92400e'; // Brown
-        case 'Household Items': return '#059669'; // Green
-        case 'Technology': return '#6b7280'; // Gray
-        case 'Education': return '#ca8a04'; // Yellow
-        case 'Elderly Care': return '#db2777'; // Pink
-        default: return '#374151'; // Default dark gray
-      }
-    } else {
-      // Resources are green
-      return '#16a34a'; 
+    // Color coding based on type
+    switch (result.type) {
+      case 'resource': return '#16a34a'; // Green
+      case 'promotion': return '#f59e0b'; // Amber
+      case 'event': return '#3b82f6'; // Blue
+      case 'update': return '#8b5cf6'; // Purple
+      case 'business': return '#ef4444'; // Red
+      case 'post':
+        // Color coding for different categories of requests
+        switch (result.category) {
+          case 'Medical': return '#dc2626'; // Red
+          case 'Food': return '#ea580c'; // Orange
+          case 'Transportation': return '#2563eb'; // Blue
+          case 'Childcare': return '#7c3aed'; // Purple
+          case 'Pet Care': return '#92400e'; // Brown
+          case 'Household Items': return '#059669'; // Green
+          case 'Technology': return '#6b7280'; // Gray
+          case 'Education': return '#ca8a04'; // Yellow
+          case 'Elderly Care': return '#db2777'; // Pink
+          default: return '#374151'; // Default dark gray
+        }
+      default: return '#374151'; // Default dark gray
     }
   };
 

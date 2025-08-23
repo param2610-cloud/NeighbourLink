@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MdVerified } from "react-icons/md";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
+import { processFeedItem } from "@/utils/feed/feedUtils";
 
 // Helper: manage image natural sizes and container height
 function useImageHeightManager() {
@@ -78,6 +79,7 @@ export interface Promotion extends BaseItem {
     name: string;
     description: string;
   };
+  businessId:string;
   responders: {
     title: string;
     useProfileLocation: boolean;
@@ -317,7 +319,9 @@ export const Feed: React.FC = () => {
       try {
         setLoading(true);
         const items = await fetchAllFeedItems();
-        setFeedItems(items);
+        // process feed item
+        const filteredItem = await processFeedItem(items);
+        setFeedItems(filteredItem);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch feed items:", err);
@@ -652,7 +656,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
   };
 
   const handleViewBusiness = () => {
-    navigate(`/business/view/${promotion.userId}`);
+    navigate(`/business/view/${promotion.businessId}`);
     setShowMenu(false);
   };
 
