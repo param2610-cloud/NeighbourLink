@@ -180,7 +180,8 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
 
   const handleMarkerDrag = async (position: Coordinates, markerIndex: number) => {
     setCoordinates(position);
-    
+    console.log('markerIndex', markerIndex);
+
     // Get address for new position
     const address = await reverseGeocode(position);
     if (address) {

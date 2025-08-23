@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, MapPin, Star, Calendar, Clock, Users, Navigation } from 'lucide-react';
+import { X, MapPin, Star, Calendar, Clock, Users } from 'lucide-react';
 import { Pandal } from './data/pandalData';
 import { AddressManager } from '../../services/addressManager';
 import ImageCarousel from './ImageCarousel';

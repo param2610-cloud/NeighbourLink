@@ -16,7 +16,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { MoreVertical, MapPin, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { useStateContext } from "@/contexts/StateContext"; // Update this import to use StateContext
+// import { useStateContext } from "@/contexts/StateContext"; // Update this import to use StateContext
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MdVerified } from "react-icons/md";
@@ -439,7 +439,6 @@ export const Feed: React.FC = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
   const { observePost } = useIntersectionObserver();
 
   const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {

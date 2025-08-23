@@ -1,27 +1,30 @@
-import React from 'react';
-import { GiHamburgerMenu } from 'react-icons/gi';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle } from 'lucide-react';
-import { useMobileContext } from '@/contexts/MobileContext';
+import React from "react";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle, X } from "lucide-react";
+import { useMobileContext } from "@/contexts/MobileContext";
+import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 
-import { useBusinessLogic } from './hooks/useBusinessLogic';
-import BusinessHeroSection from './components/BusinessHeroSection';
-import ServicesSection from './components/ServicesSection';
-import ProductsSection from './components/ProductsSection';
-import ContactInfoSection from './components/ContactInfoSection';
-import LocationSection from './components/LocationSection';
-import QuickActionsSection from './components/QuickActionsSection';
-import StatisticsReviewsSection from './components/StatisticsReviewsSection';
-import WarningCard from './components/WarningCard';
-import Modals from './components/Modals';
-import { Review } from './types';
+import { useBusinessLogic } from "./hooks/useBusinessLogic";
+import BusinessHeroSection from "./components/BusinessHeroSection";
+import ServicesSection from "./components/ServicesSection";
+import ProductsSection from "./components/ProductsSection";
+import ContactInfoSection from "./components/ContactInfoSection";
+import LocationSection from "./components/LocationSection";
+import QuickActionsSection from "./components/QuickActionsSection";
+import StatisticsReviewsSection from "./components/StatisticsReviewsSection";
+import WarningCard from "./components/WarningCard";
+import Modals from "./components/Modals";
+import { Review } from "./types";
 
 // Import other components
-import Sidebar from '../authPage/structures/Sidebar';
-import Bottombar from '../authPage/structures/Bottombar';
+import Sidebar from "../authPage/structures/Sidebar";
+import Bottombar from "../authPage/structures/Bottombar";
 
 const NeighbourLinkBusiness: React.FC = () => {
   const { isMobile } = useMobileContext();
+  const [showVerificationModal, setShowVerificationModal] =
+    React.useState(false);
   const {
     // State
     businessData,
@@ -42,12 +45,12 @@ const NeighbourLinkBusiness: React.FC = () => {
     tempProduct,
     promotingItemId,
     removingPromotionId,
-    
+
     // Refs
     fileInputProfile,
     fileInputCover,
     fileInputGallery,
-    
+
     // Utility functions
     isProfileComplete,
     isCoreProfileComplete,
@@ -57,7 +60,7 @@ const NeighbourLinkBusiness: React.FC = () => {
     isDescriptionIncomplete,
     isServicesProductsIncomplete,
     isItemPromoted,
-    
+
     // Event handlers
     handleLogout,
     toggleSidebar,
@@ -67,7 +70,7 @@ const NeighbourLinkBusiness: React.FC = () => {
     handleChangeCover,
     handleAddGallery,
     handleRemoveGallery,
-    
+
     // State setters
     setShowStatisticsModal,
     setShowGalleryDrawer,
@@ -77,33 +80,33 @@ const NeighbourLinkBusiness: React.FC = () => {
     setTempContact,
     setEditingLocation,
     setTempLocation,
-    
+
     // Basic info
     handleSaveBasic,
     handleCancelBasic,
-    
+
     // Contact info
     handleSaveContact,
     handleCancelContact,
-    
+
     // Location info
     handleSaveLocation,
     handleCancelLocation,
-    
+
     // Services
     handleAddService,
     handleEditService,
     handleSaveService,
     handleCancelService,
     handleRemoveService,
-    
+
     // Products
     handleAddProduct,
     handleEditProduct,
     handleSaveProduct,
     handleCancelProduct,
     handleRemoveProduct,
-    
+
     // Promotions
     handlePromoteItem,
     handleRemovePromotion,
@@ -141,7 +144,7 @@ const NeighbourLinkBusiness: React.FC = () => {
   ];
 
   const handleViewVerificationDocument = () => {
-    console.log("View Verification Document clicked");
+    setShowVerificationModal(true);
   };
 
   if (loading) {
@@ -201,7 +204,9 @@ const NeighbourLinkBusiness: React.FC = () => {
             onEditBasic={() => setEditingBasic(true)}
             onSaveBasic={handleSaveBasic}
             onCancelBasic={handleCancelBasic}
-            onTempBasicChange={(updates) => setTempBasic({ ...tempBasic, ...updates })}
+            onTempBasicChange={(updates) =>
+              setTempBasic({ ...tempBasic, ...updates })
+            }
           />
 
           {/* Services Section */}
@@ -252,7 +257,9 @@ const NeighbourLinkBusiness: React.FC = () => {
             onEditContact={() => setEditingContact(true)}
             onSaveContact={handleSaveContact}
             onCancelContact={handleCancelContact}
-            onTempContactChange={(updates) => setTempContact({ ...tempContact, ...updates })}
+            onTempContactChange={(updates) =>
+              setTempContact({ ...tempContact, ...updates })
+            }
           />
 
           {/* Location Section */}
@@ -265,7 +272,9 @@ const NeighbourLinkBusiness: React.FC = () => {
             onEditLocation={() => setEditingLocation(true)}
             onSaveLocation={handleSaveLocation}
             onCancelLocation={handleCancelLocation}
-            onTempLocationChange={(updates) => setTempLocation({ ...tempLocation, ...updates })}
+            onTempLocationChange={(updates) =>
+              setTempLocation({ ...tempLocation, ...updates })
+            }
           />
 
           {/* Business Images Section */}
@@ -350,6 +359,41 @@ const NeighbourLinkBusiness: React.FC = () => {
         onAddGallery={handleAddGallery}
         onRemoveGallery={handleRemoveGallery}
       />
+
+      {/* Verification Document Modal */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Verification Document
+              </h3>
+              <button
+          onClick={() => setShowVerificationModal(false)}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+          <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="p-4">
+              {businessData.verificationDocUrl ? (
+          <ImageDisplay
+            publicId={businessData.verificationDocUrl}
+            alt="Verification Document"
+            className="max-w-full max-h-[70vh] object-contain mx-auto"
+          />
+              ) : (
+          <div className="text-center py-8">
+            <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">
+              No verification document available
+            </p>
+          </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -14,7 +14,7 @@ interface UserInteractionCardProps {
 }
 
 const UserInteractionCard: React.FC<UserInteractionCardProps> = ({
-  businessId,
+  // businessId,
   currentUserId,
   stats,
   userInteractions = [],

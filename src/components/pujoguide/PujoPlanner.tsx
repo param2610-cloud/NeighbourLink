@@ -10,11 +10,11 @@ import {
     getCurrentLocation,
     sortByDistance,
     sortByPopularity,
-    filterByDistrict,
+    // filterByDistrict,
     findNearbyPandals,
     getAvailableDistricts
 } from './utils/locationUtils';
-import SplashCursor from '../ui/SplashCursor';
+// import SplashCursor from '../ui/SplashCursor';
 import { FaArrowAltCircleLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
