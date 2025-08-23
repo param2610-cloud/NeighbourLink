@@ -4,6 +4,7 @@ import { motion, useInView } from 'framer-motion';
 import { auth } from '@/firebase';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import TextType from '../ui/TextType';
+import LanguageDropdown from '@/components/LanguageDropdown';
 
 const LandingPage = () => {
 
@@ -165,7 +166,10 @@ const LandingPage = () => {
               </div>
 
 
-              <div className="flex items-center">
+              <div className="flex items-center space-x-3">
+                <div className="hidden md:block">
+                  <LanguageDropdown variant="landing" />
+                </div>
                 {
                   user ?
                     <a href="/" className="hidden md:inline-flex items-center justify-center px-4 py-2 border border-white/30 rounded-xl shadow-sm text-sm font-medium text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 transition duration-300">DashBoard</a>
@@ -190,6 +194,9 @@ const LandingPage = () => {
               transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="md:hidden">
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white/10 dark:bg-neutral-800/10 backdrop-blur-lg border-t border-white/20">
+                <div className="px-3 py-2">
+                  <LanguageDropdown variant="landing" />
+                </div>
                 <a href="#features" className="block px-3 py-2 rounded-md text-base font-medium text-white/90 hover:bg-white/10 hover:text-white transition duration-300">Features</a>
                 <a href="#how-it-works" className="block px-3 py-2 rounded-md text-base font-medium text-white/90 hover:bg-white/10 hover:text-white transition duration-300">How It Works</a>
                 <a href="#testimonials" className="block px-3 py-2 rounded-md text-base font-medium text-white/90 hover:bg-white/10 hover:text-white transition duration-300">Testimonials</a>

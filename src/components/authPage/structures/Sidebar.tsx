@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import ThemeToggle from "@/components/common/ThemeToggle";
-import GoogleTranslate from "@/components/GoogleTranslation";
+import LanguageDropdown from "@/components/LanguageDropdown";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 import { FaStore } from "react-icons/fa";
 
@@ -181,7 +181,7 @@ const Sidebar = ({ handleLogout, isSidebarOpen }: SidebarProps) => {
         <div className="p-3 border-t border-indigo-800/18 space-y-2">
           <div>
             <div className="p-1 rounded-lg bg-indigo-900/14">
-              <GoogleTranslate />
+              <LanguageDropdown variant="sidebar" />
             </div>
           </div>
           <div className="flex items-center justify-between px-2 py-1 rounded-md bg-indigo-800/14">
