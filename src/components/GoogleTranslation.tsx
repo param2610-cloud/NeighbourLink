@@ -14,11 +14,6 @@ const LANGS: Record<string, string> = {
   bn: "বাংলা",
 };
 
-function setCookie(name: string, value: string, days = 365) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = name + "=" + encodeURIComponent(value) + "; expires=" + expires + "; path=/";
-}
-
 function getCookie(name: string) {
   return document.cookie.split(";").map(c => c.trim()).filter(c => c.startsWith(name + "="))[0]?.split("=")[1];
 }
@@ -100,31 +95,47 @@ const GoogleTranslate = () => {
     // set googtrans cookie and reload to apply translation
     try {
       const cookieVal = `/en/${lang}`;
-      setCookie("googtrans", cookieVal);
 
-      // also attempt a host-level cookie when appropriate.
-      // Avoid setting a domain like `.localhost` (invalid) and only add
-      // Secure/SameSite when on HTTPS to satisfy modern browsers.
+      // Clear existing googtrans cookies for common domain variants to avoid stale duplicates
       try {
         const host = location.hostname;
+        const domainVariants: string[] = [];
+        if (host) {
+          domainVariants.push(host);
+          if (host.indexOf('.') > -1) domainVariants.push('.' + host);
+        }
+        // also clear without domain
+        domainVariants.push('');
+
+        domainVariants.forEach(d => {
+          try {
+            const domainAttr = d ? `;domain=${d}` : '';
+            document.cookie = `googtrans=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/${domainAttr}`;
+          } catch (err) {}
+        });
+      } catch (err) {}
+
+      // set cookie(s) consistently
+      try {
         const isHttps = location.protocol === 'https:';
         const secureAttrs = isHttps ? '; Secure; SameSite=None' : '';
 
+        // set for current host (no domain attr)
+        document.cookie = `googtrans=${encodeURIComponent(cookieVal)};path=/${secureAttrs}`;
+
+        // set for parent domain if appropriate
+        const host = location.hostname;
         if (host && host.indexOf('.') > -1) {
-          // host contains a dot (likely a real domain) — set domain cookie
           const domain = '.' + host;
           document.cookie = `googtrans=${encodeURIComponent(cookieVal)};domain=${domain};path=/${secureAttrs}`;
-        } else {
-          // likely localhost or an IP — set cookie without domain attribute
-          document.cookie = `googtrans=${encodeURIComponent(cookieVal)};path=/${secureAttrs}`;
         }
       } catch (e) {
         // ignore cookie-setting errors
       }
     } catch (e) {}
     setCurrent(lang);
-    // small delay to ensure cookie is written
-    setTimeout(() => window.location.reload(), 200);
+    // slightly longer delay to ensure cookies are persisted before reload
+    setTimeout(() => window.location.reload(), 500);
   };
 
   return (
