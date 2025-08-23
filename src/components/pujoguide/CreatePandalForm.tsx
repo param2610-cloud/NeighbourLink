@@ -7,7 +7,7 @@ interface CreatePandalFormProps {
   onClose: () => void;
   onSuccess: (newPandal: Pandel) => void;
 }
-
+const PYTHON_BACKEND_API_BASE_URL = import.meta.env.VITE_PYTHON_BACKEND_URL;
 interface FormData {
   name: string;
   description: string;
@@ -149,7 +149,7 @@ const CreatePandalForm: React.FC<CreatePandalFormProps> = ({ isOpen, onClose, on
       };
 
       // Call the backend API
-      const response = await fetch('http://127.0.0.1:8001/pandel/', {
+      const response = await fetch(`${PYTHON_BACKEND_API_BASE_URL}/pandel/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
