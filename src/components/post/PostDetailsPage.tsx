@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { AiOutlineLoading3Quarters, AiOutlineHeart, AiOutlineShareAlt, AiFillHeart } from 'react-icons/ai';
 import { BiMessageDetail } from 'react-icons/bi';
@@ -175,7 +175,7 @@ const PostDetailsPage = () => {
 
 
     const handleContact = async () => {
-        console.log(post);
+        console.log("Starting contact process for post:", post);
 
         if (!post?.userId || !firebaseUser?.uid) return;
 
@@ -185,19 +185,7 @@ const PostDetailsPage = () => {
                 navigate(`/messages`);
                 return;
             }
-            // Get current user details
-            const currentUserRef = doc(db, 'Users', firebaseUser.uid);
-            const currentUserSnap = await getDoc(currentUserRef);
-            if (currentUserSnap.exists()) {
-                // const currentUser = currentUserSnap.data();
 
-                // Send notification to post owner
-                // await sendResponseNotification(
-                //     post.id!,
-                //     post.userId,
-                //     `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim()
-                // );
-            }
             // Create or get existing conversation about this post
             const conversationId = await getOrCreateConversationWithUser(
                 firebaseUser.uid,
@@ -207,11 +195,53 @@ const PostDetailsPage = () => {
                 post.photoUrls && post.photoUrls.length > 0 ? post.photoUrls[0] : undefined
             );
 
-            // Navigate to the conversation
-            navigate(`/messages/${conversationId}`);
+            console.log("Conversation created/found:", conversationId);
+
+            // Generate automatic message based on post type
+            const automaticMessage = post.postType === 'offer' 
+                ? `Hi! I'm interested in your resource "${post.title}". Could we discuss the details? I'd like to request this resource if it's still available.`
+                : `Hi! I saw your request for "${post.title}" and I'd like to help. I can offer assistance with this. Let me know how I can help!`;
+
+            console.log("Sending automatic message:", automaticMessage);
+
+            // Create message document directly
+            await addDoc(collection(db, 'messages'), {
+                conversationId: conversationId,
+                senderId: firebaseUser.uid,
+                text: automaticMessage,
+                mediaUrls: [],
+                read: false,
+                createdAt: serverTimestamp()
+            });
+
+            // Update conversation with last message
+            await updateDoc(doc(db, 'conversations', conversationId), {
+                lastMessage: {
+                    text: automaticMessage,
+                    senderId: firebaseUser.uid,
+                    timestamp: serverTimestamp()
+                },
+                updatedAt: serverTimestamp()
+            });
+
+            console.log("Message sent successfully");
+
+            // Show success message
+            toast.success(
+                post.postType === 'offer' 
+                    ? "Your resource request has been sent!"
+                    : "Your offer to help has been sent!",
+                { position: 'top-center' }
+            );
+
+            // Wait a moment before navigating
+            setTimeout(() => {
+                navigate(`/messages/${conversationId}`);
+            }, 1000);
+
         } catch (error) {
-            console.error("Error creating conversation:", error);
-            alert("Could not start conversation. Please try again.");
+            console.error("Error creating conversation and sending message:", error);
+            toast.error("Could not send message. Please try again.", { position: 'top-center' });
         }
     };
 

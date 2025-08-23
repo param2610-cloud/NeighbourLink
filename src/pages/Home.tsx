@@ -281,9 +281,9 @@ const Home: React.FC = () => {
             )}
 
             {/* Main Content Area */}
-            <div className="md:ml-64">
-              {/* Top Navigation */}
-              <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200/10">
+            <div className="md:ml-64 pt-16">
+              {/* Top Navigation (fixed) */}
+              <div className="fixed top-0 md:ml-64 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200/10">
                 <div className="flex items-center justify-between p-3 max-w-7xl mx-auto">
                   <div
                     className="flex items-center gap-5 space-x-2 cursor-pointer"

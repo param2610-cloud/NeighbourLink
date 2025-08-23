@@ -117,7 +117,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   };
 
   return (
-    <div className="relative">
+    <div className="relative p-4 max-w-full overflow-hidden">
       {/* Quick responses */}
       {showQuickResponses && (
         <div className="absolute bottom-full left-0 right-0 bg-white dark:bg-gray-800 rounded-t-lg shadow-md border dark:border-gray-700 z-10 mb-2 max-h-40 overflow-y-auto">

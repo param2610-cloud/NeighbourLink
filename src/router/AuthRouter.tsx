@@ -7,8 +7,7 @@ import { useRealtimeNotification } from "@/utils/notification/NotificationHook";
 import { useStateContext } from "@/contexts/StateContext";
 
 import Home from "@/pages/Home";
-import MessagesList from "@/components/messaging/MessagesList";
-import ChatDetail from "@/components/messaging/ChatDetail";
+import ModernMessaging from "@/components/messaging/ModernMessaging";
 import LandingPage from "@/components/landingPage/LandingPage";
 import EmergencyPosts from "@/pages/EmergencyPosts";
 import SavedPosts from "@/components/post/SavedPosts";
@@ -115,8 +114,8 @@ const AuthRouter: React.FC = () => {
           <Route path="/skillHome" element={<SkillHome />} />
           <Route path="/notifications" element={<NotificationPage />} />
           <Route path="/volunteer" element={<VolunteerShow />} />
-          <Route path="/messages" element={<MessagesList />} />
-          <Route path="/messages/:conversationId" element={<ChatDetail />} />
+          <Route path="/messages" element={<ModernMessaging />} />
+          <Route path="/messages/:conversationId" element={<ModernMessaging />} />
           <Route path="/emergency/posts" element={<EmergencyPosts />} />
           <Route path="/saved/posts" element={<SavedPosts />} />
           <Route path="/events" element={<EventsPage />} />
