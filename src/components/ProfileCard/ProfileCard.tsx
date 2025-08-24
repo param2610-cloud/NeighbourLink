@@ -106,6 +106,10 @@ function ProfileCard() {
                 text: `
                   You are an AI assistant that extracts information from ID card text.
                   From the following text extracted from an ID card, extract ONLY the person's name.
+                  Return text only if you trust the source or organization of the ID card.
+                  If the source is untrusted, return an empty string.
+                  If no source is provided, return an empty string.
+                  Only Government-issued ID cards are trusted.
                   Return ONLY a JSON object with a single field "name" containing the full name found.
                   
                   Text from ID card:

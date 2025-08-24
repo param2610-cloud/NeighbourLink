@@ -87,28 +87,52 @@ export const calculateDistanceAndDuration = async (
  */
 export const geocodeAddress = async (address: string): Promise<Coordinates | null> => {
   try {
+    console.log('🔍 Starting geocoding for address:', address);
+    
     if (!window.google || !window.google.maps) {
+      console.error('❌ Google Maps API not loaded');
       throw new Error('Google Maps API not loaded');
     }
+
+    console.log('✅ Google Maps API is available');
 
     const geocoder = new window.google.maps.Geocoder();
     
     return new Promise((resolve) => {
+      console.log('🌍 Making geocoding request...');
       geocoder.geocode({ address: address }, (results: any, status: any) => {
-        if (status === 'OK' && results[0]) {
+        console.log('📍 Geocoding response:', { status, results });
+        
+        if (status === 'OK' && results && results.length > 0) {
           const location = results[0].geometry.location;
-          resolve({
+          const coordinates = {
             lat: location.lat(),
             lng: location.lng(),
-          });
+          };
+          console.log('✅ Geocoding successful:', coordinates);
+          resolve(coordinates);
         } else {
-          console.error('Geocoding failed:', status);
+          console.error('❌ Geocoding failed:', { status, results });
+          
+          // Log specific error reasons
+          if (status === 'ZERO_RESULTS') {
+            console.error('No results found for address:', address);
+          } else if (status === 'OVER_QUERY_LIMIT') {
+            console.error('Query limit exceeded');
+          } else if (status === 'REQUEST_DENIED') {
+            console.error('Request denied - check API key and permissions');
+          } else if (status === 'INVALID_REQUEST') {
+            console.error('Invalid request - missing address');
+          } else if (status === 'UNKNOWN_ERROR') {
+            console.error('Unknown error - server error');
+          }
+          
           resolve(null);
         }
       });
     });
   } catch (error) {
-    console.error('Error geocoding address:', error);
+    console.error('💥 Error in geocodeAddress function:', error);
     return null;
   }
 };

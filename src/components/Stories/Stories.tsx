@@ -51,6 +51,30 @@ function parseToDate(value: any): Date | null {
     return null;
 }
 
+// Return a human-friendly relative time like "just now", "5 minutes ago", "2 hours ago"
+function formatRelativeTime(d: Date | null) {
+    if (!d) return 'Unknown time';
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 0) return 'just now';
+
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+
+    // For older dates, show a short date
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 interface StoryItem extends Update {
     userName: string;
     userPhoto: string;
@@ -218,10 +242,10 @@ const StoriesModal: React.FC<StoriesModalProps> = ({
                     <div>
                         <h3 className="font-semibold text-sm">{currentUserGroup.userName}</h3>
                         <p className="text-xs text-gray-300">
-                            {(() => {
-                                const d = parseToDate(currentStory.createdAt);
-                                return d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Unknown time';
-                            })()}
+                                {(() => {
+                                    const d = parseToDate(currentStory.createdAt);
+                                    return formatRelativeTime(d);
+                                })()}
                         </p>
                     </div>
                 </div>

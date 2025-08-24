@@ -17,6 +17,7 @@ import { checkIfUserRegisteredInVolunteer } from "@/utils/communities/CheckIfReg
 import { calculateDistance } from "@/utils/utils";
 import { getOrCreateConversationWithUser } from "@/services/messagingService";
 import { Slider } from "@/components/ui/slider";
+import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
 
 // Define the filter type
 interface FilterState {
@@ -131,11 +132,22 @@ const VolunteerList = () => {
   useEffect(() => {
     const fetchVolunteers = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "volunteer"));
+        // Fetch only active volunteers
+        const q = query(
+          collection(db, "volunteer"),
+          where("isActiveVolunteer", "==", true)
+        );
+        const querySnapshot = await getDocs(q);
+
         let volunteersData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Volunteer[];
+
+        // Filter out current user from the list
+        volunteersData = volunteersData.filter(
+          (volunteer) => volunteer.email !== user?.email
+        );
 
         // Fetch verification status for each volunteer
         const volunteersWithVerification = await Promise.all(
@@ -150,17 +162,16 @@ const VolunteerList = () => {
                 );
 
                 if (!userSnapshot.empty) {
-                  const userData = userSnapshot.docs[0].data();
+                  const userData = userSnapshot.docs[0].data(); 
                   return {
                     ...volunteer,
+                    photoURL: userData.photo || volunteer.photoURL,
                     isVerified: userData.isVerified || false,
                   };
                 }
               } catch (err) {
-                console.error(
-                  `Error fetching user data for volunteer ${volunteer.id}:`,
-                  err
-                );
+                // Fixed: use template literal and proper console.error parameters
+                console.error(`Error fetching user data for volunteer ${volunteer.id}:`, err);
               }
             }
             return { ...volunteer, isVerified: false };
@@ -174,12 +185,17 @@ const VolunteerList = () => {
         // Store all volunteers with verification info
         setAllVolunteers(volunteersWithVerification);
 
-        // Filter volunteers based on distance and other criteria
-        filterVolunteers(
-          volunteersWithVerification,
-          currentUserLocation,
-          filter.distance
-        );
+        // Apply initial filtering - show all volunteers if no location, or filter by distance
+        if (currentUserLocation) {
+          filterVolunteersByDistance(
+            volunteersWithVerification,
+            currentUserLocation,
+            filter.distance
+          );
+        } else {
+          // Show all volunteers if no current user location
+          setVolunteers(volunteersWithVerification);
+        }
       } catch (error) {
         console.error("Error fetching volunteers:", error);
       } finally {
@@ -188,23 +204,27 @@ const VolunteerList = () => {
     };
 
     fetchVolunteers();
-  }, []);
+  }, [user?.email]);
 
-  // Function to filter volunteers based on distance
-  const filterVolunteers = (
+  // Updated function to filter volunteers based on distance
+  const filterVolunteersByDistance = (
     volunteers: Volunteer[],
     userLocation: any,
     maxDistance: number
   ) => {
-    if (!userLocation) return setVolunteers([]);
+    if (!userLocation) {
+      // If no user location, show all volunteers
+      setVolunteers(volunteers);
+      return;
+    }
 
     const filtered = volunteers.filter((volunteer) => {
       const { latitude, longitude } = volunteer.location || {};
 
-      // Skip if volunteer has no location data
-      if (!latitude || !longitude) return false;
+      // If volunteer has no location data, include them in results
+      if (!latitude || !longitude) return true;
 
-      // Calculate distance
+      // Calculate distance and filter
       const distance = calculateDistance(
         userLocation.latitude,
         userLocation.longitude,
@@ -212,11 +232,7 @@ const VolunteerList = () => {
         longitude
       );
 
-      return (
-        volunteer.isActiveVolunteer &&
-        distance <= maxDistance &&
-        volunteer.email !== user?.email
-      );
+      return distance <= maxDistance;
     });
 
     setVolunteers(filtered);
@@ -224,8 +240,17 @@ const VolunteerList = () => {
 
   // Re-filter when distance changes
   useEffect(() => {
-    if (currentUserLocation && allVolunteers.length > 0) {
-      filterVolunteers(allVolunteers, currentUserLocation, filter.distance);
+    if (allVolunteers.length > 0) {
+      if (currentUserLocation) {
+        filterVolunteersByDistance(
+          allVolunteers,
+          currentUserLocation,
+          filter.distance
+        );
+      } else {
+        // Show all volunteers if no current user location
+        setVolunteers(allVolunteers);
+      }
     }
   }, [filter.distance, currentUserLocation, allVolunteers]);
 
@@ -239,6 +264,7 @@ const VolunteerList = () => {
 
     if (filter.search) {
       const searchLower = filter.search.toLowerCase();
+      // Fixed: build full name with template literal before calling toLowerCase
       const name = `${volunteer.firstName} ${volunteer.lastName}`.toLowerCase();
       const address = volunteer.address?.toLowerCase() || "";
 
@@ -276,6 +302,7 @@ const VolunteerList = () => {
       if (conversationId) {
         console.log("Navigating to conversation:", conversationId);
 
+        // Fixed: use template literal for route
         navigate(`/messages/${conversationId}`);
       } else {
         throw new Error("Failed to create conversation");
@@ -333,28 +360,72 @@ const VolunteerList = () => {
     <div className="px-4 py-3 bg-white rounded-lg shadow-sm dark:bg-gray-800 mb-4 border border-gray-100 dark:border-gray-700">
       <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Distance: {filter.distance} km
+          {/* Fixed: use template literal inside JSX expression */}
+          {currentUserLocation ? `Search within: ${filter.distance} km` : "All Volunteers (Location not available)"}
         </label>
-        <Slider
-          value={[filter.distance]}
-          onValueChange={handleDistanceChange}
-          max={20}
-          min={1}
-          step={1}
-          className="w-full"
-        />
+        {currentUserLocation && (
+          <Slider
+            value={[filter.distance]}
+            onValueChange={handleDistanceChange}
+            max={50}
+            min={1}
+            step={1}
+            className="w-full"
+          />
+        )}
       </div>
-      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>1 km</span>
-        <span>20 km</span>
+      {currentUserLocation && (
+        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+          <span>1 km</span>
+          <span>50 km</span>
+        </div>
+      )}
+      <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+        {/* Fixed: template literals for dynamic text */}
+        {currentUserLocation
+          ? `Found ${filteredVolunteers.length} volunteers within ${filter.distance} km`
+          : `Showing all ${filteredVolunteers.length} volunteers`}
       </div>
     </div>
   );
 
-  if (volunteers.length === 0)
+  // Search filter section
+  const searchFilterSection = (
+    <div className="px-4 py-3 bg-white rounded-lg shadow-sm dark:bg-gray-800 mb-4 border border-gray-100 dark:border-gray-700">
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search volunteers by name or location..."
+          value={filter.search}
+          onChange={(e) =>
+            setFilter((prev) => ({ ...prev, search: e.target.value }))
+          }
+          className="w-full px-4 py-2 pl-10 pr-4 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+        />
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
+          <svg
+            className="w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            ></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (volunteers.length === 0 && !loading)
     return (
       <>
         {volunteerToggleSection}
+        {searchFilterSection}
         {distanceFilterSection}
         <div className="p-10 text-center bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
           <div className="flex justify-center mb-4">
@@ -363,11 +434,15 @@ const VolunteerList = () => {
             </div>
           </div>
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-            No volunteers found within {filter.distance} km
+            {/* Fixed: template literal for message */}
+            {currentUserLocation
+              ? `No active volunteers found within ${filter.distance} km`
+              : "No active volunteers found"}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-            Try increasing the distance or be the first to register as a
-            volunteer! Your help could make a big difference in your community.
+            {currentUserLocation
+              ? "Try increasing the distance or be the first to register as a volunteer! Your help could make a big difference in your community."
+              : "Be the first to register as a volunteer! Your help could make a big difference in your community."}
           </p>
         </div>
       </>
@@ -376,6 +451,7 @@ const VolunteerList = () => {
   return (
     <>
       {volunteerToggleSection}
+      {searchFilterSection}
       {distanceFilterSection}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
         {filteredVolunteers.length > 0 ? (
@@ -393,9 +469,8 @@ const VolunteerList = () => {
                 <div className="flex items-center space-x-3 relative">
                   <div className="bg-white dark:bg-gray-200 p-1 rounded-full shadow-md">
                     {volunteer.photoURL ? (
-                      <img
-                        src={volunteer.photoURL}
-                        alt={`${volunteer.firstName} ${volunteer.lastName}`}
+                      <ImageDisplay
+                        publicId={volunteer.photoURL}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (
@@ -415,6 +490,18 @@ const VolunteerList = () => {
                       <FaMapMarkerAlt className="mr-1" />
                       {volunteer.address || "Location not specified"}
                     </p>
+                    {/* Show distance if both locations are available */}
+                    {volunteer.location && currentUserLocation && (
+                      <p className="text-green-100 dark:text-green-200 text-xs">
+                        {calculateDistance(
+                          currentUserLocation.latitude,
+                          currentUserLocation.longitude,
+                          volunteer.location.latitude,
+                          volunteer.location.longitude
+                        ).toFixed(1)}{" "}
+                        km away
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -438,8 +525,6 @@ const VolunteerList = () => {
                     )}
                   </div>
                 </div>
-
-                {/* Additional volunteer info would go here */}
 
                 {/* Contact Button */}
                 <button

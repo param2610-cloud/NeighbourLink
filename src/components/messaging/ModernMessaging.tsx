@@ -415,8 +415,6 @@ const ModernMessaging = () => {
                               </div>
                             )}
                           </div>
-                          {/* Online indicator (placeholder) */}
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
                         </div>
 
                         {/* Message Info */}
@@ -509,7 +507,7 @@ const ModernMessaging = () => {
                       <h3 className="font-medium text-gray-900 dark:text-white">
                         {getRecipientName(otherUser)}
                       </h3>
-                      <p className="text-xs text-green-500">Online</p>
+                      
                     </div>
                   </div>
 

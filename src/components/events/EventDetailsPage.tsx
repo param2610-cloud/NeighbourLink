@@ -243,220 +243,446 @@ const EventDetailsPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            {/* Back button */}
-            <button
-                onClick={() => navigate(-1)}
-                className="absolute top-4 left-4 z-10 p-2 bg-white/70 dark:bg-gray-800/70 rounded-full"
-            >
-                <IoMdArrowBack className="text-xl" />
-            </button>
-
-            {/* Image Gallery */}
-            <div className="relative w-full h-64 md:h-96 bg-gray-200 dark:bg-gray-700">
-                {event.images && event.images.length > 0 ? (
-                    <>
-                        <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                            <ImageDisplay publicId={event.images[currentImageIndex]} />
-                        </div>
-
-                        {/* Image navigation dots */}
-                        {event.images.length > 1 && (
-                            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                                {event.images.map((_, i) => (
-                                    <button
-                                        key={i}
-                                        className={`w-2 h-2 rounded-full ${i === currentImageIndex ? 'bg-white' : 'bg-gray-400'}`}
-                                        onClick={() => setCurrentImageIndex(i)}
-                                    />
-                                ))}
+            {/* Header */}
+            <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="mr-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            >
+                                <IoMdArrowBack className="text-xl text-gray-600 dark:text-gray-400" />
+                            </button>
+                            <div className="flex items-center">
+                                <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                    NeighbourLink
+                                </h1>
+                                <span className="mx-2 text-gray-400">|</span>
+                                <span className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                                    Events
+                                </span>
                             </div>
-                        )}
-
-                        {/* Image navigation arrows */}
-                        {event.images.length > 1 && (
-                            <>
-                                <button
-                                    className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-white/40 dark:bg-gray-800/40 rounded-full"
-                                    onClick={() => navigateImage('prev')}
-                                >
-                                    &lt;
-                                </button>
-                                <button
-                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white/40 dark:bg-gray-800/40 rounded-full"
-                                    onClick={() => navigateImage('next')}
-                                >
-                                    &gt;
-                                </button>
-                            </>
-                        )}
-                    </>
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <BsCalendarEvent size={60} className="text-gray-400 dark:text-gray-500" />
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <button
+                                onClick={handleShareEvent}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            >
+                                <AiOutlineShareAlt className="text-xl text-gray-600 dark:text-gray-400" />
+                            </button>
+                            <button
+                                onClick={handleSaveEvent}
+                                disabled={!firebaseUser || saveLoading}
+                                className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors ${
+                                    !firebaseUser ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
+                            >
+                                {saveLoading ? (
+                                    <AiOutlineLoading3Quarters className="animate-spin text-xl text-gray-600 dark:text-gray-400" />
+                                ) : isSaved ? (
+                                    <AiFillHeart className="text-xl text-red-500" />
+                                ) : (
+                                    <AiOutlineHeart className="text-xl text-gray-600 dark:text-gray-400" />
+                                )}
+                            </button>
+                        </div>
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* Event details card */}
-            <div className="bg-white dark:bg-gray-800 rounded-t-3xl -mt-8 relative z-10 p-5 shadow-sm min-h-[calc(100vh-16rem)]">
-                {/* Title and event type */}
-                <div className="mb-4">
-                    <div className="flex justify-between items-start">
-                        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{event.title}</h1>
-                    </div>
-
-                    {/* Event type and RSVP count */}
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200">
-                            {event.eventType}
-                        </span>
-
-                        {event.isRegistrationRequired && (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-200">
-                                Registration Required
-                            </span>
-                        )}
-
-                        {event.responders?.users && (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200">
-                                {event.responders.users.length} {event.responders.users.length === 1 ? 'person' : 'people'} attending
-                            </span>
-                        )}
-                    </div>
-                </div>
-
-                {/* Description */}
-                <div className="mb-6 text-gray-700 dark:text-gray-300">
-                    <h2 className="text-lg font-semibold mb-2">Description</h2>
-                    <p>{event.description}</p>
-                </div>
-
-                {/* Event Timing */}
-                <div className="mb-6">
-                    <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Event Details</h2>
-                    <div className="space-y-2">
-                        <div className="flex items-center">
-                            <AiOutlineCalendar className="mr-2 text-gray-500 dark:text-gray-400" />
-                            <p className="text-gray-700 dark:text-gray-300">{formatDate(event.timingInfo.date)}</p>
-                        </div>
-                        <div className="flex items-center">
-                            <FiClock className="mr-2 text-gray-500 dark:text-gray-400" />
-                            <p className="text-gray-700 dark:text-gray-300">{event.timingInfo.time} ({event.timingInfo.duration})</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Location */}
-                {event.location && (
-                    <div className="mb-6">
-                        <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Location</h2>
-                        <p className="text-gray-700 dark:text-gray-300 mb-2">{event.location.address}</p>
-                        <div className="h-60 rounded-lg overflow-hidden">
-                            <GoogleMapsViewer 
-                                center={{ lat: event.location.latitude, lng: event.location.longitude }}
-                                zoom={15}
-                                height="240px"
-                                markers={[{
-                                    position: { lat: event.location.latitude, lng: event.location.longitude },
-                                    title: event.title,
-                                    description: event.location.address,
-                                    color: '#4F46E5'
-                                }]}
-                                showCurrentLocation={true}
-                                showDirectionsButton={true}
-                                mapType="roadmap"
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Organizer details */}
-                <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Organizer Details</h2>
-                    <div className="space-y-2">
-                        <div className="flex items-center">
-                            <FiUsers className="mr-2 text-gray-500 dark:text-gray-400" />
-                            <p className="text-gray-700 dark:text-gray-300">{event.organizerDetails.name}</p>
-                        </div>
-                        {event.organizerDetails.email && (
-                            <div className="flex items-center">
-                                <FiMail className="mr-2 text-gray-500 dark:text-gray-400" />
-                                <p className="text-gray-700 dark:text-gray-300">{event.organizerDetails.email}</p>
+            {/* Large screen layout */}
+            <div className="hidden lg:flex h-[calc(100vh-4rem)]">
+                {/* Left side - Fixed Image Gallery */}
+                <div className="w-1/2 relative bg-gray-200 dark:bg-gray-700">
+                    {event.images && event.images.length > 0 ? (
+                        <>
+                            <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                                <ImageDisplay publicId={event.images[currentImageIndex]} />
                             </div>
-                        )}
-                        {event.organizerDetails.contact && (
-                            <div className="flex items-center">
-                                <FiPhone className="mr-2 text-gray-500 dark:text-gray-400" />
-                                <p className="text-gray-700 dark:text-gray-300">{event.organizerDetails.contact}</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
 
-                {/* Registration Link */}
-                {event.isRegistrationRequired && event.registrationLink && (
-                    <div className="mb-6">
-                        <a 
-                            href={event.registrationLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full text-center py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-                        >
-                            Register for Event
-                        </a>
-                    </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
-                    <div className="flex justify-between mb-3">
-                        <button
-                            onClick={handleSaveEvent}
-                            disabled={!firebaseUser || saveLoading}
-                            className={`flex items-center ${!firebaseUser ? 'opacity-50 cursor-not-allowed' :
-                                isSaved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
-                                } transition-colors`}
-                        >
-                            {saveLoading ? (
-                                <AiOutlineLoading3Quarters className="animate-spin mr-1" />
-                            ) : isSaved ? (
-                                <AiFillHeart className="mr-1" />
-                            ) : (
-                                <AiOutlineHeart className="mr-1" />
+                            {/* Image navigation dots */}
+                            {event.images.length > 1 && (
+                                <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2">
+                                    {event.images.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            className={`w-3 h-3 rounded-full transition-colors ${i === currentImageIndex ? 'bg-white' : 'bg-gray-400'}`}
+                                            onClick={() => setCurrentImageIndex(i)}
+                                        />
+                                    ))}
+                                </div>
                             )}
-                            {isSaved ? 'Saved' : 'Save'}
-                        </button>
-                        <button
-                            onClick={handleShareEvent}
-                            className="flex items-center text-gray-500 dark:text-gray-400"
-                        >
-                            <AiOutlineShareAlt className="mr-1" /> Share
-                        </button>
-                    </div>
 
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleRSVP}
-                            disabled={isRSVPing || !firebaseUser}
-                            className={`flex-1 py-3 ${
-                                !firebaseUser ? 'bg-gray-400 cursor-not-allowed' :
-                                isRSVPed ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
-                            } text-white rounded-lg flex items-center justify-center font-medium`}
-                        >
-                            {isRSVPing ? 'Processing...' : isRSVPed ? 'Cancel RSVP' : 'RSVP'}
-                        </button>
-                        
-                        <button
-                            onClick={handleContactOrganizer}
-                            className={`flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center font-medium`}
-                        >
-                            <BiMessageDetail className="mr-2" /> Contact Organizer
-                        </button>
-                    </div>
+                            {/* Image navigation arrows */}
+                            {event.images.length > 1 && (
+                                <>
+                                    <button
+                                        className="absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white/60 transition-colors"
+                                        onClick={() => navigateImage('prev')}
+                                    >
+                                        <span className="text-xl font-bold">&lt;</span>
+                                    </button>
+                                    <button
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/40 dark:bg-gray-800/40 rounded-full hover:bg-white/60 transition-colors"
+                                        onClick={() => navigateImage('next')}
+                                    >
+                                        <span className="text-xl font-bold">&gt;</span>
+                                    </button>
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <BsCalendarEvent size={120} className="text-gray-400 dark:text-gray-500" />
+                        </div>
+                    )}
                 </div>
 
-                {/* Spacer for fixed bottom bar */}
-                <div className="h-32"></div>
+                {/* Right side - Scrollable Content */}
+                <div className="w-1/2 bg-white dark:bg-gray-800 overflow-y-auto">
+                    <div className="p-8">
+                        {/* Title and event type */}
+                        <div className="mb-6">
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">{event.title}</h1>
+                            
+                            {/* Event type and RSVP count */}
+                            <div className="flex flex-wrap gap-2">
+                                <span className="px-4 py-2 rounded-full text-sm font-medium bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200">
+                                    {event.eventType}
+                                </span>
+
+                                {event.isRegistrationRequired && (
+                                    <span className="px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-200">
+                                        Registration Required
+                                    </span>
+                                )}
+
+                                {event.responders?.users && (
+                                    <span className="px-4 py-2 rounded-full text-sm font-medium bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200">
+                                        {event.responders.users.length} {event.responders.users.length === 1 ? 'person' : 'people'} attending
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="mb-8 text-gray-700 dark:text-gray-300">
+                            <h2 className="text-xl font-semibold mb-3">Description</h2>
+                            <p className="text-base leading-relaxed">{event.description}</p>
+                        </div>
+
+                        {/* Event Timing */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Event Details</h2>
+                            <div className="space-y-3">
+                                <div className="flex items-center">
+                                    <AiOutlineCalendar className="mr-3 text-gray-500 dark:text-gray-400 text-lg" />
+                                    <p className="text-gray-700 dark:text-gray-300 text-base">{formatDate(event.timingInfo.date)}</p>
+                                </div>
+                                <div className="flex items-center">
+                                    <FiClock className="mr-3 text-gray-500 dark:text-gray-400 text-lg" />
+                                    <p className="text-gray-700 dark:text-gray-300 text-base">{event.timingInfo.time} ({event.timingInfo.duration})</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Location */}
+                        {event.location && (
+                            <div className="mb-8">
+                                <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Location</h2>
+                                <p className="text-gray-700 dark:text-gray-300 mb-4 text-base">{event.location.address}</p>
+                                <div className="h-64 rounded-lg overflow-hidden">
+                                    <GoogleMapsViewer 
+                                        center={{ lat: event.location.latitude, lng: event.location.longitude }}
+                                        zoom={15}
+                                        height="256px"
+                                        markers={[{
+                                            position: { lat: event.location.latitude, lng: event.location.longitude },
+                                            title: event.title,
+                                            description: event.location.address,
+                                            color: '#4F46E5'
+                                        }]}
+                                        showCurrentLocation={true}
+                                        showDirectionsButton={true}
+                                        mapType="roadmap"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Organizer details */}
+                        <div className="mb-8 p-6 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Organizer Details</h2>
+                            <div className="space-y-3">
+                                <div className="flex items-center">
+                                    <FiUsers className="mr-3 text-gray-500 dark:text-gray-400 text-lg" />
+                                    <p className="text-gray-700 dark:text-gray-300 text-base">{event.organizerDetails.name}</p>
+                                </div>
+                                {event.organizerDetails.email && (
+                                    <div className="flex items-center">
+                                        <FiMail className="mr-3 text-gray-500 dark:text-gray-400 text-lg" />
+                                        <p className="text-gray-700 dark:text-gray-300 text-base">{event.organizerDetails.email}</p>
+                                    </div>
+                                )}
+                                {event.organizerDetails.contact && (
+                                    <div className="flex items-center">
+                                        <FiPhone className="mr-3 text-gray-500 dark:text-gray-400 text-lg" />
+                                        <p className="text-gray-700 dark:text-gray-300 text-base">{event.organizerDetails.contact}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Registration Link */}
+                        {event.isRegistrationRequired && event.registrationLink && (
+                            <div className="mb-8">
+                                <a 
+                                    href={event.registrationLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block w-full text-center py-4 bg-green-600 hover:bg-green-700 text-white text-lg font-medium rounded-lg transition-colors"
+                                >
+                                    Register for Event
+                                </a>
+                            </div>
+                        )}
+
+                        {/* Action buttons for large screen */}
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={handleRSVP}
+                                    disabled={isRSVPing || !firebaseUser}
+                                    className={`flex-1 py-4 text-lg ${
+                                        !firebaseUser ? 'bg-gray-400 cursor-not-allowed' :
+                                        isRSVPed ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                                    } text-white rounded-lg flex items-center justify-center font-medium transition-colors`}
+                                >
+                                    {isRSVPing ? 'Processing...' : isRSVPed ? 'Cancel RSVP' : 'RSVP'}
+                                </button>
+                                
+                                <button
+                                    onClick={handleContactOrganizer}
+                                    className="flex-1 py-4 text-lg bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center font-medium transition-colors"
+                                >
+                                    <BiMessageDetail className="mr-2 text-xl" /> Contact Organizer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile layout */}
+            <div className="lg:hidden">
+                {/* Image Gallery */}
+                <div className="relative w-full h-64 md:h-96 bg-gray-200 dark:bg-gray-700">
+                    {event.images && event.images.length > 0 ? (
+                        <>
+                            <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                                <ImageDisplay publicId={event.images[currentImageIndex]} />
+                            </div>
+
+                            {/* Image navigation dots */}
+                            {event.images.length > 1 && (
+                                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                                    {event.images.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            className={`w-2 h-2 rounded-full ${i === currentImageIndex ? 'bg-white' : 'bg-gray-400'}`}
+                                            onClick={() => setCurrentImageIndex(i)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Image navigation arrows */}
+                            {event.images.length > 1 && (
+                                <>
+                                    <button
+                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-white/40 dark:bg-gray-800/40 rounded-full"
+                                        onClick={() => navigateImage('prev')}
+                                    >
+                                        &lt;
+                                    </button>
+                                    <button
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-white/40 dark:bg-gray-800/40 rounded-full"
+                                        onClick={() => navigateImage('next')}
+                                    >
+                                        &gt;
+                                    </button>
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                            <BsCalendarEvent size={60} className="text-gray-400 dark:text-gray-500" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Event details card */}
+                <div className="bg-white dark:bg-gray-800 rounded-t-3xl -mt-8 relative z-10 p-5 shadow-sm min-h-[calc(100vh-16rem)]">
+                    {/* Title and event type */}
+                    <div className="mb-4">
+                        <div className="flex justify-between items-start">
+                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{event.title}</h1>
+                        </div>
+
+                        {/* Event type and RSVP count */}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200">
+                                {event.eventType}
+                            </span>
+
+                            {event.isRegistrationRequired && (
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-200">
+                                    Registration Required
+                                </span>
+                            )}
+
+                            {event.responders?.users && (
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200">
+                                    {event.responders.users.length} {event.responders.users.length === 1 ? 'person' : 'people'} attending
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="mb-6 text-gray-700 dark:text-gray-300">
+                        <h2 className="text-lg font-semibold mb-2">Description</h2>
+                        <p>{event.description}</p>
+                    </div>
+
+                    {/* Event Timing */}
+                    <div className="mb-6">
+                        <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Event Details</h2>
+                        <div className="space-y-2">
+                            <div className="flex items-center">
+                                <AiOutlineCalendar className="mr-2 text-gray-500 dark:text-gray-400" />
+                                <p className="text-gray-700 dark:text-gray-300">{formatDate(event.timingInfo.date)}</p>
+                            </div>
+                            <div className="flex items-center">
+                                <FiClock className="mr-2 text-gray-500 dark:text-gray-400" />
+                                <p className="text-gray-700 dark:text-gray-300">{event.timingInfo.time} ({event.timingInfo.duration})</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Location */}
+                    {event.location && (
+                        <div className="mb-6">
+                            <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Location</h2>
+                            <p className="text-gray-700 dark:text-gray-300 mb-2">{event.location.address}</p>
+                            <div className="h-60 rounded-lg overflow-hidden">
+                                <GoogleMapsViewer 
+                                    center={{ lat: event.location.latitude, lng: event.location.longitude }}
+                                    zoom={15}
+                                    height="240px"
+                                    markers={[{
+                                        position: { lat: event.location.latitude, lng: event.location.longitude },
+                                        title: event.title,
+                                        description: event.location.address,
+                                        color: '#4F46E5'
+                                    }]}
+                                    showCurrentLocation={true}
+                                    showDirectionsButton={true}
+                                    mapType="roadmap"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Organizer details */}
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <h2 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Organizer Details</h2>
+                        <div className="space-y-2">
+                            <div className="flex items-center">
+                                <FiUsers className="mr-2 text-gray-500 dark:text-gray-400" />
+                                <p className="text-gray-700 dark:text-gray-300">{event.organizerDetails.name}</p>
+                            </div>
+                            {event.organizerDetails.email && (
+                                <div className="flex items-center">
+                                    <FiMail className="mr-2 text-gray-500 dark:text-gray-400" />
+                                    <p className="text-gray-700 dark:text-gray-300">{event.organizerDetails.email}</p>
+                                </div>
+                            )}
+                            {event.organizerDetails.contact && (
+                                <div className="flex items-center">
+                                    <FiPhone className="mr-2 text-gray-500 dark:text-gray-400" />
+                                    <p className="text-gray-700 dark:text-gray-300">{event.organizerDetails.contact}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Registration Link */}
+                    {event.isRegistrationRequired && event.registrationLink && (
+                        <div className="mb-6">
+                            <a 
+                                href={event.registrationLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-full text-center py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                            >
+                                Register for Event
+                            </a>
+                        </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex flex-col">
+                        <div className="flex justify-between mb-3">
+                            <button
+                                onClick={handleSaveEvent}
+                                disabled={!firebaseUser || saveLoading}
+                                className={`flex items-center ${!firebaseUser ? 'opacity-50 cursor-not-allowed' :
+                                    isSaved ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
+                                    } transition-colors`}
+                            >
+                                {saveLoading ? (
+                                    <AiOutlineLoading3Quarters className="animate-spin mr-1" />
+                                ) : isSaved ? (
+                                    <AiFillHeart className="mr-1" />
+                                ) : (
+                                    <AiOutlineHeart className="mr-1" />
+                                )}
+                                {isSaved ? 'Saved' : 'Save'}
+                            </button>
+                            <button
+                                onClick={handleShareEvent}
+                                className="flex items-center text-gray-500 dark:text-gray-400"
+                            >
+                                <AiOutlineShareAlt className="mr-1" /> Share
+                            </button>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleRSVP}
+                                disabled={isRSVPing || !firebaseUser}
+                                className={`flex-1 py-3 ${
+                                    !firebaseUser ? 'bg-gray-400 cursor-not-allowed' :
+                                    isRSVPed ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                                } text-white rounded-lg flex items-center justify-center font-medium`}
+                            >
+                                {isRSVPing ? 'Processing...' : isRSVPed ? 'Cancel RSVP' : 'RSVP'}
+                            </button>
+                            
+                            <button
+                                onClick={handleContactOrganizer}
+                                className={`flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center font-medium`}
+                            >
+                                <BiMessageDetail className="mr-2" /> Contact Organizer
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Spacer for fixed bottom bar */}
+                    <div className="h-32"></div>
+                </div>
             </div>
         </div>
     );
