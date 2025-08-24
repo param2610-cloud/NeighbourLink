@@ -641,6 +641,19 @@ const ModernMessaging = () => {
                                     <p className="break-words">{message.text}</p>
                                   )}
                                   
+                                  {/* Media attachments */}
+                                  {message.mediaUrls && message.mediaUrls.length > 0 && (
+                                    <div className={`mt-2 grid ${message.mediaUrls.length > 1 ? 'grid-cols-2 gap-1' : ''}`}>
+                                      {message.mediaUrls.map((url, i) => (
+                                        <div key={i} className="mt-1">
+                                          <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                            <ImageDisplay publicId={url} className="w-full h-auto max-w-full" />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
                                   {/* Message time */}
                                   <div className={`text-xs mt-1 ${
                                     isOwnMessage ? 'text-indigo-200' : 'text-gray-500 dark:text-gray-400'

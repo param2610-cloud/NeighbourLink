@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { sendMessage } from '../../services/messagingService';
-import { IoMdSend, IoMdImage, IoMdAttach } from 'react-icons/io';
+import { IoMdSend, IoMdImage } from 'react-icons/io';
 import { createUniqueFileName } from '@/utils/aws/aws';
 import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 import { uploadFileToCloudinary } from '@/utils/cloudinary/cloudinary';
@@ -30,7 +30,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{url: string, type: string}[]>([]);
   const [showQuickResponses, setShowQuickResponses] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -38,7 +38,8 @@ const MessageInput: React.FC<MessageInputProps> = ({
     if ((!message.trim() && uploadedFiles.length === 0) || !conversationId) return;
     
     try {
-      await sendMessage(conversationId, currentUserId, message.trim(), uploadedFiles);
+      const mediaUrls = uploadedFiles.map(file => file.url);
+      await sendMessage(conversationId, currentUserId, message.trim(), mediaUrls);
 
       // Send notification to recipient if it's not the current user
       if (otherUserId !== currentUserId) {
@@ -71,23 +72,28 @@ const MessageInput: React.FC<MessageInputProps> = ({
     setIsUploading(true);
     setUploadProgress(0);
     
-    const uploadedUrls: string[] = [];
-    // let currentProgress = 0;
-    
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileName = createUniqueFileName(file.name);
         
-        await uploadFileToCloudinary(
-          file,
-          fileName,
-          );
+        await uploadFileToCloudinary(file, fileName);
         
-        uploadedUrls.push(fileName);
+        // Determine file type
+        let fileType = 'file';
+        if (file.type.startsWith('image/')) {
+          fileType = 'image';
+        } else if (file.type.startsWith('video/')) {
+          fileType = 'video';
+        } else if (file.type.startsWith('audio/')) {
+          fileType = 'audio';
+        }
+        
+        setUploadedFiles(prev => [...prev, { url: fileName, type: fileType }]);
+        
+        // Update progress
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
       }
-      
-      setUploadedFiles((prev) => [...prev, ...uploadedUrls]);
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Failed to upload file. Please try again.');
@@ -139,7 +145,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           {uploadedFiles.map((file, index) => (
             <div key={index} className="relative group">
               <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded overflow-hidden">
-                <ImageDisplay publicId={file} className="w-full h-full object-cover" />
+                <ImageDisplay publicId={file.url} className="w-full h-full object-cover" />
               </div>
               <button
                 className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
@@ -168,12 +174,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       )}
       
       <div className="flex items-end gap-2">
-        <button
-          className="p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-          onClick={() => setShowQuickResponses(!showQuickResponses)}
-        >
-          <IoMdAttach size={24} />
-        </button>
+        
         
         <label className="cursor-pointer p-2 text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400">
           <IoMdImage size={24} />
