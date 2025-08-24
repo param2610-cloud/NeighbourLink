@@ -538,3 +538,175 @@ html, #root {
   background-color: var(--emergency-bg-dark);
   color: var(--emergency-text-dark);
 }
+
+/* Google Translate Widget Styles - Complete hiding and integration */
+.goog-te-banner-frame,
+.goog-te-menu-frame,
+.goog-te-ftab,
+.goog-te-balloon-frame {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.goog-te-combo {
+  visibility: visible !important;
+  display: block !important;
+}
+
+#google_translate_element {
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: all !important; /* Allow interaction but keep hidden */
+  z-index: -1 !important;
+  overflow: hidden !important;
+}
+
+/* Keep the select element functional */
+#google_translate_element select {
+  opacity: 1 !important;
+  position: relative !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.skiptranslate {
+  display: none !important;
+}
+
+.goog-te-gadget {
+  display: none !important;
+}
+
+/* Ensure body positioning doesn't change */
+body {
+  top: 0 !important;
+  position: static !important;
+  margin-top: 0 !important;
+}
+
+body.goog-te-t0 {
+  top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Hide all Google Translate UI elements except the select */
+.goog-te-gadget-simple {
+  background: transparent !important;
+  border: none !important;
+}
+
+.goog-te-gadget-simple .goog-te-menu-value {
+  display: none !important;
+}
+
+.goog-te-gadget-simple .goog-te-menu-value:before {
+  display: none !important;
+}
+
+/* RTL Support */
+.translated-rtl {
+  direction: rtl !important;
+}
+
+.translated-ltr {
+  direction: ltr !important;
+}
+
+/* Smooth transitions for direction changes */
+html {
+  transition: direction 0.3s ease;
+}
+
+/* Ensure consistent font rendering across translations */
+body[class*="goog-te-"] {
+  font-family: inherit !important;
+}
+
+/* Fix any translation artifacts */
+.goog-te-spinner-pos {
+  display: none !important;
+}
+
+/* Notification and popup suppression */
+div[id*="goog-te"]:not(#google_translate_element) {
+  display: none !important;
+}
+
+/* Additional cleanup for iframe elements */
+iframe.goog-te-banner-frame,
+iframe.goog-te-menu-frame {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+/* Hide restore link and other UI elements */
+.goog-te-banner-frame .restore,
+.goog-te-banner .restore {
+  position: absolute !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+}
+
+/* Ensure the translation tools remain functional but hidden */
+.goog-te-gadget-simple .goog-te-combo {
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+}
+
+/* Force hide Google Translate top bar */
+body {
+  top: 0px !important;
+}
+
+/* Hide Google Translate elements that might interfere with reset */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+/* Additional hiding for any Google Translate overlays */
+.goog-te-menu-frame {
+  display: none !important;
+}
+
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Force reset of any Google Translate body modifications */
+body[style*="position"] {
+  position: static !important;
+  top: 0 !important;
+}
+
+/* RTL Support for specific components */
+[dir="rtl"] .flex {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+  margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+  margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+  margin-right: calc(1rem * var(--tw-space-x-reverse));
+  margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
+/* Keep logo and brand elements LTR */
+[dir="rtl"] .logo-container {
+  direction: ltr;
+}
