@@ -332,7 +332,7 @@ const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
-export const Feed: React.FC = () => {
+export const Feed: React.FC<{ radius?: number }> = ({ radius }) => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -400,8 +400,8 @@ export const Feed: React.FC = () => {
         const items = await fetchAllFeedItems();
         setTotalItemsBeforeFiltering(items.length);
         
-        // process feed item
-        const filteredItem = await processFeedItem(items);
+        // process feed item with radius filtering
+        const filteredItem = await processFeedItem(items, radius);
         setFeedItems(filteredItem);
         setError(null);
       } catch (err) {
@@ -412,7 +412,7 @@ export const Feed: React.FC = () => {
       }
     };
     loadFeedItems();
-  }, []);
+  }, [radius]);
 
   if (loading) {
     return (
@@ -453,7 +453,7 @@ export const Feed: React.FC = () => {
             📍 Location filtering active: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            Showing {feedItems.length} of {totalItemsBeforeFiltering} total posts within radius
+            Showing {feedItems.length} of {totalItemsBeforeFiltering} total posts within {radius ? `${radius}km radius (user filter)` : 'item-specific radius'}
           </p>
         </div>
       )}

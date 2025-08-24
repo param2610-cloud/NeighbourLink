@@ -34,8 +34,9 @@ const getCurrentUserLocation = async (): Promise<UserLocation | null> => {
   }
 };
 
-export const processFeedItem = async (items: FeedItem[]) => {
+export const processFeedItem = async (items: FeedItem[], userRadius?: number) => {
   console.log("🔍 Processing feed items:", items.length);
+  console.log("📏 User radius filter:", userRadius);
   
   // Get current user's location for radius filtering
   const userLocation = await getCurrentUserLocation();
@@ -76,17 +77,26 @@ export const processFeedItem = async (items: FeedItem[]) => {
         feedItem.location.longitude
       );
 
-      // Convert visibilityRadius from string to number
-      const visibilityRadiusKm = parseFloat(feedItem.visibilityRadius);
-      
-      if (isNaN(visibilityRadiusKm)) {
-        console.log(`⚠️ Item ${feedItem.id} has invalid radius: "${feedItem.visibilityRadius}" - including by default`);
-        return true;
+      // Use userRadius if provided, otherwise fall back to feed item's visibilityRadius
+      let radiusToUse: number;
+      if (userRadius !== undefined) {
+        radiusToUse = userRadius;
+        console.log(`📏 Using user radius: ${radiusToUse}km for item ${feedItem.id}`);
+      } else {
+        // Convert visibilityRadius from string to number
+        const visibilityRadiusKm = parseFloat(feedItem.visibilityRadius);
+        
+        if (isNaN(visibilityRadiusKm)) {
+          console.log(`⚠️ Item ${feedItem.id} has invalid radius: "${feedItem.visibilityRadius}" - including by default`);
+          return true;
+        }
+        radiusToUse = visibilityRadiusKm;
+        console.log(`📏 Using item radius: ${radiusToUse}km for item ${feedItem.id}`);
       }
 
-      const isWithinRadius = distance <= visibilityRadiusKm;
+      const isWithinRadius = distance <= radiusToUse;
       
-      console.log(`📏 Item ${feedItem.id}: distance=${distance.toFixed(2)}km, radius=${visibilityRadiusKm}km, included=${isWithinRadius ? '✅' : '❌'}`);
+      console.log(`📏 Item ${feedItem.id}: distance=${distance.toFixed(2)}km, radius=${radiusToUse}km, included=${isWithinRadius ? '✅' : '❌'}`);
       
       return isWithinRadius;
     } catch (error) {
@@ -101,6 +111,7 @@ export const processFeedItem = async (items: FeedItem[]) => {
     - Total items: ${items.length}
     - Filtered items: ${filteredItems.length}
     - User has location: ${userLocation ? '✅' : '❌'}
+    - User radius filter: ${userRadius ? `${userRadius}km` : 'Not applied (using item radius)'}
     - Items with location: ${items.filter(item => item.location).length}
     - Items without location: ${items.filter(item => !item.location).length}
   `);
