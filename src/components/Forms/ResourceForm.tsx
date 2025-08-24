@@ -179,8 +179,10 @@ const ResourceForm: React.FC<ResourceFormProps> = ({ userId }) => {
   };
 
   const handleMarkerDrag = async (position: Coordinates,
-    //  markerIndex: number
+    markerIndex: number
     ) => {
+    console.log('markerIndex', markerIndex);
+
     setCoordinates(position);
     
     // Get address for new position

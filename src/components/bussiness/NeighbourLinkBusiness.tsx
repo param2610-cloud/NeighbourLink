@@ -1,53 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  addDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import { db, auth } from "@/firebase";
-import { GiHamburgerMenu } from "react-icons/gi";
-import { FaStore } from "react-icons/fa";
-import {
-  Star,
-  Phone,
-  CreditCard,
-  QrCode,
-  Eye,
-  Image,
-  FileText,
-  Crown,
-  Edit,
+import { 
+  Star, 
+  Edit, 
+  Save, 
+  Plus, 
+  Trash2, 
+  MapPin, 
+  Camera, 
+  AlertTriangle, 
+  Eye, 
+  Image, 
+  FileText, 
+  Phone, 
+  CreditCard, 
+  QrCode, 
+  Crown, 
+  Briefcase, 
+  BarChart3, 
+  TrendingUp, 
+  Users, 
   X,
-  BarChart3,
-  TrendingUp,
-  Users,
-  ShoppingBag,
-  AlertTriangle,
-  MapPin,
-  Camera,
-  Briefcase,
-  Save,
-  Plus,
-  Trash2,
+  Truck
 } from "lucide-react";
-import Sidebar from "../authPage/structures/Sidebar";
-import Bottombar from "@/components/authPage/structures/Bottombar";
+import { FaStore } from "react-icons/fa";
+import { GiHamburgerMenu } from "react-icons/gi";
+import { useNavigate } from "react-router-dom";
 import { useMobileContext } from "@/contexts/MobileContext";
+
+import { toast } from "react-toastify";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
-import {
-  uploadFileToCloudinary,
-  createUniqueFileName,
-  deleteFromCloudinary,
-} from "@/utils/cloudinary/cloudinary";
-import { toast } from "react-toastify";
+import Sidebar from "../authPage/structures/Sidebar";
+import Bottombar from "../authPage/structures/Bottombar";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { auth, db } from "@/firebase";
+import { createUniqueFileName, deleteFromCloudinary, uploadFileToCloudinary } from "@/utils/cloudinary/cloudinary";
 
 interface Review {
   id: string;
@@ -1377,7 +1364,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Service Name *
+                              Service Name
                             </label>
                             <input
                               type="text"
@@ -1400,8 +1387,8 @@ const NeighbourLinkBusiness: React.FC = () => {
                               </label>
                               <input
                                 type="number"
-                                placeholder="500"
-                                value={displayService.price || ""}
+                                placeholder="0"
+                                value={displayService.price || ''}
                                 onChange={(e) =>
                                   setTempService({
                                     ...displayService,
@@ -1417,8 +1404,8 @@ const NeighbourLinkBusiness: React.FC = () => {
                               </label>
                               <input
                                 type="text"
-                                placeholder="2 hours"
-                                value={displayService.duration || ""}
+                                placeholder="e.g., 2 hours"
+                                value={displayService.duration || ''}
                                 onChange={(e) =>
                                   setTempService({
                                     ...displayService,
@@ -1489,11 +1476,11 @@ const NeighbourLinkBusiness: React.FC = () => {
                                 setLoading(true);
                                 try {
                                   const files = Array.from(e.target.files);
-                                  const ids = await Promise.all(
-                                    files.map((f) =>
+                                  const publicIds = await Promise.all(
+                                    files.map((file) =>
                                       uploadFileToCloudinary(
-                                        f,
-                                        createUniqueFileName(f.name)
+                                        file,
+                                        createUniqueFileName(file.name)
                                       )
                                     )
                                   );
@@ -1501,7 +1488,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                                     ...displayService,
                                     imageUrl: [
                                       ...(displayService.imageUrl || []),
-                                      ...ids,
+                                      ...publicIds,
                                     ],
                                   });
                                 } finally {
@@ -1515,7 +1502,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                             <button
                               onClick={handleSaveService}
-                              disabled={loading || !displayService.name.trim()}
+                              disabled={loading}
                               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
                             >
                               {loading ? (
@@ -1523,7 +1510,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                               ) : (
                                 <Save className="w-4 h-4" />
                               )}
-                              {loading ? "Saving..." : "Save"}
+                              {loading ? "Saving..." : "Save Service"}
                             </button>
                             <button
                               onClick={handleCancelService}
@@ -1532,15 +1519,6 @@ const NeighbourLinkBusiness: React.FC = () => {
                             >
                               Cancel
                             </button>
-                            {!isNewService && (
-                              <button
-                                onClick={() => handleRemoveService(service.id)}
-                                disabled={loading}
-                                className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                              >
-                                Remove
-                              </button>
-                            )}
                           </div>
                         </div>
                       ) : (
@@ -1660,7 +1638,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Service Name *
+                          Service Name
                         </label>
                         <input
                           type="text"
@@ -1683,8 +1661,8 @@ const NeighbourLinkBusiness: React.FC = () => {
                           </label>
                           <input
                             type="number"
-                            placeholder="500"
-                            value={tempService.price || ""}
+                            placeholder="0"
+                            value={tempService.price || ''}
                             onChange={(e) =>
                               setTempService({
                                 ...tempService,
@@ -1700,8 +1678,8 @@ const NeighbourLinkBusiness: React.FC = () => {
                           </label>
                           <input
                             type="text"
-                            placeholder="2 hours"
-                            value={tempService.duration || ""}
+                            placeholder="e.g., 2 hours"
+                            value={tempService.duration || ''}
                             onChange={(e) =>
                               setTempService({
                                 ...tempService,
@@ -1771,11 +1749,11 @@ const NeighbourLinkBusiness: React.FC = () => {
                             setLoading(true);
                             try {
                               const files = Array.from(e.target.files);
-                              const ids = await Promise.all(
-                                files.map((f) =>
+                              const publicIds = await Promise.all(
+                                files.map((file) =>
                                   uploadFileToCloudinary(
-                                    f,
-                                    createUniqueFileName(f.name)
+                                    file,
+                                    createUniqueFileName(file.name)
                                   )
                                 )
                               );
@@ -1783,21 +1761,21 @@ const NeighbourLinkBusiness: React.FC = () => {
                                 ...tempService,
                                 imageUrl: [
                                   ...(tempService.imageUrl || []),
-                                  ...ids,
+                                  ...publicIds,
                                 ],
                               });
                             } finally {
                               setLoading(false);
                             }
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                         />
                       </div>
 
                       <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                         <button
                           onClick={handleSaveService}
-                          disabled={loading || !tempService.name.trim()}
+                          disabled={loading}
                           className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
                         >
                           {loading ? (
@@ -1805,500 +1783,7 @@ const NeighbourLinkBusiness: React.FC = () => {
                           ) : (
                             <Save className="w-4 h-4" />
                           )}
-                          {loading ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          onClick={handleCancelService}
-                          disabled={loading}
-                          className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Products Section - Similar improvements as Services */}
-          <div className="mt-8 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center">
-                <div className="h-8 w-1 bg-orange-600 rounded-full mr-3"></div>
-                <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                  Products
-                </h3>
-              </div>
-              <button
-                onClick={handleAddProduct}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                Add Product
-              </button>
-            </div>
-
-            {businessData.products.length === 0 &&
-              isServicesProductsIncomplete() && (
-                <WarningCard
-                  title="No Products Added"
-                  message="Add your products to showcase what you sell."
-                  actionText="Add Product"
-                  onAction={handleAddProduct}
-                  icon={<ShoppingBag className="w-5 h-5 text-amber-600" />}
-                />
-              )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {businessData.products.map((product) => {
-                const isEditing = editingProduct === product.id;
-                const displayProduct =
-                  isEditing && tempProduct ? tempProduct : product;
-                return (
-                  <div
-                    key={product.id}
-                    className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm transition-all ${
-                      isEditing
-                        ? "ring-2 ring-orange-500 ring-opacity-50"
-                        : "hover:shadow-md"
-                    }`}
-                  >
-                    <div className="p-6">
-                      {isEditing ? (
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Product Name *
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="e.g., Organic Honey"
-                              value={displayProduct.name}
-                              onChange={(e) =>
-                                setTempProduct({
-                                  ...displayProduct,
-                                  name: e.target.value,
-                                })
-                              }
-                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Price (₹)
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="299"
-                                value={displayProduct.price || ""}
-                                onChange={(e) =>
-                                  setTempProduct({
-                                    ...displayProduct,
-                                    price: parseFloat(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Stock
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="50"
-                                value={displayProduct.stock || ""}
-                                onChange={(e) =>
-                                  setTempProduct({
-                                    ...displayProduct,
-                                    stock: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Description
-                            </label>
-                            <textarea
-                              placeholder="Describe your product..."
-                              value={displayProduct.description || ""}
-                              onChange={(e) =>
-                                setTempProduct({
-                                  ...displayProduct,
-                                  description: e.target.value,
-                                })
-                              }
-                              rows={3}
-                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Product Images
-                            </label>
-                            {displayProduct.imageUrl &&
-                              displayProduct.imageUrl.length > 0 && (
-                                <div className="grid grid-cols-2 gap-2 mb-3">
-                                  {displayProduct.imageUrl.map((img) => (
-                                    <div key={img} className="relative group">
-                                      <ImageDisplay
-                                        publicId={img}
-                                        className="h-20 w-full object-cover rounded-lg"
-                                      />
-                                      <button
-                                        onClick={async () => {
-                                          await deleteFromCloudinary(img);
-                                          setTempProduct({
-                                            ...displayProduct,
-                                            imageUrl:
-                                              displayProduct.imageUrl?.filter(
-                                                (i) => i !== img
-                                              ) || [],
-                                          });
-                                        }}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              onChange={async (e) => {
-                                if (!e.target.files) return;
-                                setLoading(true);
-                                try {
-                                  const files = Array.from(e.target.files);
-                                  const ids = await Promise.all(
-                                    files.map((f) =>
-                                      uploadFileToCloudinary(
-                                        f,
-                                        createUniqueFileName(f.name)
-                                      )
-                                    )
-                                  );
-                                  setTempProduct({
-                                    ...displayProduct,
-                                    imageUrl: [
-                                      ...(displayProduct.imageUrl || []),
-                                      ...ids,
-                                    ],
-                                  });
-                                } finally {
-                                  setLoading(false);
-                                }
-                              }}
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                            />
-                          </div>
-
-                          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
-                            <button
-                              onClick={handleSaveProduct}
-                              disabled={loading || !displayProduct.name.trim()}
-                              className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-                            >
-                              {loading ? (
-                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              ) : (
-                                <Save className="w-4 h-4" />
-                              )}
-                              {loading ? "Saving..." : "Save"}
-                            </button>
-                            <button
-                              onClick={handleCancelProduct}
-                              disabled={loading}
-                              className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                            >
-                              Cancel
-                            </button>
-                            {!isNewProduct && (
-                              <button
-                                onClick={() => handleRemoveProduct(product.id)}
-                                disabled={loading}
-                                className="px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                              >
-                                Remove
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="flex justify-between items-start mb-3">
-                            <h4 className="font-semibold text-gray-800 dark:text-white text-lg">
-                              {product.name}
-                            </h4>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  setEditingProduct(product.id);
-                                  setTempProduct({
-                                    ...product,
-                                    imageUrl: product.imageUrl || [],
-                                  });
-                                }}
-                                className="p-1.5 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleRemoveProduct(product.id)}
-                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-
-                          {product.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                              {product.description}
-                            </p>
-                          )}
-
-                          {product.imageUrl && product.imageUrl.length > 0 && (
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              {product.imageUrl.map((img) => (
-                                <ImageDisplay
-                                  key={img}
-                                  publicId={img}
-                                  className="h-16 w-full object-cover rounded"
-                                />
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="flex justify-between items-center">
-                            <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-                              {product.price && <div>₹{product.price}</div>}
-                              {product.stock !== undefined && (
-                                <div>Stock: {product.stock}</div>
-                              )}
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                              {isItemPromoted(product.id, "product") && (
-                                <span className="px-3 py-1 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full border border-orange-200 dark:border-orange-700">
-                                  ✓ Promoted
-                                </span>
-                              )}
-                              {isItemPromoted(product.id, "product") ? (
-                                <button
-                                  onClick={() =>
-                                    handleRemovePromotion(product.id, "product")
-                                  }
-                                  disabled={removingPromotionId === product.id}
-                                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors min-w-[100px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {removingPromotionId === product.id ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-3 h-3 animate-spin rounded-full border border-red-600 border-t-transparent" />
-                                      <span>Removing...</span>
-                                    </div>
-                                  ) : (
-                                    "Remove Promotion"
-                                  )}
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() =>
-                                    handlePromoteItem(product.id, "product")
-                                  }
-                                  disabled={
-                                    !isProfileComplete() ||
-                                    promotingItemId === product.id
-                                  }
-                                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors min-w-[100px] ${
-                                    !isProfileComplete()
-                                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                      : "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50"
-                                  }`}
-                                >
-                                  {promotingItemId === product.id ? (
-                                    <div className="flex items-center justify-center gap-2">
-                                      <div className="w-3 h-3 animate-spin rounded-full border border-orange-600 border-t-transparent" />
-                                      <span>Promoting...</span>
-                                    </div>
-                                  ) : (
-                                    "Promote"
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {isNewProduct && tempProduct && (
-                <div className="bg-white dark:bg-gray-800 border-2 border-dashed border-orange-300 dark:border-orange-600 rounded-lg">
-                  {/* New product form - same as above editing form */}
-                  <div className="p-6">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Product Name *
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g., Organic Honey"
-                          value={tempProduct.name}
-                          onChange={(e) =>
-                            setTempProduct({
-                              ...tempProduct,
-                              name: e.target.value,
-                            })
-                          }
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Price (₹)
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="500"
-                            value={tempProduct.price || ""}
-                            onChange={(e) =>
-                              setTempProduct({
-                                ...tempProduct,
-                                price: parseFloat(e.target.value) || 0,
-                              })
-                            }
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Stock
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="50"
-                            value={tempProduct.stock || ""}
-                            onChange={(e) =>
-                              setTempProduct({
-                                ...tempProduct,
-                                stock: parseInt(e.target.value) || 0,
-                              })
-                            }
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Description
-                        </label>
-                        <textarea
-                          placeholder="Describe your product..."
-                          value={tempProduct.description || ""}
-                          onChange={(e) =>
-                            setTempProduct({
-                              ...tempProduct,
-                              description: e.target.value,
-                            })
-                          }
-                          rows={3}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Product Images
-                        </label>
-                        {tempProduct.imageUrl &&
-                          tempProduct.imageUrl.length > 0 && (
-                            <div className="grid grid-cols-2 gap-2 mb-3">
-                              {tempProduct.imageUrl.map((img) => (
-                                <div key={img} className="relative group">
-                                  <ImageDisplay
-                                    publicId={img}
-                                    className="h-20 w-full object-cover rounded-lg"
-                                  />
-                                  <button
-                                    onClick={async () => {
-                                      await deleteFromCloudinary(img);
-                                      setTempProduct({
-                                        ...tempProduct,
-                                        imageUrl: (
-                                          tempProduct.imageUrl || []
-                                        ).filter((i) => i !== img),
-                                      });
-                                    }}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={async (e) => {
-                            if (!e.target.files) return;
-                            setLoading(true);
-                            try {
-                              const files = Array.from(e.target.files);
-                              const ids = await Promise.all(
-                                files.map((f) =>
-                                  uploadFileToCloudinary(
-                                    f,
-                                    createUniqueFileName(f.name)
-                                  )
-                                )
-                              );
-                              setTempProduct({
-                                ...tempProduct,
-                                imageUrl: [
-                                  ...(tempProduct.imageUrl || []),
-                                  ...ids,
-                                ],
-                              });
-                            } finally {
-                              setLoading(false);
-                            }
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                        />
-                      </div>
-
-                      <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
-                        <button
-                          onClick={handleSaveProduct}
-                          disabled={loading || !tempProduct.name.trim()}
-                          className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-                        >
-                          {loading ? (
-                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          ) : (
-                            <Save className="w-4 h-4" />
-                          )}
-                          {loading ? "Saving..." : "Save"}
+                          {loading ? "Saving..." : "Save Product"}
                         </button>
                         <button
                           onClick={handleCancelProduct}
@@ -2349,43 +1834,37 @@ const NeighbourLinkBusiness: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phone Number *
+                        Phone Number
                       </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="tel"
-                          value={tempContact.phone}
-                          onChange={(e) =>
-                            setTempContact({
-                              ...tempContact,
-                              phone: e.target.value,
-                            })
-                          }
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="+91 9876543210"
-                        />
-                      </div>
+                      <input
+                        type="tel"
+                        value={tempContact.phone}
+                        onChange={(e) =>
+                          setTempContact({
+                            ...tempContact,
+                            phone: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="Enter phone number"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Payment Details
                       </label>
-                      <div className="relative">
-                        <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={tempContact.accountDetails}
-                          onChange={(e) =>
-                            setTempContact({
-                              ...tempContact,
-                              accountDetails: e.target.value,
-                            })
-                          }
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          placeholder="UPI ID, Bank details, etc."
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        value={tempContact.accountDetails}
+                        onChange={(e) =>
+                          setTempContact({
+                            ...tempContact,
+                            accountDetails: e.target.value,
+                          })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                        placeholder="Account details or UPI ID"
+                      />
                     </div>
                   </div>
                   <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
@@ -2420,40 +1899,20 @@ const NeighbourLinkBusiness: React.FC = () => {
                           Phone
                         </div>
                         <div className="text-gray-600 dark:text-gray-400">
-                          {businessData.contact?.phone || "Not set"}
+                          {businessData.contact?.phone || "Not provided"}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                       <CreditCard className="w-5 h-5 text-green-600" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Payment
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {businessData.paymentSupport?.accountDetails
-                            ? "Digital + Cash"
-                            : "Cash only"}
-                        </div>
+                      <div className="text-gray-700 dark:text-gray-200">
+                        {businessData.paymentSupport?.accountDetails || "Not provided"}
                       </div>
                     </div>
                     <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <div
-                        className={`w-3 h-3 rounded-full ${
-                          businessData.deliverySupport
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                        }`}
-                      ></div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Delivery
-                        </div>
-                        <div className="text-gray-600 dark:text-gray-400">
-                          {businessData.deliverySupport
-                            ? "Available"
-                            : "Not available"}
-                        </div>
+                      <Truck className="w-5 h-5 text-blue-600" />
+                      <div className="text-gray-700 dark:text-gray-200">
+                        Delivery: {businessData.deliverySupport ? "Available" : "Not Available"}
                       </div>
                     </div>
                   </div>
@@ -2772,10 +2231,12 @@ const NeighbourLinkBusiness: React.FC = () => {
             <div className="p-6 overflow-y-auto max-h-[75vh]">
               <div className="flex flex-col items-center">
                 <div className="w-full max-w-2xl">
-                  <ImageDisplay
-                    publicId={businessData.verificationDocUrl}
-                    className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg"
-                  />
+                  {businessData.verificationDocUrl && (
+                    <ImageDisplay
+                      publicId={businessData.verificationDocUrl}
+                      className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg"
+                    />
+                  )}
                 </div>
                 <div className="mt-4 text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-300">

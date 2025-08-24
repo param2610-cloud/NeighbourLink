@@ -16,7 +16,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { MoreVertical, MapPin, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { useStateContext } from "@/contexts/StateContext"; // Update this import to use StateContext
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MdVerified } from "react-icons/md";
@@ -48,8 +47,8 @@ function useImageHeightManager() {
       const maxScaled = allScaled.length ? Math.max(...allScaled) : maxAllowed;
       setHeight(Math.min(maxAllowed, maxScaled));
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   return { containerRef, onImgLoad, height, getMaxAllowed };
@@ -288,6 +287,11 @@ export const Feed: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {
+    if (!id) {
+      console.error("Cannot delete item: ID is missing");
+      return;
+    }
+    
     try {
       let collectionName: string;
       switch (type) {
@@ -378,48 +382,60 @@ export const Feed: React.FC = () => {
             </p>
           </div>
         ) : (
-          feedItems.map((item) => {
-            switch (item.type) {
-              case "resource":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <ResourceCard
-                      resource={item as Resource}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              case "promotion":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <PromotionCard
-                      promotion={item as Promotion}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              case "event":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <EventCard
-                      event={item as Event}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              case "update":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <UpdateCard
-                      update={item as Update}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              default:
+          feedItems
+            .map((item) => {
+              // Add safety check for item and item.id
+              if (!item || !item.id) {
+                console.warn("Skipping item with missing data:", item);
                 return null;
-            }
-          })
+              }
+
+              const CardComponent = () => {
+                switch (item.type) {
+                  case "resource":
+                    return (
+                      <ResourceCard
+                        resource={item as Resource}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  case "promotion":
+                    return (
+                      <PromotionCard
+                        promotion={item as Promotion}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  case "event":
+                    return (
+                      <EventCard
+                        event={item as Event}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  case "update":
+                    return (
+                      <UpdateCard
+                        update={item as Update}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              };
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32 }}
+                >
+                  <CardComponent />
+                </motion.div>
+              );
+            }).filter(Boolean) // Remove null items
         )}
       </div>
     </div>
@@ -521,7 +537,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
               publicId={resource.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onImgLoad(e, resource.images![currentImageIndex])}
-              style={{ width: '100%', height: height ? `${height}px` : 'auto', objectFit: height ? 'cover' : 'contain' }}
+              style={{ width: "100%", height: height ? `${height}px` : "auto", objectFit: height ? "cover" : "contain" }}
             />
           </div>
           {/* hidden loaders to measure all images for height calculation */}
@@ -708,7 +724,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
       {promotion.images && promotion.images.length > 0 && (
         <div ref={containerRef} className="relative w-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 overflow-hidden">
           <div style={{ height: height ? `${height}px` : undefined, maxHeight: getMaxAllowed(containerRef.current?.clientWidth || 520) }} className="w-full overflow-hidden flex justify-center items-center">
-            <ImageDisplay publicId={promotion.images[currentImageIndex]} className="w-full h-full" style={{ objectFit: height ? 'cover' : 'contain' }} />
+            <ImageDisplay publicId={promotion.images[currentImageIndex]} className="w-full h-full" style={{ objectFit: height ? "cover" : "contain" }} />
           </div>
           {promotion.images.map((imgId, idx) => (
             <div key={`loader-${idx}`} className="hidden" aria-hidden>
@@ -812,7 +828,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const totalImages = event.images?.length || 0;
-  const { user } = useStateContext(); // Use StateContext instead of auth.currentUser
+  const user = auth.currentUser; // Use auth.currentUser instead of useStateContext
   const isOwner = user?.uid === event.userId;
   const [isRSVPed, setIsRSVPed] = useState(false);
   const [isRSVPing, setIsRSVPing] = useState(false);
@@ -832,10 +848,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
 
   useEffect(() => {
     // Check if the current user has already RSVPed
-    if (user && event.responders?.users) {
+    if (user?.uid && event.responders?.users) {
       setIsRSVPed(event.responders.users.includes(user.uid));
     }
-  }, [user, event.responders]);
+  }, [user?.uid, event.responders]);
 
   const handleNext = () => {
     setCurrentImageIndex((prev) => (prev + 1) % totalImages);
@@ -851,7 +867,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   };
 
   const handleRSVP = async () => {
-    if (!user) {
+    if (!user?.uid) {
       // Handle not logged in state
       alert("Please log in to RSVP for this event");
       return;
@@ -930,7 +946,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
               publicId={event.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onEventImgLoad(e, event.images![currentImageIndex])}
-              style={{ width: '100%', height: eventHeight ? `${eventHeight}px` : 'auto', objectFit: eventHeight ? 'cover' : 'contain' }}
+              style={{ width: "100%", height: eventHeight ? `${eventHeight}px` : "auto", objectFit: eventHeight ? "cover" : "contain" }}
             />
           </div>
           <div className="hidden">
@@ -1124,7 +1140,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
               publicId={update.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onUpdLoad(e, update.images![currentImageIndex])}
-              style={{ width: '100%', height: updHeight ? `${updHeight}px` : 'auto', objectFit: updHeight ? 'cover' : 'contain' }}
+              style={{ width: "100%", height: updHeight ? `${updHeight}px` : "auto", objectFit: updHeight ? "cover" : "contain" }}
             />
           </div>
           <div className="hidden">

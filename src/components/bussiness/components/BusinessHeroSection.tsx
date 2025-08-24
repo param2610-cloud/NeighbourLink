@@ -217,13 +217,13 @@ const BusinessHeroSection: React.FC<BusinessHeroSectionProps> = ({
             </div>
           </div>
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 items-center text-center">
-            <div className="flex items-center gap-3 p-3 text-center rounded-lg">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            <div className="flex items-center gap-3 p-3 text-center justify-center rounded-lg">
+              <span className={`px-2 py-1 rounded-full text-lg font-medium ${
                 businessData.isVerified
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                   : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
               }`}>
-                {businessData.isVerified ? 'Verified' : 'Pending'}
+                {businessData.isVerified ? 'Verified ✓' : 'Pending'}
               </span>
             </div>
           </div>
