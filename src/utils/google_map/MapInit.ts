@@ -70,12 +70,13 @@ export const loadGoogleMapsScript = (): Promise<void> => {
       }
 
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMaps`;
       script.async = true;
       script.defer = true;
-      script.id = 'google-maps-script'; // Add ID for easier tracking
+      script.id = 'google-maps-script';
       
-      script.onload = () => {
+      // Set up the callback function
+      window.initGoogleMaps = () => {
         isLoading = false;
         cleanupExistingScripts();
         resolve();
@@ -84,6 +85,9 @@ export const loadGoogleMapsScript = (): Promise<void> => {
       script.onerror = () => {
         isLoading = false;
         loadPromise = null;
+        if (window.initGoogleMaps) {
+          window.initGoogleMaps = () => {};
+        }
         reject(new Error('Failed to load Google Maps'));
       };
 

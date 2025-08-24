@@ -123,34 +123,18 @@ const GoogleMapsViewer: React.FC<GoogleMapsViewerProps> = ({
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY;
-    if (!apiKey) {
-      setLoadError('Google Maps API key not found');
-      return;
-    }
-
-    // Create script element
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    
-    script.onload = () => {
-      setIsLoaded(true);
-    };
-    
-    script.onerror = () => {
-      setLoadError('Failed to load Google Maps');
-    };
-
-    document.head.appendChild(script);
-
-    return () => {
-      // Clean up script if component unmounts before loading
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
+    const loadScript = async () => {
+      try {
+        const { loadGoogleMapsScript } = await import('./MapInit');
+        await loadGoogleMapsScript();
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('Failed to load Google Maps:', error);
+        setLoadError('Failed to load Google Maps');
       }
     };
+
+    loadScript();
   }, []);
 
   // Initialize map when Google Maps is loaded

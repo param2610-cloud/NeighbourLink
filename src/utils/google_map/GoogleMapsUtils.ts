@@ -44,12 +44,21 @@ export const calculateDistanceAndDuration = async (
       throw new Error('Google Maps API not loaded');
     }
     
+    // Sanitize coordinates before using them
+    const sanitizedFrom = sanitizeCoordinates(fromLocation);
+    const sanitizedTo = sanitizeCoordinates(toLocation);
+    
+    if (!sanitizedFrom || !sanitizedTo) {
+      console.error('Invalid coordinates provided');
+      return null;
+    }
+    
     const service = new window.google.maps.DistanceMatrixService();
     
     return new Promise((resolve) => {
       service.getDistanceMatrix({
-        origins: [fromLocation],
-        destinations: [toLocation],
+        origins: [new window.google.maps.LatLng(sanitizedFrom.lat, sanitizedFrom.lng)],
+        destinations: [new window.google.maps.LatLng(sanitizedTo.lat, sanitizedTo.lng)],
         travelMode: window.google.maps.TravelMode.DRIVING,
         unitSystem: window.google.maps.UnitSystem.METRIC,
         avoidHighways: false,
@@ -211,6 +220,146 @@ export const createMapsUrl = (coordinates: Coordinates, zoom: number = 15): stri
   return `https://www.google.com/maps/@${coordinates.lat},${coordinates.lng},${zoom}z`;
 };
 
+export interface SafePlaceType {
+  placeId: string;
+  name: string;
+  address: string;
+  coordinates: Coordinates;
+  type: string;
+  rating: number;
+  openNow: boolean | undefined;
+  distance: number;
+}
+
+/**
+ * Search for safe meetup places around given coordinates
+ * Returns only the 3 nearest places with high ratings
+ */
+export const findSafeMeetupPlaces = async (
+  location: Coordinates,
+  radius: number = 2000
+): Promise<SafePlaceType[]> => {
+  console.log('🔍 findSafeMeetupPlaces called with:', { location, radius });
+  
+  try {
+    if (!window.google || !window.google.maps || !window.google.maps.places) {
+      console.error('❌ Google Maps Places API not loaded');
+      throw new Error('Google Maps Places API not loaded');
+    }
+
+    // Sanitize input coordinates
+    const sanitizedLocation = sanitizeCoordinates(location);
+    if (!sanitizedLocation) {
+      console.error('❌ Invalid location coordinates');
+      return [];
+    }
+
+    console.log('✅ Google Maps Places API is available');
+
+    // Create a temporary map element for the PlacesService
+    const mapDiv = document.createElement('div');
+    const map = new window.google.maps.Map(mapDiv, {
+      center: new window.google.maps.LatLng(sanitizedLocation.lat, sanitizedLocation.lng),
+      zoom: 15
+    });
+
+    const service = new window.google.maps.places.PlacesService(map);
+
+    const safeTypes = [
+      'transit_station',
+      'shopping_mall',
+      'police',
+      'hospital',
+      'library',
+      'cafe'
+    ];
+
+    console.log('🏗️ Searching for types:', safeTypes);
+
+    const searchPromises = safeTypes.map(type => 
+      new Promise<any[]>((resolve) => {
+        console.log(`🔎 Searching for type: ${type}`);
+        const request = {
+          location: new window.google.maps.LatLng(sanitizedLocation.lat, sanitizedLocation.lng),
+          radius,
+          type: type
+        };
+
+        // Add timeout to prevent hanging requests
+        const timeout = setTimeout(() => {
+          console.warn(`⏰ Search timeout for ${type}`);
+          resolve([]);
+        }, 15000);
+
+        service.nearbySearch(request, (results: any[], status: any) => {
+          clearTimeout(timeout);
+          console.log(`📍 Results for ${type}:`, { status, count: results?.length || 0 });
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+            const mappedResults = results.map(place => ({ ...place, searchType: type }));
+            console.log(`✅ Mapped results for ${type}:`, mappedResults.length, 'places');
+            resolve(mappedResults);
+          } else {
+            console.warn(`❌ No results for ${type}:`, status);
+            resolve([]);
+          }
+        });
+      })
+    );
+
+    const allResults = await Promise.all(searchPromises);
+    console.log('🎯 All search results:', allResults);
+    
+    const places = allResults.flat();
+    console.log('📋 Flattened places:', places.length, 'total places');
+
+    const processedPlaces = places
+      .filter(place => place.place_id && place.name && place.geometry && place.geometry.location)
+      .map(place => {
+        try {
+          const placeCoords = {
+            lat: typeof place.geometry.location.lat === 'function' ? place.geometry.location.lat() : place.geometry.location.lat,
+            lng: typeof place.geometry.location.lng === 'function' ? place.geometry.location.lng() : place.geometry.location.lng
+          };
+          
+          const distance = calculateStraightLineDistance(sanitizedLocation, placeCoords);
+          
+          return {
+            placeId: place.place_id,
+            name: place.name,
+            address: place.vicinity || '',
+            coordinates: placeCoords,
+            type: place.searchType,
+            rating: place.rating || 0,
+            openNow: place.opening_hours?.open_now,
+            distance: distance
+          };
+        } catch (error) {
+          console.error('Error processing place:', place, error);
+          return null;
+        }
+      })
+      .filter((place): place is SafePlaceType => place !== null)
+      .filter((place: SafePlaceType) => {
+        const isEssentialService = ['police', 'hospital', 'transit_station'].includes(place.type);
+        return isEssentialService || !place.rating || place.rating >= 3.5;
+      })
+      .sort((a: SafePlaceType, b: SafePlaceType) => {
+        // Create a weighted score: lower distance is better, higher rating is better
+        const scoreA = a.distance! - (a.rating || 0) * 0.5;
+        const scoreB = b.distance! - (b.rating || 0) * 0.5;
+        return scoreA - scoreB;
+      })
+      .slice(0, 3);
+
+    console.log('🎉 Final processed places (top 3):', processedPlaces);
+    return processedPlaces;
+
+  } catch (error) {
+    console.error('💥 Error finding safe meetup places:', error);
+    return [];
+  }
+};
+
 /**
  * Load Google Maps API script dynamically
  */
@@ -240,4 +389,24 @@ export const loadGoogleMapsAPI = (apiKey: string, libraries: string[] = ['places
 
     document.head.appendChild(script);
   });
+};
+
+/**
+ * Sanitize coordinates to ensure proper number types
+ */
+export const sanitizeCoordinates = (coordinates: any): Coordinates | null => {
+  try {
+    const lat = typeof coordinates.lat === 'string' ? parseFloat(coordinates.lat) : coordinates.lat;
+    const lng = typeof coordinates.lng === 'string' ? parseFloat(coordinates.lng) : coordinates.lng;
+    
+    if (isNaN(lat) || isNaN(lng)) {
+      console.error('Invalid coordinate values:', coordinates);
+      return null;
+    }
+    
+    return { lat, lng };
+  } catch (error) {
+    console.error('Error sanitizing coordinates:', error);
+    return null;
+  }
 };
