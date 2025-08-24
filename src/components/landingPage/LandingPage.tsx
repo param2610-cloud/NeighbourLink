@@ -5,6 +5,7 @@ import { auth } from '@/firebase';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import TextType from '../ui/TextType';
 import LanguageDropdown from '@/components/LanguageDropdown';
+import Translatable from '@/components/Translatable';
 
 const LandingPage = () => {
 
@@ -159,10 +160,10 @@ const LandingPage = () => {
                 </div>
               </div>
               <div className="hidden md:flex items-center font-extrabold  space-x-8">
-                <a href="#features" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg">Features</a>
-                <a href="#how-it-works" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg">How It Works</a>
-                <a href="#testimonials" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg">Testimonials</a>
-                <a href="#download" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg">Download</a>
+                <a href="#features" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg"><Translatable>Features</Translatable></a>
+                <a href="#how-it-works" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg"><Translatable>How It Works</Translatable></a>
+                <a href="#testimonials" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg"><Translatable>Testimonials</Translatable></a>
+                <a href="#download" className="text-white/90 hover:text-white transition duration-300 hover:drop-shadow-lg"><Translatable>Download</Translatable></a>
               </div>
 
 
@@ -233,7 +234,7 @@ const LandingPage = () => {
                     variants={fadeInUp}
                     className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight"
                   >
-                    Connect with your neighbors like never before
+                    <Translatable>Connect with your neighbors like never before</Translatable>
                   </motion.div>
                   <motion.div
                     variants={staggerItem}
@@ -257,7 +258,7 @@ const LandingPage = () => {
                       href="#download" 
                       className="cta-button inline-flex items-center justify-center px-6 py-3 border border-white/30 text-base font-medium rounded-xl text-white bg-white/10 backdrop-blur-md hover:bg-white/20 md:py-4 md:text-lg md:px-8 shadow-lg transition duration-300"
                     >
-                      Get Started
+                      <Translatable>Get Started</Translatable>
                     </motion.a>
                     <motion.a 
                       whileHover={{ scale: 1.05, y: -2 }}
@@ -265,7 +266,7 @@ const LandingPage = () => {
                       href="#how-it-works" 
                       className="cta-button inline-flex items-center justify-center px-6 py-3 border border-indigo-300/30 text-base font-medium rounded-xl text-white bg-indigo-500/20 backdrop-blur-md hover:bg-indigo-500/30 md:py-4 md:text-lg md:px-8 shadow-lg transition duration-300"
                     >
-                      How It Works
+                      <Translatable>How It Works</Translatable>
                     </motion.a>
                   </motion.div>
                 </div>
@@ -290,10 +291,10 @@ const LandingPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.div variants={fadeInUp} className="text-center">
               <h2 className="text-3xl font-extrabold text-white sm:text-4xl drop-shadow-lg">
-                Everything you need to build a stronger community
+                <Translatable>Everything you need to build a stronger community</Translatable>
               </h2>
               <p className="mt-4 max-w-2xl mx-auto text-xl text-white/80 drop-shadow-md">
-                NeighbourLink makes it easy to connect with your neighbors and share resources.
+                <Translatable>NeighbourLink makes it easy to connect with your neighbors and share resources.</Translatable>
               </p>
             </motion.div>
 
@@ -314,9 +315,9 @@ const LandingPage = () => {
                 >
                   <img src="/assets/resource_sharing.png" className='' alt="" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md">Resource Sharing</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md"><Translatable>Resource Sharing</Translatable></h3>
                 <p className="text-white/80 drop-shadow-sm">
-                  Share underutilized items like tools, medical equipment, or books with trusted neighbors.
+                  <Translatable>Share underutilized items like tools, medical equipment, or books with trusted neighbors.</Translatable>
                 </p>
               </motion.div>
 
@@ -333,9 +334,9 @@ const LandingPage = () => {
                 >
                   <img src="/assets/emergency_alert.png" className='' alt="" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md">Emergency Alerts</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md"><Translatable>Emergency Alerts</Translatable></h3>
                 <p className="text-white/80 drop-shadow-sm">
-                  Broadcast urgent needs to neighbors within a 2km radius via push notifications and SMS.
+                  <Translatable>Broadcast urgent needs to neighbors within a 2km radius via push notifications and SMS.</Translatable>
                 </p>
               </motion.div>
 
@@ -352,9 +353,9 @@ const LandingPage = () => {
                 >
                   <img src="/assets/secure_communication.png" className='' alt="" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md">Secure Communication</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md"><Translatable>Secure Communication</Translatable></h3>
                 <p className="text-white/80 drop-shadow-sm">
-                  Chat privately with neighbors using our end-to-end encrypted messaging system.
+                  <Translatable>Chat privately with neighbors using our end-to-end encrypted messaging system.</Translatable>
                 </p>
               </motion.div>
 
@@ -371,9 +372,9 @@ const LandingPage = () => {
                 >
                   <img src="/assets/trust_building.png" className='' alt="" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md">Trust Building</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md"><Translatable>Trust Building</Translatable></h3>
                 <p className="text-white/80 drop-shadow-sm">
-                  Earn "Trusted Neighbor" badges through ID verification and positive community interactions.
+                  <Translatable>Earn "Trusted Neighbor" badges through ID verification and positive community interactions.</Translatable>
                 </p>
               </motion.div>
 
@@ -390,9 +391,9 @@ const LandingPage = () => {
                 >
                   <img src="/assets/hyperlocal_focus.png" className='' alt="" />
                 </motion.div>
-                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md">Hyperlocal Focus</h3>
+                <h3 className="text-xl font-semibold text-white mb-2 drop-shadow-md"><Translatable>Hyperlocal Focus</Translatable></h3>
                 <p className="text-white/80 drop-shadow-sm">
-                  Connect with neighbors within 1-5km radius, creating a truly local community network.
+                  <Translatable>Connect with neighbors within 1-5km radius, creating a truly local community network.</Translatable>
                 </p>
               </motion.div>
 

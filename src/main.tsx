@@ -6,21 +6,21 @@ import PlayGround from './router/PlayGround'
 import { StateProvider } from './contexts/StateContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { MobileProvider } from './contexts/MobileContext'
-import { LanguageProvider } from '@/contexts/LanguageContext'
+import { TranslationProvider } from '@/contexts/TranslationContext'
+import PageTranslationManager from '@/components/PageTranslationManager'
 import { Analytics } from "@vercel/analytics/react"
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <StateProvider>
       <ThemeProvider>
-        <LanguageProvider>
+        <TranslationProvider>
           <MobileProvider>
             <PlayGround />
+            <PageTranslationManager />
             <Analytics/>
-            {/* Hidden Google Translate Element */}
-            <div id="google_translate_element" style={{ display: 'none' }}></div>
           </MobileProvider>
-        </LanguageProvider>
+        </TranslationProvider>
       </ThemeProvider>
     </StateProvider>
   </React.StrictMode>,

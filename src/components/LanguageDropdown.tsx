@@ -1,19 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
-import { useLanguage, supportedLanguages, type Language } from '@/contexts/LanguageContext'
+import { useTranslation } from '@/contexts/TranslationContext'
 
 interface LanguageDropdownProps {
   variant?: 'default' | 'landing' | 'sidebar'
 }
 
 export default function LanguageDropdown({ variant = 'default' }: LanguageDropdownProps) {
-  const { currentLanguage, setCurrentLanguage, isTranslating, scriptLoaded } = useLanguage()
+  const { currentLanguage, availableLanguages, setLanguage, isLoading } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const handleLanguageChange = (language: Language) => {
-    if (isTranslating) return
+  const handleLanguageChange = (language: typeof availableLanguages[0]) => {
+    if (isLoading) return
     console.log('Changing language to:', language.name)
-    setCurrentLanguage(language)
+    setLanguage(language)
     setIsOpen(false)
   }
 
@@ -54,12 +54,12 @@ export default function LanguageDropdown({ variant = 'default' }: LanguageDropdo
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={buttonStyles}
-        title={isTranslating ? "Translating..." : "Change Language"}
-        disabled={isTranslating}
+        title={isLoading ? "Translating..." : "Change Language"}
+        disabled={isLoading}
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        {isTranslating ? (
+        {isLoading ? (
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -80,8 +80,7 @@ export default function LanguageDropdown({ variant = 'default' }: LanguageDropdo
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-sm">{currentLanguage.flag}</span>
-            <span className="text-sm">{currentLanguage.name}</span>
+            <span className="text-sm">{currentLanguage.nativeName}</span>
             <svg className={`h-4 w-4 ml-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -92,7 +91,7 @@ export default function LanguageDropdown({ variant = 'default' }: LanguageDropdo
       {isOpen && (
         <div className={dropdownStyles}>
           <div className={variant === 'sidebar' ? "py-1 max-h-48 overflow-auto" : "py-1"}>
-            {supportedLanguages.map((language) => (
+            {availableLanguages.map((language) => (
               <button
                 key={language.code}
                 onClick={() => handleLanguageChange(language)}
@@ -100,7 +99,7 @@ export default function LanguageDropdown({ variant = 'default' }: LanguageDropdo
                   ? `w-full flex items-center gap-3 px-3 py-2 text-sm ${language.code === currentLanguage.code ? 'bg-indigo-50 text-indigo-700 font-semibold dark:bg-indigo-900/30 dark:text-indigo-300' : 'text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-300 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300'} transition-colors disabled:opacity-50`
                   : itemStyles
                 }
-                disabled={isTranslating}
+                disabled={isLoading}
               >
                 {variant === 'sidebar' ? (
                   <>
@@ -113,16 +112,16 @@ export default function LanguageDropdown({ variant = 'default' }: LanguageDropdo
                 ) : (
                   <>
                     <div className="flex items-center space-x-3">
-                      <span className="text-lg">{language.flag}</span>
-                      <span className="font-medium">{language.name}</span>
+                      <span className="text-lg">{language.code.toUpperCase()}</span>
+                      <span className="font-medium">{language.nativeName}</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      {isTranslating && currentLanguage.code === language.code && (
+                      {isLoading && currentLanguage.code === language.code && (
                         <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}
-                      {currentLanguage.code === language.code && !isTranslating && (
+                      {currentLanguage.code === language.code && !isLoading && (
                         <svg className="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
