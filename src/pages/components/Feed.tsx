@@ -109,6 +109,11 @@ export interface BaseItem {
   userId: string;
   visibilityRadius: string;
   images?: string[];
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
   type: "resource" | "promotion" | "event" | "update";
 }
 
@@ -331,6 +336,31 @@ export const Feed: React.FC = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [totalItemsBeforeFiltering, setTotalItemsBeforeFiltering] = useState<number>(0);
+
+  // Get user location for debugging purposes
+  useEffect(() => {
+    const getUserLocation = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "Users", user.uid));
+          if (userDoc.exists() && userDoc.data().location) {
+            const location = userDoc.data().location;
+            setUserLocation({
+              latitude: parseFloat(location.latitude),
+              longitude: parseFloat(location.longitude),
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error getting user location:", error);
+      }
+    };
+    
+    getUserLocation();
+  }, []);
 
   const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {
     if (!id) {
@@ -368,6 +398,8 @@ export const Feed: React.FC = () => {
       try {
         setLoading(true);
         const items = await fetchAllFeedItems();
+        setTotalItemsBeforeFiltering(items.length);
+        
         // process feed item
         const filteredItem = await processFeedItem(items);
         setFeedItems(filteredItem);
@@ -414,6 +446,18 @@ export const Feed: React.FC = () => {
 
   return (
     <div className="container w-full sm:w-[520px] mx-auto px-4 bg-transparent">
+      {/* Debug info section */}
+      {userLocation && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            📍 Location filtering active: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
+          </p>
+          <p className="text-xs text-blue-600 dark:text-blue-400">
+            Showing {feedItems.length} of {totalItemsBeforeFiltering} total posts within radius
+          </p>
+        </div>
+      )}
+      
       <div className="">
         {feedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -422,9 +466,14 @@ export const Feed: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No posts yet</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {userLocation ? "No posts in your area" : "No posts yet"}
+            </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-sm">
-              Be the first to share something with your community. Create a resource, event, promotion, or update!
+              {userLocation 
+                ? `Found ${totalItemsBeforeFiltering} total posts, but none are within your location radius. Try expanding your search or check back later for new posts in your neighborhood.`
+                : "Be the first to share something with your community. Create a resource, event, promotion, or update!"
+              }
             </p>
           </div>
         ) : (

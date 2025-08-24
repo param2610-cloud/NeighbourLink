@@ -1,15 +1,109 @@
 import { FeedItem } from "@/pages/components/Feed";
+import { auth, db } from "@/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { calculateDistance } from "@/utils/utils";
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+}
+
+// Get current user's location from their profile
+const getCurrentUserLocation = async (): Promise<UserLocation | null> => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.log("No authenticated user found");
+      return null;
+    }
+
+    const userDoc = await getDoc(doc(db, "Users", user.uid));
+    if (userDoc.exists() && userDoc.data().location) {
+      const location = userDoc.data().location;
+      return {
+        latitude: parseFloat(location.latitude),
+        longitude: parseFloat(location.longitude),
+      };
+    } else {
+      console.log("User profile or location data not found");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching user location:", error);
+    return null;
+  }
+};
 
 export const processFeedItem = async (items: FeedItem[]) => {
-    // if feed items' createdAt- today is greater than duration then we should discard those feed  itemes.
-    const filteredItems = items?.filter(feedItem => {
-        const createdAt = new Date(feedItem.createdAt).getTime();
-        const durationInDays = parseInt(feedItem.duration);
-        const durationInMs = durationInDays * 24 * 60 * 60 * 1000; 
-        const timeDiff = Date.now() - createdAt;
-        console.log(timeDiff);
+  console.log("🔍 Processing feed items:", items.length);
+  
+  // Get current user's location for radius filtering
+  const userLocation = await getCurrentUserLocation();
+  console.log("📍 User location:", userLocation);
 
-        return timeDiff < durationInMs;
-    });
-    return filteredItems;
+  // Filter feed items based on duration and radius
+  const filteredItems = items?.filter(feedItem => {
+    // Duration filtering (existing logic)
+    const createdAt = new Date(feedItem.createdAt).getTime();
+    const durationInDays = parseInt(feedItem.duration);
+    const durationInMs = durationInDays * 24 * 60 * 60 * 1000; 
+    const timeDiff = Date.now() - createdAt;
+    
+    // Check if item is still valid by duration
+    const isValidByDuration = timeDiff < durationInMs;
+    if (!isValidByDuration) {
+      console.log(`⏰ Item ${feedItem.id} filtered out by duration (${Math.round(timeDiff / durationInMs * 100)}% expired)`);
+      return false;
+    }
+
+    // Location/radius filtering
+    if (!userLocation) {
+      console.log(`🌍 No user location available - including item ${feedItem.id}`);
+      return true;
+    }
+
+    if (!feedItem.location) {
+      console.log(`📍 Item ${feedItem.id} has no location data - including by default`);
+      return true;
+    }
+
+    try {
+      // Calculate distance between user and feed item
+      const distance = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        feedItem.location.latitude,
+        feedItem.location.longitude
+      );
+
+      // Convert visibilityRadius from string to number
+      const visibilityRadiusKm = parseFloat(feedItem.visibilityRadius);
+      
+      if (isNaN(visibilityRadiusKm)) {
+        console.log(`⚠️ Item ${feedItem.id} has invalid radius: "${feedItem.visibilityRadius}" - including by default`);
+        return true;
+      }
+
+      const isWithinRadius = distance <= visibilityRadiusKm;
+      
+      console.log(`📏 Item ${feedItem.id}: distance=${distance.toFixed(2)}km, radius=${visibilityRadiusKm}km, included=${isWithinRadius ? '✅' : '❌'}`);
+      
+      return isWithinRadius;
+    } catch (error) {
+      console.error(`❌ Error calculating distance for item ${feedItem.id}:`, error);
+      // On error, include the item to avoid breaking the feed
+      return true;
+    }
+  });
+
+  console.log(`🎯 Filtered ${items.length} items to ${filteredItems.length} items`);
+  console.log(`📊 Filtering summary:
+    - Total items: ${items.length}
+    - Filtered items: ${filteredItems.length}
+    - User has location: ${userLocation ? '✅' : '❌'}
+    - Items with location: ${items.filter(item => item.location).length}
+    - Items without location: ${items.filter(item => !item.location).length}
+  `);
+  
+  return filteredItems;
 }
