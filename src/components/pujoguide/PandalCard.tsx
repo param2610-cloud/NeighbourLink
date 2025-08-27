@@ -8,9 +8,10 @@ import RatingDisplay from './RatingDisplay';
 interface PandalCardProps {
   pandal: Pandal;
   onWriteReview?: (pandal: Pandal) => void;
+  onPandalSelect?: (pandal: Pandal) => void;
 }
 
-const PandalCard: React.FC<PandalCardProps> = ({ pandal, onWriteReview }) => {
+const PandalCard: React.FC<PandalCardProps> = ({ pandal, onWriteReview, onPandalSelect }) => {
   const navigate = useNavigate();
 
   // Get images array for carousel (Cloudinary URLs)
@@ -170,7 +171,7 @@ const PandalCard: React.FC<PandalCardProps> = ({ pandal, onWriteReview }) => {
         <div className="flex space-x-2">
           <button 
             className="flex-1 backdrop-blur-sm hover:cursor-pointer bg-white/20 border border-white/30 hover:border-white/40 text-white text-sm font-medium py-3 px-3 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2"
-            onClick={() => navigate(`/pujo-planner/pandal/${pandal.id}`)}
+            onClick={() => onPandalSelect ? onPandalSelect(pandal) : navigate(`/pujo-planner/pandal/${pandal.id}`)}
           >
             <Eye className="h-4 w-4" />
             <span>Details</span>

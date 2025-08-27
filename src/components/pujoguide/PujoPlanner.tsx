@@ -5,6 +5,7 @@ import SearchBar, { SearchType } from './SearchBar';
 import PandalGrid from './PandalGrid';
 import SearchResultHeader from './SearchResultHeader';
 import CreatePandalSection from './CreatePandalSection';
+import PandalDetailsPanel from './PandalDetailsPanel';
 import { Pandel } from '../../interface/main';
 
 import {
@@ -24,7 +25,11 @@ const PujoPlanner: React.FC = () => {
     const [isLocationBased, setIsLocationBased] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [allPandals, setAllPandals] = useState<Pandal[]>([]); // Store all pandals data
-    // Poster modal state (opens on page visit)
+    
+    // Drawer state
+    const [selectedPandal, setSelectedPandal] = useState<Pandal | null>(null);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    
     const [isPosterOpen, setIsPosterOpen] = useState(false);
     const [isPosterMinimized, setIsPosterMinimized] = useState(false);
 
@@ -160,6 +165,38 @@ const PujoPlanner: React.FC = () => {
         }
     };
 
+    // Handle pandal selection for drawer
+    const handlePandalSelect = (pandal: Pandal) => {
+        setSelectedPandal(pandal);
+        setIsDrawerOpen(true);
+    };
+
+    // Handle drawer close
+    const handleDrawerClose = () => {
+        setIsDrawerOpen(false);
+        setTimeout(() => setSelectedPandal(null), 300); // Clear after animation
+    };
+
+    // Get nearby pandals for the selected pandal
+    const getNearbyPandals = (targetPandal: Pandal) => {
+        if (!userLocation) return [];
+        
+        return filteredPandals
+            .filter(p => p.id !== targetPandal.id)
+            .sort((a, b) => {
+                const distA = Math.sqrt(
+                    Math.pow(a.coordinates.lat - targetPandal.coordinates.lat, 2) +
+                    Math.pow(a.coordinates.lng - targetPandal.coordinates.lng, 2)
+                );
+                const distB = Math.sqrt(
+                    Math.pow(b.coordinates.lat - targetPandal.coordinates.lat, 2) +
+                    Math.pow(b.coordinates.lng - targetPandal.coordinates.lng, 2)
+                );
+                return distA - distB;
+            })
+            .slice(0, 5);
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen relative">
@@ -288,6 +325,7 @@ const PujoPlanner: React.FC = () => {
 
                     <PandalGrid
                         pandals={filteredPandals}
+                        onPandalSelect={handlePandalSelect}
                     />
 
                     {filteredPandals.length === 0 && !isLoading && (
@@ -305,6 +343,15 @@ const PujoPlanner: React.FC = () => {
                     <CreatePandalSection onPandalCreated={handlePandalCreated} />
                 </div>
             </div>
+
+            {/* Pandal Details Drawer */}
+            <PandalDetailsPanel
+                pandal={selectedPandal}
+                isOpen={isDrawerOpen}
+                onClose={handleDrawerClose}
+                nearbyPandals={selectedPandal ? getNearbyPandals(selectedPandal) : []}
+                onPandalSelect={handlePandalSelect}
+            />
         </div>
     );
 };

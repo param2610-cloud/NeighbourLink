@@ -5,9 +5,10 @@ import PandalCard from './PandalCard';
 
 interface PandalGridProps {
   pandals: Pandal[];
+  onPandalSelect?: (pandal: Pandal) => void;
 }
 
-const PandalGrid: React.FC<PandalGridProps> = ({ pandals }) => {
+const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect }) => {
   
   
   return (
@@ -26,7 +27,11 @@ const PandalGrid: React.FC<PandalGridProps> = ({ pandals }) => {
       ) : (
         <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {pandals.map((pandal, index) => (
-            <PandalCard key={index} pandal={pandal} />
+            <PandalCard 
+              key={index} 
+              pandal={pandal} 
+              onPandalSelect={onPandalSelect}
+            />
           ))}
         </div>
       )}
