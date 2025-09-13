@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion, PanInfo, useMotionValue, useTransform } from "motion/react";
 import { ImageIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { ImageDisplay } from "../../utils/cloudinary/CloudinaryDisplay";
+import { getPandelGalleryImageUrl } from "@/utils/cloudinary/cloudinary";
 
 export interface ImageCarouselItem {
   publicId: string;
@@ -48,7 +49,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const itemWidth = baseWidth - containerPadding * 2;
   const trackItemOffset = itemWidth + GAP;
 
-  // Process images to create carousel items
+
   const processedImages = images.length > 0 
     ? images.filter(img => img && img.trim() !== '') // Filter out empty/null images
     : ['l47920220926121122.jpeg']; // fallback
@@ -160,19 +161,6 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
     }
   };
 
-  const getImageUrl = (publicId: string) => {
-    // If already a full URL, return as is
-    if (publicId.startsWith('http')) return publicId;
-    
-    // If it's a Cloudinary public_id from the backend, use ImageDisplay component
-    if (publicId && !publicId.includes('/')) {
-        console.log(`https://res.cloudinary.com/dqdc9ioah/image/upload/v1734876088/${publicId}.jpg`);
-      return `https://res.cloudinary.com/dqd7ywrxm/image/upload/${publicId}.jpg`;
-    }
-    
-    // Legacy format for geobums
-    return `https://geobums.com/photos/thumbs/${publicId}.jpg`;
-  };
 
   const goToPrevious = () => {
     if (loop && currentIndex === 0) {
@@ -228,6 +216,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
           const outputRange = [10, 0, -10]; // Reduced rotation for better image viewing
           const rotateY = useTransform(x, range, outputRange, { clamp: false });
           
+          
           return (
             <motion.div
               key={`${item.id}-${index}`}
@@ -241,19 +230,19 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
               }}
               transition={effectiveTransition}
             >
-              {/* Check if it's a Cloudinary public_id */}
-              {item.publicId && !item.publicId.includes('/') && !item.publicId.startsWith('http') ? (
+              {/* Check if it's a Cloudinary public_id for gallery images */}
+              {item.publicId && !item.publicId.includes('/') && !item.publicId.includes('.') && !item.publicId.startsWith('http') ? (
                 <ImageDisplay 
                   publicId={item.publicId} 
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <img
-                  src={getImageUrl(item.publicId)}
+                  src={getPandelGalleryImageUrl(item.publicId)}
                   alt={item.title || `${name} - Image ${index + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.currentTarget.src = 'https://i.cdn.newsbytesapp.com/images/l47920220926121122.jpeg';
+                    e.currentTarget.src = 'https://geobums.com/photos/thumbs/l47920220926121122.jpg';
                   }}
                   loading="lazy"
                 />

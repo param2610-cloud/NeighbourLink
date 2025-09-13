@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ref, onValue, push, set, get } from "firebase/database";
-import { realtimeDB as db, db as firestoreDB } from "@/firebase";
+import { realtimeDB as db, db as firestoreDB, auth } from "@/firebase";
 import { useStateContext } from "@/contexts/StateContext";
 import { collection, getDocs } from "firebase/firestore";
 
@@ -25,27 +25,38 @@ interface NotificationData {
  * action_url: The URL to be opened when the notification is clicked.
  * @param {NotificationData} notification - The notification data to be added.
  */
-export function addNotification({
+export async function addNotification({
   title,
   receipt,
   description,
   action_url,
-}: NotificationData): void {
-  const notificationsRef = ref(db, "notifications");
-  const newNotificationRef = push(notificationsRef);
+}: NotificationData): Promise<void> {
+  try {
+    // Check if user is authenticated
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      console.error("User must be authenticated to send notifications");
+      throw new Error("User not authenticated");
+    }
 
-  set(newNotificationRef, {
-    title,
-    receipt,
-    description,
-    action_url,
-  })
-    .then(() => {
-      console.log("Notification added successfully");
-    })
-    .catch((error) => {
-      console.error("Error adding notification:", error);
-    });
+    const notificationsRef = ref(db, "notifications");
+    const newNotificationRef = push(notificationsRef);
+
+    const notificationData = {
+      title,
+      receipt,
+      description,
+      action_url,
+      timestamp: Date.now(),
+      createdBy: currentUser.uid,
+    };
+
+    await set(newNotificationRef, notificationData);
+    console.log("Notification added successfully");
+  } catch (error) {
+    console.error("Error adding notification:", error);
+    throw error;
+  }
 }
 
 // --------------------
@@ -264,7 +275,7 @@ export async function notifyNearbyUsersAboutResource(
       };
       
       // Send the notification
-      addNotification(notification);
+      await addNotification(notification);
       console.log("Urgent resource notification sent to nearby users");
     }
   } catch (error) {
@@ -344,7 +355,7 @@ export async function notifyNearbyUsersAboutEvent(
       };
       
       // Send the notification
-      addNotification(notification);
+      await addNotification(notification);
       console.log("Event notification sent to nearby users");
     }
   } catch (error) {

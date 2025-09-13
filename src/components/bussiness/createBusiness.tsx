@@ -192,6 +192,7 @@ const CreateBusiness: React.FC = () => {
         isVerified: isVerified,
         verificationDocUrl: verificationDocPublicId ? verificationDocPublicId : "",
         businessType: businessType,
+        createdAt: new Date(),
         contact: {
           phone: "",
           verified: false,
@@ -209,6 +210,17 @@ const CreateBusiness: React.FC = () => {
         services: [],
         products: [],
         faq: [],
+        // Initialize interaction fields
+        userInteractions: [],
+        stats: {
+          totalViews: 0,
+          totalLikes: 0,
+          averageRating: 0,
+          totalRatings: 0,
+          totalFeedbacks: 0,
+          monthlyViews: 0,
+          monthlyLikes: 0,
+        },
       };
       console.log("After form data populate")
 

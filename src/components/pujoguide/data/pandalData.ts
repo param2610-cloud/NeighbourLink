@@ -1,27 +1,7 @@
-export interface Pandal {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-  district?: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  image?: string;
-  avatar: string;
-  popularity: number; // 1-10 scale for famous pandals
-  category: 'traditional' | 'modern' | 'heritage' | 'community';
-  // Additional fields from backend (optional for backward compatibility)
-  average_rating?: number;
-  banner_image?: string;
-  created_at?: string;
-  updated_at?: string;
-  images?: string[];
-  avatar_image?: string;
-  address?: string;
-  reviews?: any[];
-}
+import { Pandal } from '../../../interface/main';
+
+// Re-export the legacy Pandal interface for local use
+export type { Pandal };
 
 export const pandalData: Pandal[] = [
   {
@@ -33,7 +13,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5726, lng: 88.3639 },
     avatar: "S",
     popularity: 8,
-    category: "traditional"
+    category: "traditional",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_1_gallery_1", "pandal_1_gallery_2", "pandal_1_gallery_3"],
+    average_rating: 4.5,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Salt Lake, Kolkata",
+    reviews: []
   },
   {
     id: "2",
@@ -44,7 +32,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5205, lng: 88.3426 },
     avatar: "K",
     popularity: 9,
-    category: "heritage"
+    category: "heritage",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_2_gallery_1", "pandal_2_gallery_2"],
+    average_rating: 4.8,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Kalighat, Kolkata",
+    reviews: []
   },
   {
     id: "3",
@@ -55,7 +51,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5958, lng: 88.3639 },
     avatar: "B",
     popularity: 10,
-    category: "heritage"
+    category: "heritage",
+    banner_image: "l47920220926121122",
+    avatar_image: "",
+    images: ["pandal_3_gallery_1", "pandal_3_gallery_2", "pandal_3_gallery_3"],
+    average_rating: 4.9,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Bagbazar, Kolkata",
+    reviews: []
   },
   {
     id: "4",
@@ -66,7 +70,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5448, lng: 88.3426 },
     avatar: "P",
     popularity: 9,
-    category: "modern"
+    category: "modern",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_4_gallery_1"],
+    average_rating: 4.7,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Park Street, Kolkata",
+    reviews: []
   },
   {
     id: "5",
@@ -77,7 +89,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5448, lng: 88.3426 },
     avatar: "H",
     popularity: 8,
-    category: "modern"
+    category: "modern",
+    banner_image: "l47920220926121122",
+    avatar_image: "",
+    images: ["pandal_5_gallery_1", "pandal_5_gallery_2"],
+    average_rating: 4.6,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Chowringhee, Kolkata",
+    reviews: []
   },
   {
     id: "6",
@@ -88,7 +108,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5205, lng: 88.3639 },
     avatar: "R",
     popularity: 7,
-    category: "community"
+    category: "community",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_6_gallery_1"],
+    average_rating: 4.4,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Rashbehari Avenue, Kolkata",
+    reviews: []
   },
   // Adding more pandals for better demonstration
   {
@@ -100,7 +128,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.5958, lng: 88.2636 },
     avatar: "H",
     popularity: 8,
-    category: "community"
+    category: "community",
+    banner_image: "l47920220926121122",
+    avatar_image: "",
+    images: ["pandal_7_gallery_1", "pandal_7_gallery_2"],
+    average_rating: 4.5,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Howrah Maidan, Howrah",
+    reviews: []
   },
   {
     id: "8",
@@ -111,7 +147,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.6328, lng: 88.2636 },
     avatar: "B",
     popularity: 9,
-    category: "traditional"
+    category: "traditional",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_8_gallery_1"],
+    average_rating: 4.8,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Belur, Howrah",
+    reviews: []
   },
   {
     id: "9",
@@ -122,7 +166,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 22.4250, lng: 87.3119 },
     avatar: "M",
     popularity: 7,
-    category: "traditional"
+    category: "traditional",
+    banner_image: "l47920220926121122",
+    avatar_image: "",
+    images: ["pandal_9_gallery_1", "pandal_9_gallery_2"],
+    average_rating: 4.3,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Midnapore Town, Midnapore",
+    reviews: []
   },
   {
     id: "10",
@@ -133,7 +185,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 21.6281, lng: 87.5236 },
     avatar: "D",
     popularity: 6,
-    category: "modern"
+    category: "modern",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_10_gallery_1"],
+    average_rating: 4.2,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Digha Beach, Midnapore",
+    reviews: []
   },
   {
     id: "11",
@@ -144,7 +204,15 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 23.5204, lng: 87.3119 },
     avatar: "D",
     popularity: 6,
-    category: "modern"
+    category: "modern",
+    banner_image: "l47920220926121122",
+    avatar_image: "",
+    images: ["pandal_11_gallery_1", "pandal_11_gallery_2"],
+    average_rating: 4.1,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Durgapur City Center, Burdwan",
+    reviews: []
   },
   {
     id: "12",
@@ -155,6 +223,14 @@ export const pandalData: Pandal[] = [
     coordinates: { lat: 23.6739, lng: 86.9524 },
     avatar: "A",
     popularity: 5,
-    category: "community"
+    category: "community",
+    banner_image: "l47920220926121122",
+    avatar_image: "l47920220926121122",
+    images: ["pandal_12_gallery_1"],
+    average_rating: 4.0,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    address: "Asansol Junction, Burdwan",
+    reviews: []
   }
 ];

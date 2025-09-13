@@ -346,7 +346,7 @@ const Home: React.FC = () => {
               <Stories onStoryOpen={() => setIsSidebarOpen(false)} />
 
               <div className="flex-1 px-4 py-2 ">
-                <Feed />
+                <Feed radius={radius} />
               </div>
 
               {/* Floating Action Button */}

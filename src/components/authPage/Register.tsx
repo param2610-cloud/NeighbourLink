@@ -1,10 +1,9 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../../firebase";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { FaArrowAltCircleLeft, FaBell, FaCamera, FaMapMarkerAlt, FaUserAlt, FaExclamationTriangle } from "react-icons/fa";
-// import { uploadFileToS3 } from "@/utils/aws/aws";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useMobileContext } from "@/contexts/MobileContext";
@@ -39,7 +38,7 @@ function Register() {
   const [fetchingLocation, setFetchingLocation] = useState<boolean>(false);
   const [selectedLocation, setSelectedLocation] = useState<Coordinates | null>(null);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
-  const mapRef = useRef<any>(null);
+  
   const navigate = useNavigate();
   const { isMobile } = useMobileContext();
 
@@ -81,15 +80,11 @@ function Register() {
     }
   };
 
-  const handlePhotoChange =async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setPhoto(file);
       setPhotoPreview(URL.createObjectURL(file));
-      let photoUrl = '';
-      photoUrl = await uploadFileToCloudinary(file, `${file.name}_profile_image`);
-      console.log("Photo URL:", photoUrl);
-      
     }
   };
 
@@ -139,7 +134,7 @@ function Register() {
       const user = userCredential.user;
 
       if (user) {
-        let photoUrl = {};
+        let photoUrl = "";
         try {
           if (photo) {
             photoUrl = await uploadFileToCloudinary(photo, `${user.uid}_profile_image`);
@@ -290,12 +285,7 @@ function Register() {
     }
   };
 
-  const handleLocationPermissionDenied = () => {
-    setLocationPermission('denied');
-    toast.warn("Please manually select your location on the map.", {
-      position: "bottom-center",
-    });
-  };
+
 
   const clearLocationSelection = () => {
     setLocationSelected(false);
@@ -752,6 +742,8 @@ function Register() {
     </div>
   );
 }
+
+
 
 export default Register;
 

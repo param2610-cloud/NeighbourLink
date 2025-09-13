@@ -415,8 +415,6 @@ const ModernMessaging = () => {
                               </div>
                             )}
                           </div>
-                          {/* Online indicator (placeholder) */}
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></div>
                         </div>
 
                         {/* Message Info */}
@@ -509,7 +507,7 @@ const ModernMessaging = () => {
                       <h3 className="font-medium text-gray-900 dark:text-white">
                         {getRecipientName(otherUser)}
                       </h3>
-                      <p className="text-xs text-green-500">Online</p>
+                      
                     </div>
                   </div>
 
@@ -527,15 +525,7 @@ const ModernMessaging = () => {
                     >
                       <FiCalendar className="w-5 h-5" />
                     </button>
-                    <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <FaPhone />
-                    </button>
-                    <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <FaVideo />
-                    </button>
-                    <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                      <FaInfoCircle />
-                    </button>
+                    
                   </div>
                 </div>
 
@@ -639,6 +629,19 @@ const ModernMessaging = () => {
                                   {/* Message text */}
                                   {message.text && (
                                     <p className="break-words">{message.text}</p>
+                                  )}
+                                  
+                                  {/* Media attachments */}
+                                  {message.mediaUrls && message.mediaUrls.length > 0 && (
+                                    <div className={`mt-2 grid ${message.mediaUrls.length > 1 ? 'grid-cols-2 gap-1' : ''}`}>
+                                      {message.mediaUrls.map((url, i) => (
+                                        <div key={i} className="mt-1">
+                                          <div className="rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                                            <ImageDisplay publicId={url} className="w-full h-auto max-w-full" />
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
                                   )}
                                   
                                   {/* Message time */}

@@ -1,168 +1,373 @@
-import { auth, db } from '@/firebase';
-import { collection, deleteDoc, doc, getDocs, orderBy, query, where, Timestamp } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
-import { ResourceCard, PromotionCard, EventCard, UpdateCard, Resource, Promotion, Event, Update } from './components/Feed';
-import { FeedItem } from './components/Feed';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { auth, db } from "@/firebase";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  where,
+  Timestamp,
+} from "firebase/firestore";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import {
+  ResourceCard,
+  PromotionCard,
+  EventCard,
+  UpdateCard,
+  Resource,
+  Promotion,
+  Event,
+  Update,
+} from "./components/Feed";
+import { FeedItem } from "./components/Feed";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 import { GiHamburgerMenu } from "react-icons/gi";
 import Sidebar from "../components/authPage/structures/Sidebar";
 import Bottombar from "@/components/authPage/structures/Bottombar";
-import { useMobileContext } from '@/contexts/MobileContext';
+import { useMobileContext } from "@/contexts/MobileContext";
 
 // Reuse the convertDoc function from your Feed component
-const convertDoc = <T extends FeedItem>(doc: any, type: FeedItem['type']): T => {
-    const data = doc.data();
-    return {
-        ...data,
-        id: doc.id,
-        type,
-        createdAt: data.createdAt instanceof Timestamp
-            ? data.createdAt.toDate().toISOString()
-            : data.createdAt
-    } as T;
+const convertDoc = <T extends FeedItem>(
+  doc: any,
+  type: FeedItem["type"]
+): T => {
+  const data = doc.data();
+  
+  // Ensure we have valid data
+  if (!data || !doc.id) {
+    console.warn("Invalid document data:", { docId: doc.id, data });
+    return null as any; // This will be filtered out later
+  }
+  
+  return {
+    ...data,
+    id: doc.id,
+    type,
+    createdAt:
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate().toISOString()
+        : data.createdAt,
+  } as T;
 };
 
 // User-specific fetch functions
 const fetchUserResources = async (userId: string): Promise<Resource[]> => {
-    console.debug('📊 Fetching resources for user:', userId);
-    const resourcesRef = collection(db, "resources");
-    const q = query(resourcesRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const resources = querySnapshot.docs.map(doc => convertDoc<Resource>(doc, 'resource'));
-    console.debug('📊 Found resources:', resources.length);
-    return resources;
+  console.debug("📊 Fetching resources for user:", userId);
+  const resourcesRef = collection(db, "resources");
+  const q = query(
+    resourcesRef,
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const querySnapshot = await getDocs(q);
+  const resources = querySnapshot.docs
+    .map((doc) => convertDoc<Resource>(doc, "resource"))
+    .filter((resource) => resource !== null); // Filter out null results
+  console.debug("📊 Found resources:", resources.length);
+  return resources;
 };
 
 const fetchUserPromotions = async (userId: string): Promise<Promotion[]> => {
-    console.debug('📊 Fetching promotions for user:', userId);
-    const promotionsRef = collection(db, "promotions");
-    const q = query(promotionsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const promotions = querySnapshot.docs.map(doc => convertDoc<Promotion>(doc, 'promotion'));
-    console.debug('📊 Found promotions:', promotions.length);
-    return promotions;
+  console.debug("📊 Fetching promotions for user:", userId);
+  const promotionsRef = collection(db, "promotions");
+  const q = query(
+    promotionsRef,
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const querySnapshot = await getDocs(q);
+  const promotions = querySnapshot.docs
+    .map((doc) => convertDoc<Promotion>(doc, "promotion"))
+    .filter((promotion) => promotion !== null); // Filter out null results
+  console.debug("📊 Found promotions:", promotions.length);
+  return promotions;
 };
 
 const fetchUserEvents = async (userId: string): Promise<Event[]> => {
-    console.debug('📊 Fetching events for user:', userId);
-    const eventsRef = collection(db, "events");
-    const q = query(eventsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const events = querySnapshot.docs.map(doc => convertDoc<Event>(doc, 'event'));
-    console.debug('📊 Found events:', events.length);
-    return events;
+  console.debug("📊 Fetching events for user:", userId);
+  const eventsRef = collection(db, "events");
+  const q = query(
+    eventsRef,
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const querySnapshot = await getDocs(q);
+  const events = querySnapshot.docs
+    .map((doc) => convertDoc<Event>(doc, "event"))
+    .filter((event) => event !== null); // Filter out null results
+  console.debug("📊 Found events:", events.length);
+  return events;
 };
 
 const fetchUserUpdates = async (userId: string): Promise<Update[]> => {
-    console.debug('📊 Fetching updates for user:', userId);
-    const updatesRef = collection(db, "updates");
-    const q = query(updatesRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-    const updates = querySnapshot.docs.map(doc => convertDoc<Update>(doc, 'update'));
-    console.debug('📊 Found updates:', updates.length);
-    return updates;
+  console.debug("📊 Fetching updates for user:", userId);
+  const updatesRef = collection(db, "updates");
+  const q = query(
+    updatesRef,
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const querySnapshot = await getDocs(q);
+  const updates = querySnapshot.docs
+    .map((doc) => convertDoc<Update>(doc, "update"))
+    .filter((update) => update !== null); // Filter out null results
+  console.debug("📊 Found updates:", updates.length);
+  return updates;
 };
 
 const fetchAllUserFeedItems = async (userId: string): Promise<FeedItem[]> => {
-    console.debug('🔄 Starting to fetch all feed items for user:', userId);
-    try {
-        const startTime = performance.now();
-        const [resources, promotions, events, updates] = await Promise.all([
-            fetchUserResources(userId),
-            fetchUserPromotions(userId),
-            fetchUserEvents(userId),
-            fetchUserUpdates(userId)
-        ]);
+  console.debug("🔄 Starting to fetch all feed items for user:", userId);
+  try {
+    const startTime = performance.now();
+    const [resources, promotions, events, updates] = await Promise.all([
+      fetchUserResources(userId),
+      fetchUserPromotions(userId),
+      fetchUserEvents(userId),
+      fetchUserUpdates(userId),
+    ]);
 
-        const allItems: FeedItem[] = [...resources, ...promotions, ...events, ...updates];
-        const sortedItems = allItems.sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+    const allItems: FeedItem[] = [
+      ...resources,
+      ...promotions,
+      ...events,
+      ...updates,
+    ];
+    const sortedItems = allItems.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
-        const endTime = performance.now();
-        console.debug('✅ Fetch completed in', (endTime - startTime).toFixed(2), 'ms');
-        console.debug('📊 Total items:', sortedItems.length, {
-            resources: resources.length,
-            promotions: promotions.length,
-            events: events.length,
-            updates: updates.length
+    const endTime = performance.now();
+    console.debug(
+      "✅ Fetch completed in",
+      (endTime - startTime).toFixed(2),
+      "ms"
+    );
+    console.debug("📊 Total items:", sortedItems.length, {
+      resources: resources.length,
+      promotions: promotions.length,
+      events: events.length,
+      updates: updates.length,
+    });
+
+    return sortedItems;
+  } catch (error) {
+    console.error("❌ Error fetching user feed items:", error);
+    throw error;
+  }
+};
+
+// Add session-based functions for user posts
+const getSessionSeed = () => {
+  let seed = sessionStorage.getItem("userPostsShuffleSeed");
+  if (!seed) {
+    seed = Date.now().toString();
+    sessionStorage.setItem("userPostsShuffleSeed", seed);
+  }
+  return seed;
+};
+
+const deterministicShuffle = <T,>(array: T[], seed: string): T[] => {
+  const arr = [...array];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    hash = (hash * 9301 + 49297) % 233280;
+    const j = Math.floor((hash / 233280) * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+// Simplified sorting for user posts
+const smartSortFeedItems = (items: FeedItem[]): FeedItem[] => {
+  // Filter out any undefined or invalid items first
+  const validItems = items.filter((item) => item && item.createdAt && item.type && item.id);
+  
+  const now = new Date();
+  const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const sessionSeed = getSessionSeed();
+
+  const veryRecentPosts = validItems.filter((item) => {
+    const postDate = new Date(item.createdAt);
+    return postDate > twoHoursAgo;
+  });
+
+  const recentPosts = validItems.filter((item) => {
+    const postDate = new Date(item.createdAt);
+    return postDate <= twoHoursAgo && postDate > oneDayAgo;
+  });
+
+  const olderPosts = validItems.filter((item) => {
+    const postDate = new Date(item.createdAt);
+    return postDate <= oneDayAgo;
+  });
+
+  // Sort chronologically for user's own posts, light shuffle for older posts
+  veryRecentPosts.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  recentPosts.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const lightlyShuffledOlderPosts = deterministicShuffle(
+    olderPosts,
+    sessionSeed
+  );
+
+  return [...veryRecentPosts, ...recentPosts, ...lightlyShuffledOlderPosts];
+};
+
+// Simplified intersection observer for user posts
+const useIntersectionObserver = () => {
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const postRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
+            const postId = entry.target.getAttribute("data-post-id");
+            if (postId) {
+              setTimeout(() => {
+                const viewedPosts = JSON.parse(
+                  localStorage.getItem("viewedUserPosts") || "[]"
+                );
+                if (!viewedPosts.includes(postId)) {
+                  viewedPosts.push(postId);
+                  localStorage.setItem(
+                    "viewedUserPosts",
+                    JSON.stringify(viewedPosts)
+                  );
+                }
+              }, 2000);
+            }
+          }
         });
+      },
+      { threshold: 0.8, rootMargin: "0px 0px -10% 0px" }
+    );
 
-        return sortedItems;
-    } catch (error) {
-        console.error("❌ Error fetching user feed items:", error);
-        throw error;
-    }
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  const observePost = useCallback(
+    (postId: string, element: HTMLElement | null) => {
+      if (!observerRef.current) return;
+
+      const prevElement = postRefs.current.get(postId);
+      if (prevElement) {
+        observerRef.current.unobserve(prevElement);
+      }
+
+      if (element) {
+        element.setAttribute("data-post-id", postId);
+        postRefs.current.set(postId, element);
+        observerRef.current.observe(element);
+      } else {
+        postRefs.current.delete(postId);
+      }
+    },
+    []
+  );
+
+  return { observePost };
 };
 
 const AuthPosts: React.FC = () => {
-    console.debug('🔄 Rendering AuthPosts component');
-    const user = auth.currentUser;
-    const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { isMobile } = useMobileContext()
+  console.debug("🔄 Rendering AuthPosts component");
+  const user = auth.currentUser;
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isMobile } = useMobileContext();
+  const { observePost } = useIntersectionObserver();
 
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
-    async function handleLogout() {
-        try {
-            await auth.signOut();
-            window.location.href = "/login";
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                console.error("Error logging out:", error.message);
-            }
-        }
+  async function handleLogout() {
+    try {
+      await auth.signOut();
+      window.location.href = "/login";
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error logging out:", error.message);
+      }
     }
+  }
 
+  const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {
+    console.debug("🗑️ Attempting to delete item:", { id, type });
+    try {
+      let collectionName: string;
+      switch (type) {
+        case "resource":
+          collectionName = "resources";
+          break;
+        case "promotion":
+          collectionName = "promotions";
+          break;
+        case "event":
+          collectionName = "events";
+          break;
+        case "update":
+          collectionName = "updates";
+          break;
+        default:
+          return;
+      }
+      await deleteDoc(doc(db, collectionName, id));
+      console.debug("✅ Item deleted successfully");
+      setFeedItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("❌ Error deleting item:", error);
+    }
+  };
 
-
-    const handleDeleteItem = async (id: string, type: FeedItem['type']) => {
-        console.debug('🗑️ Attempting to delete item:', { id, type });
-        try {
-            let collectionName: string;
-            switch (type) {
-                case 'resource': collectionName = 'resources'; break;
-                case 'promotion': collectionName = 'promotions'; break;
-                case 'event': collectionName = 'events'; break;
-                case 'update': collectionName = 'updates'; break;
-                default: return;
-            }
-            await deleteDoc(doc(db, collectionName, id));
-            console.debug('✅ Item deleted successfully');
-            setFeedItems(prev => prev.filter(item => item.id !== id));
-        } catch (error) {
-            console.error('❌ Error deleting item:', error);
+  useEffect(() => {
+    const loadUserPosts = async () => {
+      try {
+        setLoading(true);
+        if (!user) {
+          throw new Error("User not authenticated");
         }
+        const items = await fetchAllUserFeedItems(user.uid);
+        setFeedItems(items);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch user posts:", err);
+        setError(err instanceof Error ? err.message : "Failed to load posts");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    useEffect(() => {
-        const loadUserPosts = async () => {
-            try {
-                setLoading(true);
-                if (!user) {
-                    throw new Error('User not authenticated');
-                }
-                const items = await fetchAllUserFeedItems(user.uid);
-                setFeedItems(items);
-                setError(null);
-            } catch (err) {
-                console.error('Failed to fetch user posts:', err);
-                setError(err instanceof Error ? err.message : 'Failed to load posts');
-            } finally {
-                setLoading(false);
-            }
-        };
+    loadUserPosts();
+  }, [user]);
 
-        loadUserPosts();
-    }, [user]);
+  // Apply smart sorting only when feedItems change
+  const sortedFeedItems = useMemo(() => {
+    if (feedItems.length === 0) return [];
+    return smartSortFeedItems(feedItems);
+  }, [feedItems]); // Only depend on feedItems
 
     if (!user) {
         return (
@@ -235,7 +440,7 @@ const AuthPosts: React.FC = () => {
                     </div>
 
                     {/* Loading content */}
-                    <div className="container w-full mt-16 mx-auto px-4 py-8">
+                    <div className="max-w-2xl mx-auto mt-16 px-4 py-8">
                         <div className="mb-8 text-center space-y-3">
                             <div className="h-8 w-48 mx-auto">
                                 <Skeleton className="h-full w-full" />
@@ -244,14 +449,10 @@ const AuthPosts: React.FC = () => {
                                 <Skeleton className="h-full w-full" />
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            {[...Array(8)].map((_, index) => (
-                                <div key={index} className="space-y-3">
-                                    <Skeleton className="h-[200px] w-full rounded-xl" />
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-[80%]" />
-                                        <Skeleton className="h-4 w-[60%]" />
-                                    </div>
+                        <div className="space-y-6">
+                            {[...Array(6)].map((_, index) => (
+                                <div key={index} className="w-full">
+                                    <Skeleton className="h-[300px] w-full rounded-xl" />
                                 </div>
                             ))}
                         </div>
@@ -388,55 +589,84 @@ const AuthPosts: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Content Area */}
-                <div className="flex-1 px-4 py-6 pb-24">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 mb-8 px-4 py-2 text-blue-500"
-                        aria-label="Go back"
-                    >
-                        <FaArrowLeft className="text-blue-500" />
-                        <span className="font-medium">Back</span>
-                    </button>
+                {/* Content Area - Feed Style */}
+                <div className="flex-1 overflow-y-auto">
+                    <div className="px-4 py-6 pb-24">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 mb-8 px-4 py-2 text-blue-500 hover:text-blue-600 transition-colors"
+                            aria-label="Go back"
+                        >
+                            <FaArrowLeft className="text-blue-500" />
+                            <span className="font-medium">Back</span>
+                        </button>
 
-                    <div className="mb-8 text-center">
-                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                            My Posts
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400 mt-2">
-                            {feedItems.length} posts created
-                        </p>
-                    </div>
+                        <div className="mb-8 text-center">
+                            <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
+                                My Posts
+                            </h1>
+                            <p className="text-gray-600 dark:text-gray-400 mt-2">
+                                {feedItems.length} posts created
+                            </p>
+                        </div>
 
-                    <div className="space-y-4">
+                    {/* Feed Container - Vertical Scrollable Layout */}
+                    <div className="max-w-2xl mx-auto space-y-6">
                         {feedItems.length === 0 ? (
                             <div className="text-center py-12">
-                                <p className="text-gray-500 dark:text-gray-400">
-                                    You haven't created any posts yet.
-                                </p>
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+                                    <div className="text-gray-400 dark:text-gray-500 mb-4">
+                                        <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                                        No posts yet
+                                    </h3>
+                                    <p className="text-gray-500 dark:text-gray-400">
+                                        You haven't created any posts yet. Start sharing with your neighbors!
+                                    </p>
+                                </div>
                             </div>
                         ) : (
-                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                            <div className="space-y-6">
                                 {
-                                    feedItems.map((item) => {
-                                        switch (item.type) {
-                                            case 'resource':
-                                                return <ResourceCard key={item.id} resource={item as Resource} onDelete={handleDeleteItem} />;
-                                            case 'promotion':
-                                                return <PromotionCard key={item.id} promotion={item as Promotion} onDelete={handleDeleteItem} />;
-                                            case 'event':
-                                                return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
-                                            case 'update':
-                                                return <UpdateCard key={item.id} update={item as Update} onDelete={handleDeleteItem} />;
-                                            default:
-                                                return null;
-                                        }
-                                    })
+                                    sortedFeedItems
+                                        .filter((item) => item && item.type && item.id) // Filter out undefined items
+                                        .map((item) => {
+                                            const CardComponent = (() => {
+                                                switch (item.type) {
+                                                    case "resource":
+                                                        return <ResourceCard key={item.id} resource={item as Resource} onDelete={handleDeleteItem} />;
+                                                    case "promotion":
+                                                        return <PromotionCard key={item.id} promotion={item as Promotion} onDelete={handleDeleteItem} />;
+                                                    case "event":
+                                                        return <EventCard key={item.id} event={item as Event} onDelete={handleDeleteItem} />;
+                                                    case "update":
+                                                        return <UpdateCard key={item.id} update={item as Update} onDelete={handleDeleteItem} />;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })();
+
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    ref={(el) => {
+                                                        if (item.id) observePost(item.id, el);
+                                                    }}
+                                                    className="w-full"
+                                                >
+                                                    {CardComponent}
+                                                </div>
+                                            );
+                                        })
                                 }
                             </div>
                         )}
                     </div>
                     {/* <FloatingActionMenu openModal={openModal} setIsSidebarOpen={set}/> */}
+                    </div>
                 </div>
 
                 {/* Bottom Navigation */}

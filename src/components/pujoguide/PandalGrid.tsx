@@ -6,10 +6,11 @@ import PandalCard from './PandalCard';
 interface PandalGridProps {
   pandals: Pandal[];
   onPandalSelect?: (pandal: Pandal) => void;
-  isPanelOpen?: boolean;
 }
 
-const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect, isPanelOpen }) => {
+const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect }) => {
+  
+  
   return (
     <div className="mb-8">
       {/* <h2 className="text-xl md:text-2xl font-semibold text-white mb-6 drop-shadow-lg px-2">
@@ -24,13 +25,13 @@ const PandalGrid: React.FC<PandalGridProps> = ({ pandals, onPandalSelect, isPane
           </div>
         </div>
       ) : (
-        <div className={`grid gap-4 md:gap-6 transition-all duration-500 ease-out ${
-          isPanelOpen 
-            ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 px-14' 
-            : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3'
-        }`}>
+        <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {pandals.map((pandal, index) => (
-            <PandalCard key={index} pandal={pandal} onContactClick={onPandalSelect} />
+            <PandalCard 
+              key={index} 
+              pandal={pandal} 
+              onPandalSelect={onPandalSelect}
+            />
           ))}
         </div>
       )}

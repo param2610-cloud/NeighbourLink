@@ -15,9 +15,13 @@ interface PostData {
   id: string;
   title: string;
   description: string;
-  category: string;
+  category?: string;
   photoUrls?: string[];
-  postType: 'need' | 'offer';
+  images?: string[]; // For promotions
+  postType?: 'need' | 'offer';
+  type?: string; // For promotions
+  eventType?: string; // For events
+  _collection?: string; // Track which collection this came from
 }
 
 const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, imageUrl }) => {
@@ -29,21 +33,35 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
     const fetchPostDetails = async () => {
       try {
         setLoading(true);
-        // Try resources collection first (your actual collection)
-        let postRef = doc(db, 'resources', postId);
-        let postSnap = await getDoc(postRef);
         
-        // If not found in resources, try posts collection as fallback
-        if (!postSnap.exists()) {
-          postRef = doc(db, 'posts', postId);
-          postSnap = await getDoc(postRef);
-        }
+        // Define all possible collections to search
+        const collections = ['resources', 'posts', 'promotions', 'events'];
         
-        if (postSnap.exists()) {
-          setPost({
-            id: postSnap.id,
-            ...postSnap.data()
-          } as PostData);
+        // Try each collection in parallel for better performance
+        const promises = collections.map(async (collectionName) => {
+          try {
+            const postRef = doc(db, collectionName, postId);
+            const postSnap = await getDoc(postRef);
+            if (postSnap.exists()) {
+              return {
+                id: postSnap.id,
+                ...postSnap.data(),
+                _collection: collectionName // Track which collection this came from
+              };
+            }
+            return null;
+          } catch (error) {
+            console.error(`Error fetching from ${collectionName}:`, error);
+            return null;
+          }
+        });
+        
+        // Wait for all promises and find the first successful result
+        const results = await Promise.all(promises);
+        const foundPost = results.find(result => result !== null);
+        
+        if (foundPost) {
+          setPost(foundPost as unknown as PostData);
         } else {
           setError('Post not found');
         }
@@ -59,13 +77,28 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
   }, [postId]);
 
   
-  const displayTitle = post?.title || title || 'Post Details';
-  const displayImage = post?.photoUrls?.[0] || imageUrl;
-  const postType = post?.postType || 'offer';
+  const displayTitle = post?.title || title || 'Item Details';
+  const displayImage = post?.photoUrls?.[0] || post?.images?.[0] || imageUrl;
+  
+  // Determine the type of item and set the appropriate route and label
+  let itemType: string;
+  let linkPath: string;
+  
+  // Use collection information if available for more accurate detection
+  if (post?._collection === 'promotions' || post?.type !== undefined) {
+    itemType = 'business';
+    linkPath = `/promotion/${postId}`;
+  } else if (post?._collection === 'events' || post?.eventType !== undefined) {
+    itemType = 'event';
+    linkPath = `/event/${postId}`;
+  } else {
+    itemType = post?.postType || 'offer';
+    linkPath = `/resource/${postId}`;
+  }
 
   return (
     <Link 
-      to={`/resource/${postId}`}
+      to={linkPath}
       className="block bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 p-3 relative"
     >
       <div className="flex items-center">
@@ -79,14 +112,18 @@ const ItemReferenceCard: React.FC<ItemReferenceCardProps> = ({ postId, title, im
         <div className="flex-1 min-w-0">
           <div className="flex items-center">
             <span className={`px-2 py-0.5 text-xs rounded mr-2 ${
-              postType === 'offer' 
+              itemType === 'business'
+                ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-200'
+                : itemType === 'event'
+                ? 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-200'
+                : itemType === 'offer' 
                 ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-200' 
                 : 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-200'
             }`}>
-              {postType === 'offer' ? 'Offering' : 'Needed'}
+              {itemType === 'business' ? 'Business' : itemType === 'event' ? 'Event' : itemType === 'offer' ? 'Offering' : 'Needed'}
             </span>
             <h3 className="font-medium text-gray-900 dark:text-white truncate flex-1">
-              {loading ? 'Loading...' : error ? 'Post Unavailable' : displayTitle}
+              {loading ? 'Loading...' : error ? 'Item Unavailable' : displayTitle}
             </h3>
           </div>
           

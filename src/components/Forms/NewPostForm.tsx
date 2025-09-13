@@ -238,6 +238,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   const [eventForm, setEventForm] = useState<EventFormData>(initialEventForm);
   const [promotionForm, setPromotionForm] = useState<PromotionFormData>(initialPromotionForm);
   const [updateForm, setUpdateForm] = useState<UpdateFormData>(initialUpdateForm);
+  const [useEventDateForDuration, setUseEventDateForDuration] = useState<boolean>(false);
 
   // Use userData directly if it's provided
   useEffect(() => {
@@ -298,6 +299,22 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
   // Helper function to handle map click and location selection
   const handleMapClick = async (coordinates: { lat: number; lng: number }) => {
     try {
+      // Check if we're using profile location and prevent manual location setting
+      switch (formState.postType) {
+        case 'resource':
+          if (resourceForm.useProfileLocation) return;
+          break;
+        case 'event':
+          if (eventForm.useProfileLocation) return;
+          break;
+        case 'promotion':
+          if (promotionForm.useProfileLocation) return;
+          break;
+        case 'update':
+          if (updateForm.useProfileLocation) return;
+          break;
+      }
+
       // Get the address from coordinates using reverse geocoding
       const address = await reverseGeocode(coordinates);
       
@@ -306,6 +323,8 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
         longitude: coordinates.lng,
         address: address || `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`
       };
+
+      console.log('Map clicked, setting custom location:', newLocation);
 
       // Update the appropriate form based on current post type
       switch (formState.postType) {
@@ -333,15 +352,19 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
       switch (formState.postType) {
         case 'resource':
+          if (resourceForm.useProfileLocation) return;
           setResourceForm(prev => ({ ...prev, location: newLocation }));
           break;
         case 'event':
+          if (eventForm.useProfileLocation) return;
           setEventForm(prev => ({ ...prev, location: newLocation }));
           break;
         case 'promotion':
+          if (promotionForm.useProfileLocation) return;
           setPromotionForm(prev => ({ ...prev, location: newLocation }));
           break;
         case 'update':
+          if (updateForm.useProfileLocation) return;
           setUpdateForm(prev => ({ ...prev, location: newLocation }));
           break;
       }
@@ -354,6 +377,7 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     setEventForm(initialEventForm);
     setPromotionForm(initialPromotionForm);
     setUpdateForm(initialUpdateForm);
+    setUseEventDateForDuration(false);
   };
 
   // Enhanced address search function
@@ -361,7 +385,14 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
     if (!address.trim()) return;
     
     try {
+      console.log(`Searching for address: ${address} for form type: ${formType}`);
+      
+      // Clear any previous errors
+      setFormState(prev => ({ ...prev, error: null }));
+      
       const coordinates = await geocodeAddress(address);
+      console.log('Geocoding result:', coordinates);
+      
       if (coordinates) {
         const newLocation: Location = {
           latitude: coordinates.lat,
@@ -369,20 +400,32 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
           address: address
         };
 
+        console.log('Setting new location:', newLocation);
+
         switch (formType) {
           case 'resource':
             setResourceForm(prev => ({ ...prev, location: newLocation }));
+            console.log('Updated resource form location');
             break;
           case 'event':
             setEventForm(prev => ({ ...prev, location: newLocation }));
+            console.log('Updated event form location');
             break;
           case 'promotion':
             setPromotionForm(prev => ({ ...prev, location: newLocation }));
+            console.log('Updated promotion form location');
             break;
           case 'update':
             setUpdateForm(prev => ({ ...prev, location: newLocation }));
+            console.log('Updated update form location');
             break;
         }
+      } else {
+        console.error('No coordinates returned from geocoding');
+        setFormState(prev => ({
+          ...prev,
+          error: "Could not find the address. Please check the spelling and try again."
+        }));
       }
     } catch (error) {
       console.error('Error geocoding address:', error);
@@ -432,6 +475,34 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
       setFormState(prev => ({ ...prev, loading: false }));
     }
   };
+
+  // Function to calculate duration until event date
+  const calculateDurationUntilEventDate = (eventDate: string): string => {
+    if (!eventDate) return '';
+    
+    const today = new Date();
+    const eventDateObj = new Date(eventDate);
+    
+    // Reset time to start of day for accurate day calculation
+    today.setHours(0, 0, 0, 0);
+    eventDateObj.setHours(0, 0, 0, 0);
+    
+    const timeDiff = eventDateObj.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    // If event date is today or in the past, set to 1 day minimum
+    const durationDays = Math.max(1, daysDiff);
+    
+    return `${durationDays} days`;
+  };
+
+  // Effect to automatically update duration when event date changes and "Until event date" is selected
+  useEffect(() => {
+    if (useEventDateForDuration && eventForm.timingInfo.date) {
+      const calculatedDuration = calculateDurationUntilEventDate(eventForm.timingInfo.date);
+      setEventForm(prev => ({ ...prev, duration: calculatedDuration }));
+    }
+  }, [useEventDateForDuration, eventForm.timingInfo.date]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -564,8 +635,27 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
               isValid = false;
             }
             if (!eventForm.duration) {
-              errors.duration = "Duration is required";
-              isValid = false;
+              if (useEventDateForDuration && !eventForm.timingInfo.date) {
+                errors.duration = "Event date is required to calculate post duration";
+                isValid = false;
+              } else if (!useEventDateForDuration) {
+                errors.duration = "Post duration is required";
+                isValid = false;
+              }
+            } else {
+              // Extract number from the duration string (e.g., "30 days" -> 30)
+              const durationNumber = parseInt(eventForm.duration.replace(/[^0-9]/g, ''));
+              if (isNaN(durationNumber) || durationNumber < 1) {
+                if (useEventDateForDuration) {
+                  errors.duration = "Event date must be in the future";
+                } else {
+                  errors.duration = "Post duration must be at least 1 day";
+                }
+                isValid = false;
+              } else if (!useEventDateForDuration && durationNumber > 365) {
+                errors.duration = "Post duration must be between 1 and 365 days";
+                isValid = false;
+              }
             }
             if (eventForm.isRegistrationRequired && !eventForm.registrationLink) {
               errors.registrationLink = "Registration link is required when registration is needed";
@@ -1465,7 +1555,27 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
               </div>
               <Switch
                 checked={eventForm.useProfileLocation}
-                onCheckedChange={(checked) => setEventForm({ ...eventForm, useProfileLocation: checked })}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    // If switching to use profile location, set it from user profile
+                    setEventForm({ 
+                      ...eventForm, 
+                      useProfileLocation: checked,
+                      location: userProfile?.location ? {
+                        latitude: parseFloat(userProfile.location.latitude),
+                        longitude: parseFloat(userProfile.location.longitude),
+                        address: userProfile.address || "Your location"
+                      } : undefined
+                    });
+                  } else {
+                    // If switching to custom location, clear the location so user can set a new one
+                    setEventForm({ 
+                      ...eventForm, 
+                      useProfileLocation: checked,
+                      location: undefined
+                    });
+                  }
+                }}
               />
             </div>
 
@@ -1476,11 +1586,15 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
                 {/* Address Search Input */}
                 <div className="mb-3 space-y-2">
                   <Input
+                    id="event-address-search"
                     placeholder="Search for event venue or address"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
+                        e.preventDefault();
                         const target = e.target as HTMLInputElement;
-                        handleAddressSearch(target.value, 'event');
+                        if (target.value.trim()) {
+                          handleAddressSearch(target.value, 'event');
+                        }
                       }
                     }}
                   />
@@ -1490,9 +1604,8 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const inputs = document.querySelectorAll('input[placeholder*="Search for event venue"]');
-                        const input = inputs[inputs.length - 1] as HTMLInputElement;
-                        if (input?.value) {
+                        const input = document.getElementById('event-address-search') as HTMLInputElement;
+                        if (input?.value.trim()) {
                           handleAddressSearch(input.value, 'event');
                         }
                       }}
@@ -1505,16 +1618,45 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
                       size="sm"
                       onClick={() => handleGetCurrentLocation('event')}
                     >
-                      📍 Use Current Location
+                      Use Current Location
                     </Button>
                   </div>
+                  
+                  {/* Debug info - remove in production */}
+                  {eventForm.useProfileLocation && userProfile?.location && (
+                    <div className="text-xs text-orange-600 p-2 bg-orange-50 rounded">
+                      🏠 Using Profile Location: {userProfile.address || 'Your saved location'}
+                      <br />
+                      📍 Coordinates: {parseFloat(userProfile.location.latitude).toFixed(6)}, {parseFloat(userProfile.location.longitude).toFixed(6)}
+                    </div>
+                  )}
+                  
+                  {!eventForm.useProfileLocation && eventForm.location && (
+                    <div className="text-xs text-green-600 p-2 bg-green-50 rounded">
+                      ✅ Custom Location: {eventForm.location.address || 'Custom location'}
+                      <br />
+                      📍 Coordinates: {eventForm.location.latitude.toFixed(6)}, {eventForm.location.longitude.toFixed(6)}
+                    </div>
+                  )}
+                  
+                  {!eventForm.useProfileLocation && !eventForm.location && (
+                    <div className="text-xs text-blue-600 p-2 bg-blue-50 rounded">
+                      ℹ️ Please search for an address or click on the map to set event location
+                    </div>
+                  )}
                 </div>
 
                 <div className="h-64 border rounded-md overflow-hidden mt-2">
                   <GoogleMapsViewer
-                    center={eventForm.location ? 
-                      { lat: eventForm.location.latitude, lng: eventForm.location.longitude } : 
-                      { lat: 22.5726, lng: 88.3639 }
+                    center={
+                      eventForm.useProfileLocation && userProfile?.location ? 
+                        { 
+                          lat: parseFloat(userProfile.location.latitude), 
+                          lng: parseFloat(userProfile.location.longitude) 
+                        } :
+                      eventForm.location ? 
+                        { lat: eventForm.location.latitude, lng: eventForm.location.longitude } : 
+                        { lat: 22.5726, lng: 88.3639 } // Default to Kolkata if no location
                     }
                     zoom={13}
                     height="256px"
@@ -1522,14 +1664,30 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
                     showCurrentLocation={true}
                     enableGeolocation={true}
                     showDirectionsButton={false}
-                    markers={eventForm.location ? [{
-                      position: { lat: eventForm.location.latitude, lng: eventForm.location.longitude },
-                      title: "Event Location",
-                      color: "#2196F3",
-                      draggable: true
-                    }] : []}
+                    markers={
+                      eventForm.useProfileLocation && userProfile?.location ? 
+                        [{
+                          position: { 
+                            lat: parseFloat(userProfile.location.latitude), 
+                            lng: parseFloat(userProfile.location.longitude) 
+                          },
+                          title: "Your Profile Location",
+                          color: "#4CAF50",
+                          draggable: false
+                        }] :
+                      eventForm.location ? 
+                        [{
+                          position: { lat: eventForm.location.latitude, lng: eventForm.location.longitude },
+                          title: "Event Location",
+                          color: "#2196F3",
+                          draggable: true
+                        }] : 
+                        []
+                    }
                     onMarkerDrag={(position) => {
-                      handleMapClick(position);
+                      if (!eventForm.useProfileLocation) {
+                        handleMapClick(position);
+                      }
                     }}
                   />
                 </div>
@@ -1656,11 +1814,73 @@ const NewPostForm: React.FC<NewPostFormProps> = ({
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 text-foreground">Post Duration (How long this event post will be active)</label>
-              <Input
-                placeholder="e.g., Until event date, 30 days"
-                value={eventForm.duration}
-                onChange={(e) => setEventForm({ ...eventForm, duration: e.target.value })}
-              />
+              
+              {/* Option to select until event date */}
+              <div className="mb-3">
+                <div className="flex flex-row items-center justify-between">
+                  <div className="space-y-0.5">
+                    <label className="block text-sm font-medium text-foreground">Until Event Date</label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically calculate duration until the event date
+                      {useEventDateForDuration && eventForm.timingInfo.date && (
+                        <span className="ml-2 text-xs text-green-600">
+                          (Auto: {eventForm.duration})
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={useEventDateForDuration}
+                    onCheckedChange={(checked) => {
+                      setUseEventDateForDuration(checked);
+                      
+                      if (checked && eventForm.timingInfo.date) {
+                        // Calculate and set duration until event date
+                        const calculatedDuration = calculateDurationUntilEventDate(eventForm.timingInfo.date);
+                        setEventForm(prev => ({ ...prev, duration: calculatedDuration }));
+                      } else if (!checked) {
+                        // Clear duration when unchecked
+                        setEventForm(prev => ({ ...prev, duration: '' }));
+                      }
+                    }}
+                  />
+                </div>
+                {useEventDateForDuration && !eventForm.timingInfo.date && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    ⚠️ Please set the event date first to calculate duration
+                  </p>
+                )}
+              </div>
+
+              {/* Manual duration input (disabled when "until event date" is selected) */}
+              <div className={`flex gap-2 ${useEventDateForDuration ? 'opacity-50' : ''}`}>
+                <Input
+                  type="number"
+                  placeholder="30"
+                  min="1"
+                  max="365"
+                  disabled={useEventDateForDuration}
+                  value={useEventDateForDuration ? '' : eventForm.duration.replace(/[^0-9]/g, '')}
+                  onChange={(e) => {
+                    if (!useEventDateForDuration) {
+                      const numValue = e.target.value;
+                      const stringValue = numValue ? `${numValue} days` : '';
+                      setEventForm({ ...eventForm, duration: stringValue });
+                    }
+                  }}
+                  className="flex-1"
+                />
+                <div className="flex items-center px-3 text-sm text-muted-foreground bg-muted rounded-md border">
+                  days
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mt-1">
+                {useEventDateForDuration 
+                  ? "Duration will be automatically calculated until the event date"
+                  : "Enter number of days (1-365) the post will remain active"
+                }
+              </p>
               {formState.errors.duration && <p className="text-sm text-destructive mt-1">{formState.errors.duration}</p>}
             </div>
           </>

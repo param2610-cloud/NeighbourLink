@@ -16,13 +16,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { MoreVertical, MapPin, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { useStateContext } from "@/contexts/StateContext"; // Update this import to use StateContext
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MdVerified } from "react-icons/md";
 import { ImageDisplay } from "@/utils/cloudinary/CloudinaryDisplay";
+import { processFeedItem } from "@/utils/feed/feedUtils";
 
-// Helper: manage image natural sizes and container height
 function useImageHeightManager() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const natural = useRef<Record<string, { w: number; h: number }>>({});
@@ -47,11 +46,58 @@ function useImageHeightManager() {
       const maxScaled = allScaled.length ? Math.max(...allScaled) : maxAllowed;
       setHeight(Math.min(maxAllowed, maxScaled));
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   return { containerRef, onImgLoad, height, getMaxAllowed };
+}
+// Helper to render duration with proper singular/plural 'day' text
+function formatDuration(duration?: string | null) {
+  if (duration === undefined || duration === null || duration === "") return "";
+  const n = Number(duration);
+  if (!Number.isNaN(n)) {
+    return `${n} day${n === 1 ? "" : "s"}`;
+  }
+  // Fallback: if duration already contains non-numeric text, return as-is
+  return `${duration} day${duration === "1" ? "" : "s"}`;
+}
+
+// Helper to truncate description and show "Show more" button if needed
+function TruncatedDescription({ 
+  description, 
+  itemId, 
+  itemType, 
+  navigate 
+}: { 
+  description: string; 
+  itemId: string; 
+  itemType: FeedItem["type"]; 
+  navigate: any;
+}) {
+  const MAX_CHARS = 300;
+  const isLong = description.length > MAX_CHARS;
+  const truncatedText = isLong ? description.slice(0, MAX_CHARS) + "..." : description;
+
+  const handleShowMore = () => {
+    navigate(`/${itemType}/${itemId}`);
+  };
+
+  return (
+    <div className="mb-4">
+      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        {truncatedText}
+      </p>
+      {isLong && (
+        <button
+          onClick={handleShowMore}
+          className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline"
+        >
+          Show more
+        </button>
+      )}
+    </div>
+  );
 }
 
 export interface BaseItem {
@@ -63,6 +109,11 @@ export interface BaseItem {
   userId: string;
   visibilityRadius: string;
   images?: string[];
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
   type: "resource" | "promotion" | "event" | "update";
 }
 
@@ -78,6 +129,7 @@ export interface Promotion extends BaseItem {
     name: string;
     description: string;
   };
+  businessId:string;
   responders: {
     title: string;
     useProfileLocation: boolean;
@@ -280,13 +332,42 @@ const UserInfoDisplay: React.FC<{ userId: string }> = ({ userId }) => {
   );
 };
 
-export const Feed: React.FC = () => {
+export const Feed: React.FC<{ radius?: number }> = ({ radius }) => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [totalItemsBeforeFiltering, setTotalItemsBeforeFiltering] = useState<number>(0);
+
+  // Get user location for debugging purposes
+  useEffect(() => {
+    const getUserLocation = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDoc = await getDoc(doc(db, "Users", user.uid));
+          if (userDoc.exists() && userDoc.data().location) {
+            const location = userDoc.data().location;
+            setUserLocation({
+              latitude: parseFloat(location.latitude),
+              longitude: parseFloat(location.longitude),
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error getting user location:", error);
+      }
+    };
+    
+    getUserLocation();
+  }, []);
 
   const handleDeleteItem = async (id: string, type: FeedItem["type"]) => {
+    if (!id) {
+      console.error("Cannot delete item: ID is missing");
+      return;
+    }
+    
     try {
       let collectionName: string;
       switch (type) {
@@ -317,7 +398,11 @@ export const Feed: React.FC = () => {
       try {
         setLoading(true);
         const items = await fetchAllFeedItems();
-        setFeedItems(items);
+        setTotalItemsBeforeFiltering(items.length);
+        
+        // process feed item with radius filtering
+        const filteredItem = await processFeedItem(items, radius);
+        setFeedItems(filteredItem);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch feed items:", err);
@@ -327,7 +412,7 @@ export const Feed: React.FC = () => {
       }
     };
     loadFeedItems();
-  }, []);
+  }, [radius]);
 
   if (loading) {
     return (
@@ -361,6 +446,18 @@ export const Feed: React.FC = () => {
 
   return (
     <div className="container w-full sm:w-[520px] mx-auto px-4 bg-transparent">
+      {/* Debug info section */}
+      {userLocation && (
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <p className="text-xs text-blue-700 dark:text-blue-300">
+            📍 Location filtering active: {userLocation.latitude.toFixed(4)}, {userLocation.longitude.toFixed(4)}
+          </p>
+          <p className="text-xs text-blue-600 dark:text-blue-400">
+            Showing {feedItems.length} of {totalItemsBeforeFiltering} total posts within {radius ? `${radius}km radius (user filter)` : 'item-specific radius'}
+          </p>
+        </div>
+      )}
+      
       <div className="">
         {feedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -369,54 +466,71 @@ export const Feed: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No posts yet</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {userLocation ? "No posts in your area" : "No posts yet"}
+            </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-sm">
-              Be the first to share something with your community. Create a resource, event, promotion, or update!
+              {userLocation 
+                ? `Found ${totalItemsBeforeFiltering} total posts, but none are within your location radius. Try expanding your search or check back later for new posts in your neighborhood.`
+                : "Be the first to share something with your community. Create a resource, event, promotion, or update!"
+              }
             </p>
           </div>
         ) : (
-          feedItems.map((item) => {
-            switch (item.type) {
-              case "resource":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <ResourceCard
-                      resource={item as Resource}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              case "promotion":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <PromotionCard
-                      promotion={item as Promotion}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              case "event":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <EventCard
-                      event={item as Event}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              case "update":
-                return (
-                  <motion.div key={item.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32 }}>
-                    <UpdateCard
-                      update={item as Update}
-                      onDelete={handleDeleteItem}
-                    />
-                  </motion.div>
-                );
-              default:
+          feedItems
+            .map((item) => {
+              // Add safety check for item and item.id
+              if (!item || !item.id) {
+                console.warn("Skipping item with missing data:", item);
                 return null;
-            }
-          })
+              }
+
+              const CardComponent = () => {
+                switch (item.type) {
+                  case "resource":
+                    return (
+                      <ResourceCard
+                        resource={item as Resource}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  case "promotion":
+                    return (
+                      <PromotionCard
+                        promotion={item as Promotion}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  case "event":
+                    return (
+                      <EventCard
+                        event={item as Event}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  case "update":
+                    return (
+                      <UpdateCard
+                        update={item as Update}
+                        onDelete={handleDeleteItem}
+                      />
+                    );
+                  default:
+                    return null;
+                }
+              };
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.32 }}
+                >
+                  <CardComponent />
+                </motion.div>
+              );
+            }).filter(Boolean) // Remove null items
         )}
       </div>
     </div>
@@ -466,7 +580,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-600">
       {/* Category indicator stripe */}
       {/* <div className={`absolute top-0 left-0 right-0 h-1 ${
@@ -518,7 +632,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
               publicId={resource.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onImgLoad(e, resource.images![currentImageIndex])}
-              style={{ width: '100%', height: height ? `${height}px` : 'auto', objectFit: height ? 'cover' : 'contain' }}
+              style={{ width: "100%", height: height ? `${height}px` : "auto", objectFit: height ? "cover" : "contain" }}
             />
           </div>
           {/* hidden loaders to measure all images for height calculation */}
@@ -590,9 +704,30 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
           {resource.title || "Resource"}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-          {resource.description}
-        </p>
+        <TruncatedDescription 
+          description={resource.description}
+          itemId={resource.id!}
+          itemType="resource"
+          navigate={navigate}
+        />
+
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-4 border border-blue-100 dark:border-blue-800">
+          <h4 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-2">Resource Details</h4>
+          <div className="space-y-1 text-xs">
+            <p className="text-gray-700 dark:text-gray-300 flex items-center">
+              <svg className="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M9.243 3.03a1 1 0 01.727 1.213L9.53 6h2.94l.56-2.243a1 1 0 111.94.486L14.53 6H17a1 1 0 110 2h-2.97l-1 4H15a1 1 0 110 2h-2.47l-.56 2.242a1 1 0 11-1.94-.485L10.47 14H7.53l-.56 2.242a1 1 0 11-1.94-.485L5.47 14H3a1 1 0 110-2h2.97l1-4H5a1 1 0 110-2h2.47l.56-2.243a1 1 0 011.213-.727zM9.03 8l-1 4h2.94l1-4H9.03z" clipRule="evenodd" />
+              </svg>
+              Category: {resource.category}
+            </p>
+            <p className="text-gray-700 dark:text-gray-300 flex items-center">
+              <svg className="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Urgency: {resource.urgency}
+            </p>
+          </div>
+        </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-transparent dark:border-transparent">
           <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">
@@ -600,7 +735,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
               <svg className="w-4 h-4 mr-1.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span className="font-medium">{resource.duration}</span>
+              <span className="font-medium">{formatDuration(resource.duration)}</span>
             </div>
             <div className="flex items-center">
               <Calendar size={14} className="mr-1.5 text-green-500" />
@@ -652,12 +787,12 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
   };
 
   const handleViewBusiness = () => {
-    navigate(`/business/view/${promotion.userId}`);
+    navigate(`/business/view/${promotion.businessId}`);
     setShowMenu(false);
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-purple-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-purple-200 dark:hover:border-purple-600">
       {/* Category indicator stripe */}
 
@@ -705,7 +840,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
       {promotion.images && promotion.images.length > 0 && (
         <div ref={containerRef} className="relative w-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 overflow-hidden">
           <div style={{ height: height ? `${height}px` : undefined, maxHeight: getMaxAllowed(containerRef.current?.clientWidth || 520) }} className="w-full overflow-hidden flex justify-center items-center">
-            <ImageDisplay publicId={promotion.images[currentImageIndex]} className="w-full h-full" style={{ objectFit: height ? 'cover' : 'contain' }} />
+            <ImageDisplay publicId={promotion.images[currentImageIndex]} className="w-full h-full" style={{ objectFit: height ? "cover" : "contain" }} />
           </div>
           {promotion.images.map((imgId, idx) => (
             <div key={`loader-${idx}`} className="hidden" aria-hidden>
@@ -760,9 +895,12 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
           {promotion?.title || "Promotion"}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-          {promotion.description}
-        </p>
+        <TruncatedDescription 
+          description={promotion.description}
+          itemId={promotion.id!}
+          itemType="promotion"
+          navigate={navigate}
+        />
 
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 mb-4 border border-purple-100 dark:border-purple-800">
           <h4 className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide mb-2">Contact Information</h4>
@@ -775,7 +913,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
             </p>
             <p className="text-gray-700 dark:text-gray-300 flex items-center">
               <svg className="w-3 h-3 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" />
                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
               </svg>
               {promotion.contactInfo?.email}
@@ -809,7 +947,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const totalImages = event.images?.length || 0;
-  const { user } = useStateContext(); // Use StateContext instead of auth.currentUser
+  const user = auth.currentUser; // Use auth.currentUser instead of useStateContext
   const isOwner = user?.uid === event.userId;
   const [isRSVPed, setIsRSVPed] = useState(false);
   const [isRSVPing, setIsRSVPing] = useState(false);
@@ -829,10 +967,10 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
 
   useEffect(() => {
     // Check if the current user has already RSVPed
-    if (user && event.responders?.users) {
+    if (user?.uid && event.responders?.users) {
       setIsRSVPed(event.responders.users.includes(user.uid));
     }
-  }, [user, event.responders]);
+  }, [user?.uid, event.responders]);
 
   const handleNext = () => {
     setCurrentImageIndex((prev) => (prev + 1) % totalImages);
@@ -848,7 +986,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   };
 
   const handleRSVP = async () => {
-    if (!user) {
+    if (!user?.uid) {
       // Handle not logged in state
       alert("Please log in to RSVP for this event");
       return;
@@ -880,7 +1018,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-green-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-green-200 dark:hover:border-green-600">
       {/* Category indicator stripe */}
 
@@ -927,7 +1065,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
               publicId={event.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onEventImgLoad(e, event.images![currentImageIndex])}
-              style={{ width: '100%', height: eventHeight ? `${eventHeight}px` : 'auto', objectFit: eventHeight ? 'cover' : 'contain' }}
+              style={{ width: "100%", height: eventHeight ? `${eventHeight}px` : "auto", objectFit: eventHeight ? "cover" : "contain" }}
             />
           </div>
           <div className="hidden">
@@ -983,9 +1121,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
           {event.title || "Event"}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-          {event.description}
-        </p>
+        <TruncatedDescription 
+          description={event.description}
+          itemId={event.id!}
+          itemType="event"
+          navigate={navigate}
+        />
 
         <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 mb-4 border border-green-100 dark:border-green-800">
           <h4 className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-2">Event Details</h4>
@@ -1000,7 +1141,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
               <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>Duration: {event.timingInfo?.duration}</span>
+              <span>Duration: {formatDuration(event.timingInfo?.duration)}</span>
             </div>
             <div className="flex items-center text-gray-700 dark:text-gray-300">
               <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1077,7 +1218,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-900 dark:to-amber-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-amber-200 dark:hover:border-amber-600">
       {/* Category indicator stripe */}
       <div className="p-4">
@@ -1121,7 +1262,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
               publicId={update.images[currentImageIndex]}
               className="w-full"
               onLoad={(e) => onUpdLoad(e, update.images![currentImageIndex])}
-              style={{ width: '100%', height: updHeight ? `${updHeight}px` : 'auto', objectFit: updHeight ? 'cover' : 'contain' }}
+              style={{ width: "100%", height: updHeight ? `${updHeight}px` : "auto", objectFit: updHeight ? "cover" : "contain" }}
             />
           </div>
           <div className="hidden">
@@ -1173,9 +1314,12 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight">
           {update?.title || "Update"}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-          {update.description}
-        </p>
+        <TruncatedDescription 
+          description={update.description}
+          itemId={update.id!}
+          itemType="update"
+          navigate={navigate}
+        />
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 space-x-4">

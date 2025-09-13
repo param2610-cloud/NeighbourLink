@@ -157,6 +157,8 @@ export class BusinessInteractionService {
   static async incrementViews(businessId: string): Promise<void> {
     try {
       const businessRef = doc(db, 'business', businessId);
+      console.log(businessId);
+      
       await updateDoc(businessRef, {
         'stats.totalViews': increment(1),
         'stats.monthlyViews': increment(1),
@@ -181,7 +183,8 @@ export class BusinessInteractionService {
       
       const businessData = businessDoc.data();
       
-      if (!businessData.stats) {
+      // Check if stats or userInteractions don't exist and initialize them
+      if (!businessData.stats || !businessData.userInteractions) {
         const initialStats: BusinessStats = {
           totalViews: 0,
           totalLikes: 0,
@@ -192,10 +195,17 @@ export class BusinessInteractionService {
           monthlyLikes: 0,
         };
         
-        await updateDoc(businessRef, {
-          stats: initialStats,
-          userInteractions: [],
-        });
+        const updateData: any = {};
+        
+        if (!businessData.stats) {
+          updateData.stats = initialStats;
+        }
+        
+        if (!businessData.userInteractions) {
+          updateData.userInteractions = [];
+        }
+        
+        await updateDoc(businessRef, updateData);
       }
     } catch (error) {
       console.error('Error initializing stats:', error);
@@ -219,6 +229,26 @@ export class BusinessInteractionService {
       return businessData.userInteractions || [];
     } catch (error) {
       console.error('Error getting user interactions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get business stats for a specific business
+   */
+  static async getBusinessStats(businessId: string): Promise<BusinessStats | undefined> {
+    try {
+      const businessRef = doc(db, 'business', businessId);
+      const businessDoc = await getDoc(businessRef);
+      
+      if (!businessDoc.exists()) {
+        throw new Error('Business not found');
+      }
+      
+      const businessData = businessDoc.data();
+      return businessData.stats;
+    } catch (error) {
+      console.error('Error getting business stats:', error);
       throw error;
     }
   }

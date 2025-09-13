@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "notifications": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$notificationId": {
+        ".validate": "newData.hasChildren(['title', 'receipt', 'description', 'action_url', 'timestamp', 'createdBy'])",
+        "title": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "receipt": {
+          ".validate": "newData.isString() || (newData.hasChildren() && newData.val().length > 0)"
+        },
+        "description": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "action_url": {
+          ".validate": "newData.isString()"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber()"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && newData.val() == auth.uid"
+        }
+      }
+    }
+  }
+}

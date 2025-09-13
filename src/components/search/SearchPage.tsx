@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiSearch, FiFilter, FiMapPin, FiList, FiX } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiMapPin, FiList, FiX, FiClock, FiUser, FiStar } from 'react-icons/fi';
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '@/firebase';
-import PostList from '@/components/PostCard/PostList';
-import SharedResourceList from '@/components/PostCard/SharedResourceList ';
 import SearchResultMap from './SearchResultMap';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Bottombar from '../authPage/structures/Bottombar';
+import { calculateDistance } from '@/utils/utils';
+import { ImageDisplay } from '@/utils/cloudinary/CloudinaryDisplay';
 
 
 type ViewMode = 'list' | 'map';
@@ -20,7 +20,7 @@ type FilterSheetState = 'closed' | 'open';
 
 interface SearchResult {
   id: string;
-  type: 'post' | 'resource';
+  type: 'resource' | 'promotion' | 'event' | 'update' | 'business' | 'post';
   title: string;
   description: string;
   category: string;
@@ -31,17 +31,31 @@ interface SearchResult {
   };
   createdAt: any;
   urgencyLevel?: number;
-
-
   urgency?: boolean;
   userId: string;
   photoUrl: string;
   responders?: { userId: string; accepted: boolean }[];
-
-
+  
+  // Resource specific
   resourceName?: string;
   condition?: string;
-
+  
+  // Business specific
+  businessName?: string;
+  contact?: { phone: string; email: string; verified: boolean };
+  services?: any[];
+  products?: any[];
+  
+  // Event specific
+  startDate?: any;
+  endDate?: any;
+  maxParticipants?: number;
+  currentParticipants?: number;
+  
+  // Promotion specific
+  visibilityRadius?: string;
+  duration?: string;
+  isPromoted?: boolean;
 
   [key: string]: any;
 }
@@ -49,8 +63,199 @@ interface SearchResult {
 const CATEGORIES = [
   'Medical', 'Food', 'Transportation', 'Childcare',
   'Pet Care', 'Household Items', 'Technology', 'Education',
-  'Elderly Care', 'Other'
+  'Elderly Care', 'Business', 'Events', 'Community',
+  'Services', 'Products', 'Other'
 ];
+
+const COLLECTION_TYPES = [
+  { value: 'all', label: 'All Types' },
+  { value: 'resource', label: 'Resources' },
+  { value: 'promotion', label: 'Promotions' },
+  { value: 'event', label: 'Events' },
+  { value: 'update', label: 'Updates' },
+  { value: 'business', label: 'Businesses' },
+  { value: 'post', label: 'Posts' }
+];
+
+// Search Result Card Component
+interface SearchResultCardProps {
+  result: SearchResult;
+}
+
+const SearchResultCard: React.FC<SearchResultCardProps> = ({ result }) => {
+  const navigate = useNavigate();
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'resource': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'promotion': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'event': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'update': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case 'business': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'post': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'resource': return 'Resource';
+      case 'promotion': return 'Promotion';
+      case 'event': return 'Event';
+      case 'update': return 'Update';
+      case 'business': return 'Business';
+      case 'post': return 'Request';
+      default: return 'Item';
+    }
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return '';
+    try {
+      const dateObj = date.toDate ? date.toDate() : new Date(date);
+      return dateObj.toLocaleDateString();
+    } catch (error) {
+      return '';
+    }
+  };
+
+  const handleCardClick = () => {
+    // Navigate to appropriate detail page based on type
+    switch (result.type) {
+      case 'business':
+        navigate(`/business/${result.id}`);
+        break;
+      case 'event':
+        navigate(`/events/${result.id}`);
+        break;
+      case 'resource':
+        navigate(`/resources/${result.id}`);
+        break;
+      case 'promotion':
+        navigate(`/promotions/${result.id}`);
+        break;
+      case 'update':
+        navigate(`/updates/${result.id}`);
+        break;
+      case 'post':
+        navigate(`/posts/${result.id}`);
+        break;
+      default:
+        console.log('Unknown type:', result.type);
+    }
+  };
+
+  return (
+    <div 
+      className="bg-white dark:bg-neutral-900 rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 dark:border-neutral-700"
+      onClick={handleCardClick}
+    >
+      {/* Header with type and category */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex gap-2 flex-wrap">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(result.type)}`}>
+            {getTypeLabel(result.type)}
+          </span>
+          <span className="px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-gray-300">
+            {result.category}
+          </span>
+          {result.urgency && (
+            <span className="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">
+              Urgent
+            </span>
+          )}
+        </div>
+        {result.urgencyLevel && (
+          <div className="flex items-center gap-1">
+            <FiStar className="text-yellow-500" size={14} />
+            <span className="text-sm text-gray-600 dark:text-gray-400">{result.urgencyLevel}/5</span>
+          </div>
+        )}
+      </div>
+
+      {/* Image */}
+      {result.photoUrl && (
+        <div className="mb-3">
+          <ImageDisplay 
+            publicId={result.photoUrl} 
+            alt={result.title}
+            className="w-full h-32 object-cover rounded-md"
+          />
+        </div>
+      )}
+
+      {/* Title and Description */}
+      <div className="mb-3">
+        <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-1 overflow-hidden" style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical' as any
+        }}>
+          {result.title}
+        </h3>
+        {result.description && (
+          <p className="text-gray-600 dark:text-gray-400 text-sm overflow-hidden" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical' as any
+          }}>
+            {result.description}
+          </p>
+        )}
+      </div>
+
+      {/* Business-specific info */}
+      {result.type === 'business' && result.contact && (
+        <div className="mb-3 p-2 bg-gray-50 dark:bg-neutral-800 rounded">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            📞 {result.contact.phone}
+          </p>
+          {result.contact.verified && (
+            <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded mt-1">
+              Verified
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Event-specific info */}
+      {result.type === 'event' && (result.startDate || result.maxParticipants) && (
+        <div className="mb-3 p-2 bg-gray-50 dark:bg-neutral-800 rounded">
+          {result.startDate && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              📅 {formatDate(result.startDate)}
+            </p>
+          )}
+          {result.maxParticipants && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              👥 {result.currentParticipants || 0}/{result.maxParticipants} participants
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
+            <FiClock size={14} />
+            <span>{formatDate(result.createdAt)}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FiMapPin size={14} />
+            <span className="truncate" style={{ maxWidth: '100px' }}>{result.location}</span>
+          </div>
+        </div>
+        {result.responders && result.responders.length > 0 && (
+          <div className="flex items-center gap-1">
+            <FiUser size={14} />
+            <span>{result.responders.length} responses</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SearchPage: React.FC = () => {
 
@@ -63,18 +268,44 @@ const SearchPage: React.FC = () => {
   const [refreshing,] = useState(false);
   const navigate = useNavigate();
 
-
+  // Filter states
   const [distance, setDistance] = useState([5]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>(['all']);
   const [availability, setAvailability] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('recency');
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
+
+  // Get user's location on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          setLocationError('Unable to get your location');
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
+      );
+    } else {
+      setLocationError('Geolocation not supported');
+    }
+  }, []);
 
   const debouncedSearch = useCallback(
-
     debounce((term: string) => {
       if (term.trim()) {
-
         if (!recentSearches.includes(term)) {
           const updatedSearches = [term, ...recentSearches.slice(0, 4)];
           setRecentSearches(updatedSearches);
@@ -100,13 +331,11 @@ const SearchPage: React.FC = () => {
     setLoading(true);
 
     try {
-
       if (!recentSearches.includes(searchTerm)) {
         const updatedSearches = [searchTerm, ...recentSearches.slice(0, 4)];
         setRecentSearches(updatedSearches);
         localStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
       }
-
 
       await fetchResults(searchTerm);
     } catch (error) {
@@ -121,78 +350,157 @@ const SearchPage: React.FC = () => {
     try {
       setLoading(true);
 
-      const postsQuery = query(
-        collection(db, "posts"),
+      // Define collections to search
+      const collections = [
+        { name: 'resources', type: 'resource' },
+        { name: 'promotions', type: 'promotion' },
+        { name: 'events', type: 'event' },
+        { name: 'updates', type: 'update' },
+        { name: 'business', type: 'business' }
+      ];
 
-        orderBy("createdAt", "desc"),
-        limit(20)
-      );
-      const postsSnapshot = await getDocs(postsQuery);
-      const postsData = postsSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        console.log(data);
+      let allResults: SearchResult[] = [];
 
+      // Fetch from each collection
+      for (const { name, type } of collections) {
+        try {
+          const collectionQuery = query(
+            collection(db, name),
+            orderBy("createdAt", "desc"),
+            limit(20)
+          );
+          
+          const snapshot = await getDocs(collectionQuery);
+          
+          const collectionData = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            
+            // Normalize coordinates
+            let coordinates = { latitude: 0, longitude: 0 };
+            if (data.coordinates && data.coordinates.latitude && data.coordinates.longitude) {
+              coordinates = data.coordinates;
+            } else if (data.latitude && data.longitude) {
+              coordinates = { latitude: data.latitude, longitude: data.longitude };
+            } else if (data.location && data.location.latitude && data.location.longitude) {
+              coordinates = { latitude: data.location.latitude, longitude: data.location.longitude };
+            }
 
-        let coordinates = { latitude: 0, longitude: 0 };
+            // Normalize title based on type
+            let title = data.title || '';
+            if (type === 'business') {
+              title = data.businessName || data.name || '';
+            } else if (type === 'resource') {
+              title = data.resourceName || data.title || '';
+            } else if (type === 'event') {
+              title = data.title || data.eventName || '';
+            }
 
+            // Normalize description
+            let description = data.description || '';
+            if (type === 'business') {
+              description = data.description || data.tagline || '';
+            }
 
-        if (data.coordinates && data.coordinates.latitude && data.coordinates.longitude) {
-          coordinates = data.coordinates;
-        } else if (data.latitude && data.longitude) {
-          coordinates = { latitude: data.latitude, longitude: data.longitude };
+            // Normalize category
+            let category = data.category || 'Other';
+            if (type === 'business') {
+              category = data.businessCategory || data.category || 'Business';
+            }
+
+            // Normalize location string
+            let location = data.location || '';
+            if (typeof location === 'object' && location.address) {
+              location = location.address;
+            } else if (typeof location !== 'string') {
+              location = `${coordinates.latitude}, ${coordinates.longitude}`;
+            }
+
+            return {
+              id: doc.id,
+              ...data,
+              type: type as SearchResult['type'],
+              title,
+              description,
+              category,
+              location,
+              coordinates,
+              userId: data.userId || "",
+              photoUrl: data.photoUrl || data.imageUrl || (data.images && data.images[0]) || "",
+              urgency: data.urgency || false,
+              urgencyLevel: data.urgencyLevel || (data.urgency ? 3 : 0),
+              responders: data.responders || []
+            } as SearchResult;
+          });
+
+          allResults = [...allResults, ...collectionData];
+        } catch (error) {
+          console.error(`Error fetching from ${name}:`, error);
+          // Continue with other collections even if one fails
         }
+      }
 
-        return {
-          id: doc.id,
-          ...data,
-          type: "post",
-
-          coordinates: coordinates,
-
-          userId: data.userId || "",
-          photoUrl: data.photoUrl || "",
-          urgency: data.urgency || false,
-          responders: data.responders || []
-        };
-      }) as SearchResult[];
-
-      let combined = [...postsData];
-
-
-      combined = combined.filter(item =>
+      // Filter results with valid coordinates
+      allResults = allResults.filter(item =>
         item.coordinates &&
         typeof item.coordinates.latitude === 'number' &&
-        typeof item.coordinates.longitude === 'number'
+        typeof item.coordinates.longitude === 'number' &&
+        !isNaN(item.coordinates.latitude) &&
+        !isNaN(item.coordinates.longitude)
       );
 
-
+      // Apply search term filter
       const searchTermToUse = term !== undefined ? term : searchTerm;
-      if (searchTermToUse) {
-        combined = combined.filter(item =>
-          item.title.toLowerCase().includes(searchTermToUse.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchTermToUse.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTermToUse.toLowerCase())
+      if (searchTermToUse && searchTermToUse.trim()) {
+        const searchLower = searchTermToUse.toLowerCase();
+        allResults = allResults.filter(item =>
+          item.title.toLowerCase().includes(searchLower) ||
+          item.description.toLowerCase().includes(searchLower) ||
+          item.category.toLowerCase().includes(searchLower) ||
+          (item.businessName && item.businessName.toLowerCase().includes(searchLower)) ||
+          (item.resourceName && item.resourceName.toLowerCase().includes(searchLower))
         );
       }
 
-
+      // Apply category filter
       if (selectedCategories.length > 0) {
-        combined = combined.filter(item =>
+        allResults = allResults.filter(item =>
           selectedCategories.includes(item.category)
         );
       }
 
-
-      if (availability) {
-        combined = combined.filter(item =>
-          item.status !== 'completed' && item.status !== 'closed'
+      // Apply type filter
+      if (selectedTypes.length > 0 && !selectedTypes.includes('all')) {
+        allResults = allResults.filter(item =>
+          selectedTypes.includes(item.type)
         );
       }
 
+      // Apply availability filter
+      if (availability) {
+        allResults = allResults.filter(item =>
+          item.status !== 'completed' && 
+          item.status !== 'closed' && 
+          item.status !== 'inactive'
+        );
+      }
 
-      combined = sortResults(combined, sortBy);
+      // Apply location-based distance filter
+      if (userLocation && distance[0] > 0) {
+        allResults = allResults.filter(item => {
+          const itemDistance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            item.coordinates.latitude,
+            item.coordinates.longitude
+          );
+          return itemDistance <= distance[0];
+        });
+      }
 
-      setResults(combined);
+      // Sort results
+      allResults = sortResults(allResults, sortBy);
+
+      setResults(allResults);
     } catch (error) {
       console.error('Error fetching results:', error);
     } finally {
@@ -229,8 +537,23 @@ const SearchPage: React.FC = () => {
           return timeB - timeA;
         });
       case 'distance':
-
-
+        if (userLocation) {
+          return [...data].sort((a, b) => {
+            const distanceA = calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              a.coordinates.latitude,
+              a.coordinates.longitude
+            );
+            const distanceB = calculateDistance(
+              userLocation.lat,
+              userLocation.lng,
+              b.coordinates.latitude,
+              b.coordinates.longitude
+            );
+            return distanceA - distanceB;
+          });
+        }
         return data;
       default:
         return data;
@@ -241,6 +564,7 @@ const SearchPage: React.FC = () => {
   const handleClearFilters = () => {
     setDistance([5]);
     setSelectedCategories([]);
+    setSelectedTypes(['all']);
     setAvailability(true);
     setSortBy('recency');
   };
@@ -258,6 +582,22 @@ const SearchPage: React.FC = () => {
     });
   };
 
+  const toggleType = (type: string) => {
+    setSelectedTypes(prev => {
+      if (type === 'all') {
+        return ['all'];
+      } else {
+        const filtered = prev.filter(t => t !== 'all');
+        if (filtered.includes(type)) {
+          const newTypes = filtered.filter(t => t !== type);
+          return newTypes.length === 0 ? ['all'] : newTypes;
+        } else {
+          return [...filtered, type];
+        }
+      }
+    });
+  };
+
 
 
   useEffect(() => {
@@ -266,14 +606,12 @@ const SearchPage: React.FC = () => {
       setRecentSearches(JSON.parse(savedSearches));
     }
 
-
     fetchResults();
   }, []);
 
-
   useEffect(() => {
     fetchResults();
-  }, [selectedCategories, availability, sortBy]);
+  }, [selectedCategories, selectedTypes, availability, sortBy, distance, userLocation]);
 
   return (
     <div className="min-h-screen mb-16 bg-gray-100 dark:bg-neutral-800 pt-4">
@@ -393,7 +731,7 @@ const SearchPage: React.FC = () => {
             {/* Distance Slider */}
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2 dark:text-gray-300">
-                Distance: {distance[0]} km
+                Distance: {distance[0]} km {!userLocation && '(Location needed for filtering)'}
               </label>
               <Slider
                 value={distance}
@@ -401,7 +739,33 @@ const SearchPage: React.FC = () => {
                 max={20}
                 min={1}
                 step={1}
+                disabled={!userLocation}
               />
+              {locationError && (
+                <p className="text-xs text-red-500 mt-1">{locationError}</p>
+              )}
+            </div>
+
+            {/* Collection Types */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium mb-2 dark:text-gray-300">Content Types</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {COLLECTION_TYPES.map((type) => (
+                  <div key={type.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`type-${type.value}`}
+                      checked={selectedTypes.includes(type.value)}
+                      onCheckedChange={() => toggleType(type.value)}
+                    />
+                    <label
+                      htmlFor={`type-${type.value}`}
+                      className="text-sm dark:text-gray-300"
+                    >
+                      {type.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Categories */}
@@ -500,42 +864,9 @@ const SearchPage: React.FC = () => {
           ) : results.length > 0 ? (
             <>
               {viewMode === 'list' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-4">
                   {results.map((result) => (
-                    result.type === 'post' ? (
-                      <PostList
-                        key={`post-${result.id}`}
-                        post={{
-                          id: result.id,
-                          category: result.category,
-                          createdAt: result.createdAt,
-                          description: result.description,
-                          location: result.location,
-                          photoUrl: result.photoUrl,
-                          title: result.title,
-                          urgency: result.urgency || false,
-                          userId: result.userId,
-                          responders: result.responders || []
-                        }}
-                        setUpdated={() => { }}
-                      />
-                    ) : (
-                      <SharedResourceList
-                        key={`resource-${result.id}`}
-                        resource={{
-                          id: result.id,
-                          category: result.category,
-                          createdAt: result.createdAt,
-                          description: result.description,
-                          location: result.location,
-                          photoUrl: result.photoUrl,
-                          resourceName: result.resourceName || result.title,
-                          condition: result.condition || "",
-                          userId: result.userId
-                        }}
-                        setUpdated={() => { }}
-                      />
-                    )
+                    <SearchResultCard key={`${result.type}-${result.id}`} result={result} />
                   ))}
                 </div>
               ) : (

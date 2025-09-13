@@ -99,6 +99,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 3000,
   },
   server:{
+    allowedHosts:[
+      'neighbourlink.hexabytes.tech',
+      'backend.neighbourlink.hexabytes.tech',
+      
+    ],
     host: process.env.VITE_IP,
     port:5174,
     // host: '192.168.0.193'

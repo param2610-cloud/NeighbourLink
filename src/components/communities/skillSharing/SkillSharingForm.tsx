@@ -82,7 +82,7 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
             lastName: userData.lastName,
             description: formData.description.trim(),
             email,
-            photoURL,
+            photoURL:userData.photo,
             isActive: true,
             userId: user.uid,
             skills: formData.skills
