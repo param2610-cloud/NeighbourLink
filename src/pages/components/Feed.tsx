@@ -580,7 +580,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-blue-200 dark:hover:border-blue-600">
       {/* Category indicator stripe */}
       {/* <div className={`absolute top-0 left-0 right-0 h-1 ${
@@ -792,7 +792,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-purple-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-purple-200 dark:hover:border-purple-600">
       {/* Category indicator stripe */}
 
@@ -1018,7 +1018,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-green-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-green-200 dark:hover:border-green-600">
       {/* Category indicator stripe */}
 
@@ -1218,7 +1218,7 @@ export const UpdateCard: React.FC<UpdateCardProps> = ({ update, onDelete }) => {
   };
 
   return (
-    <motion.div initial={{ scale: 0.95 }} animate={{ scale: 0.95 }} whileHover={{ y: -6, scale: 0.99 }} transition={{ duration: 0.22 }}
+    <motion.div
       className="group relative bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-900 dark:to-amber-900/20 rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 ease-out overflow-hidden border border-transparent hover:border-amber-200 dark:hover:border-amber-600">
       {/* Category indicator stripe */}
       <div className="p-4">
