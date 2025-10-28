@@ -224,8 +224,8 @@ const NeighbourLinkBusiness: React.FC = () => {
     BusinessCollection["services"][0] | null
   >(null);
 
-  const [editingProduct, setEditingProduct] = useState<string | null>(null);
-  const [tempProduct, setTempProduct] = useState<
+  const [, setEditingProduct] = useState<string | null>(null);
+  const [, setTempProduct] = useState<
     BusinessCollection["products"][0] | null
   >(null);
 
@@ -873,81 +873,81 @@ const NeighbourLinkBusiness: React.FC = () => {
     }
   };
 
-  const handleAddProduct = () => {
-    const newId = Date.now().toString();
-    setTempProduct({
-      id: newId,
-      name: "",
-      description: "",
-      price: 0,
-      stock: 0,
-      imageUrl: [],
-    });
-    setEditingProduct(newId);
-  };
+  // const handleAddProduct = () => {
+  //   const newId = Date.now().toString();
+  //   setTempProduct({
+  //     id: newId,
+  //     name: "",
+  //     description: "",
+  //     price: 0,
+  //     stock: 0,
+  //     imageUrl: [],
+  //   });
+  //   setEditingProduct(newId);
+  // };
 
-  const handleSaveProduct = async () => {
-    if (!businessData || !tempProduct) return;
-    setLoading(true);
-    try {
-      let newProducts = businessData.products;
-      const isNew = !businessData.products.some((p) => p.id === tempProduct.id);
-      if (isNew) {
-        newProducts = [...newProducts, tempProduct];
-      } else {
-        newProducts = newProducts.map((p) =>
-          p.id === tempProduct.id ? tempProduct : p
-        );
-      }
-      await updateDoc(doc(db, "business", businessData.id), {
-        products: newProducts,
-      });
-      const newData = { ...businessData, products: newProducts };
-      setBusinessData(newData);
-      setIncompleteFields(checkIncompleteFields(newData));
-      setEditingProduct(null);
-      setTempProduct(null);
-    } catch (error) {
-      console.error("Error saving product:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleSaveProduct = async () => {
+  //   if (!businessData || !tempProduct) return;
+  //   setLoading(true);
+  //   try {
+  //     let newProducts = businessData.products;
+  //     const isNew = !businessData.products.some((p) => p.id === tempProduct.id);
+  //     if (isNew) {
+  //       newProducts = [...newProducts, tempProduct];
+  //     } else {
+  //       newProducts = newProducts.map((p) =>
+  //         p.id === tempProduct.id ? tempProduct : p
+  //       );
+  //     }
+  //     await updateDoc(doc(db, "business", businessData.id), {
+  //       products: newProducts,
+  //     });
+  //     const newData = { ...businessData, products: newProducts };
+  //     setBusinessData(newData);
+  //     setIncompleteFields(checkIncompleteFields(newData));
+  //     setEditingProduct(null);
+  //     setTempProduct(null);
+  //   } catch (error) {
+  //     console.error("Error saving product:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleCancelProduct = () => {
     setEditingProduct(null);
     setTempProduct(null);
   };
 
-  const handleRemoveProduct = async (id: string) => {
-    if (
-      !businessData ||
-      !confirm("Are you sure you want to remove this product?")
-    )
-      return;
-    setLoading(true);
-    try {
-      const productToRemove = businessData.products.find((p) => p.id === id);
-      if (productToRemove?.imageUrl) {
-        await Promise.all(productToRemove.imageUrl.map(deleteFromCloudinary));
-      }
-      const newProducts = businessData.products.filter((p) => p.id !== id);
-      await updateDoc(doc(db, "business", businessData.id), {
-        products: newProducts,
-      });
-      const newData = { ...businessData, products: newProducts };
-      setBusinessData(newData);
-      setIncompleteFields(checkIncompleteFields(newData));
-      if (editingProduct === id) {
-        setEditingProduct(null);
-        setTempProduct(null);
-      }
-    } catch (error) {
-      console.error("Error removing product:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleRemoveProduct = async (id: string) => {
+  //   if (
+  //     !businessData ||
+  //     !confirm("Are you sure you want to remove this product?")
+  //   )
+  //     return;
+  //   setLoading(true);
+  //   try {
+  //     const productToRemove = businessData.products.find((p) => p.id === id);
+  //     if (productToRemove?.imageUrl) {
+  //       await Promise.all(productToRemove.imageUrl.map(deleteFromCloudinary));
+  //     }
+  //     const newProducts = businessData.products.filter((p) => p.id !== id);
+  //     await updateDoc(doc(db, "business", businessData.id), {
+  //       products: newProducts,
+  //     });
+  //     const newData = { ...businessData, products: newProducts };
+  //     setBusinessData(newData);
+  //     setIncompleteFields(checkIncompleteFields(newData));
+  //     if (editingProduct === id) {
+  //       setEditingProduct(null);
+  //       setTempProduct(null);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error removing product:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -969,9 +969,9 @@ const NeighbourLinkBusiness: React.FC = () => {
   const isNewService =
     editingService &&
     !businessData.services.some((s) => s.id === editingService);
-  const isNewProduct =
-    editingProduct &&
-    !businessData.products.some((p) => p.id === editingProduct);
+  // const isNewProduct =
+  //   editingProduct &&
+  //   !businessData.products.some((p) => p.id === editingProduct);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">

@@ -53,7 +53,7 @@ const SkillSharingForm = ({ isOpen }: SkillFormProps) => {
     setError("");
     setIsSubmitting(true);
 
-    const { email, photoURL } = user;
+    const { email } = user;
 
     try {
       // Validate required fields

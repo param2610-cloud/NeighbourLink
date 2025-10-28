@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../../firebase';
 import { Conversation, getUserConversations, getMessages, markConversationAsRead, Message } from '../../services/messagingService';
 import { formatDistanceToNow } from 'date-fns';
-import { FaArrowLeft, FaSearch, FaVideo, FaPhone, FaInfoCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaSearch } from 'react-icons/fa';
 import { FiCalendar } from 'react-icons/fi';
 import { GiHamburgerMenu } from "react-icons/gi";
 import { BsChatDots } from "react-icons/bs";
