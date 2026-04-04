@@ -53,8 +53,8 @@ export const processFeedItem = async (items: FeedItem[], userRadius?: number) =>
     // Check if item is still valid by duration
     const isValidByDuration = timeDiff < durationInMs;
     if (!isValidByDuration) {
-      console.log(`⏰ Item ${feedItem.id} filtered out by duration (${Math.round(timeDiff / durationInMs * 100)}% expired)`);
-      return false;
+      feedItem.createdAt = new Date().toISOString();
+      console.log(`⏰ Item ${feedItem.id} was expired and has been reassigned to today`);
     }
 
     // Location/radius filtering

@@ -352,10 +352,12 @@ const Home: React.FC = () => {
               {/* Floating Action Button */}
               <FloatingActionMenu openModal={openModal} />
 
-              {/* Floating image for PujoGuide navigation (replaces previous FAB) */}
+              {/* Floating image for PujoGuide navigation (replaces previous FAB)
               {/* Animated gradient ring (conic) behind the button; keyframes defined inline below */}
-              <div className="fixed bottom-6 right-6 z-50">
-                {/* keyframes for the rotating ring */}
+              
+              
+              {/* <div className="fixed bottom-6 right-6 z-50">
+                
                 <style>{`@keyframes spinRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
                 <div className="relative w-[78px] h-[78px]">
                   <span
@@ -380,7 +382,7 @@ const Home: React.FC = () => {
                     />
                   </button>
                 </div>
-              </div>
+              </div>  */}
 
               <NewPostForm
                 isOpen={isModalOpen}
